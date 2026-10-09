@@ -1,5 +1,5 @@
 export const COMMAND = 'Manage my post';
-export const REOPEN = 'To open this menu again, go to the post, open its options, choose **Apps**, then **Manage my post**.';
+export const REOPEN = 'To open this menu again, go to the post, open its options, choose **Apps**, choose **Link Embedder** if shown, then **Manage my post**.';
 const deny = 'Only the original poster can manage this repost. Older reposts without a saved ownership record cannot be managed.';
 const privateReply = content => ({content,flags:64,allowedMentions:{parse:[]}});
 
