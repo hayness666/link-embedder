@@ -12,7 +12,7 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
   assert.deepEqual(card.components.map(c=>c.type), [10,12,10,10]);
-  assert.equal(card.components[3].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram**');
+  assert.equal(card.components[3].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram** via <@1557858203897823304>');
   assert.equal(card.components[0].content, '**Name** @\u200bperson');
   const json = JSON.stringify(card);
   assert.doesNotMatch(json, /❤️|💬|date|https:\/\/www.instagram/);
@@ -56,9 +56,9 @@ test('component repost retains source once, disables mentions and supplies webho
   assert.deepEqual(result.allowedMentions,{parse:[],repliedUser:false});
 });
 
-test('caption limit is 100 characters including ellipsis', () => {
-  assert.equal(shortCaption('a'.repeat(100)), 'a'.repeat(100));
-  assert.equal(shortCaption('a'.repeat(101)), 'a'.repeat(99)+'…');
+test('caption limit is 250 characters including ellipsis', () => {
+  assert.equal(shortCaption('a'.repeat(250)), 'a'.repeat(250));
+  assert.equal(shortCaption('a'.repeat(251)), 'a'.repeat(249)+'…');
   assert.equal(shortCaption('hello [#tag](https://instagram.com/tags/tag/)'), 'hello #tag');
 });
 

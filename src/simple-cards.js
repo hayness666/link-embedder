@@ -1,0 +1,133 @@
+import { brands, footer } from './platform-brands.js';
+import { extractLinks, parseSocialUrl } from './previews.js';
+import { helperUrl } from './adapters.js';
+import { helperModes } from './config.js';
+import { instagramPayload, shortCaption, plain } from './instagram-card.js';
+
+const mediaHosts = {
+  medal: ['medal.tv', 'cdn.medal.tv'],
+  streamable: ['api-f.streamable.com','cdn-cf-east.streamable.com','cdn-cf-west.streamable.com','cdn-cf.streamable.com'],
+  imgur: ['i.imgur.com'],
+  twitter: ['pbs.twimg.com', 'video.twimg.com'],
+  bluesky: ['cdn.bsky.app', 'video.bsky.app'],
+  tiktok: ['offload.tnktok.com'],
+  reddit: ['i.redd.it', 'v.redd.it', 'preview.redd.it', 'external-preview.redd.it', 'vxreddit.com', 'www.vxreddit.com'],
+  twitch: ['clips-media-assets2.twitch.tv', 'production.assets.clips.twitchcdn.net', 'clips-media-assets.twitch.tv'],
+  snapchat: ['cf-st.sc-cdn.net'],
+  facebook: [], amazon: [], rednote: [], linkedin: ['media.licdn.com'], upscrolled: [], mastodon: []
+};
+export function validMedia(raw, platform) {
+  try {
+    const u = new URL(raw);
+    return typeof raw === 'string' && raw.length <= 2048 && u.protocol === 'https:' && !u.username && !u.password && !u.port && !u.hash
+      && (mediaHosts[platform] || []).includes(u.hostname);
+  } catch { return false; }
+}
+const decode = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
+  const names = { '&amp;': '&', '&quot;': '"', '&apos;': "'", '&lt;': '<', '&gt;': '>' };
+  if (names[entity.toLowerCase()]) return names[entity.toLowerCase()];
+  const n = entity[2].toLowerCase() === 'x' ? parseInt(entity.slice(3), 16) : parseInt(entity.slice(2), 10);
+  return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : '';
+});
+export function readMeta(html) {
+  const tags = new Map();
+  for (const match of html.matchAll(/<meta\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi)) {
+    const attrs = {};
+    for (const [, key, , val] of match[0].matchAll(/([\w:-]+)\s*=\s*(["'])(.*?)\2/gs)) attrs[key.toLowerCase()] = decode(val);
+    const key = (attrs.property || attrs.name || '').toLowerCase();
+    if (key && attrs.content) tags.set(key, [...(tags.get(key) || []), attrs.content]);
+  }
+  return tags;
+}
+export function metadataFromHtml(html, platform) {
+  const tags = readMeta(html), get = name => tags.get(name)?.[0] || '';
+  const type = get('og:video:type') || get('twitter:player:stream:content_type');
+  const videos = type === 'video/mp4' ? [...(tags.get('og:video:secure_url') || []), ...(tags.get('og:video') || []), ...(tags.get('twitter:player:stream') || [])] : [];
+  const validVideos = videos.filter(url => validMedia(url, platform));
+  const media = validVideos.length ? [validVideos[0]] : [...new Set((tags.get('og:image') || []).filter(url => validMedia(url, platform)))].slice(0, 10);
+  let name = '', username = '', caption = get('og:description') || '';
+  const title = get('og:title');
+  if (platform === 'tiktok') {
+    const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
+    if (author) [, name, username] = author;
+  } else if (platform === 'twitch') {
+    const split = title.indexOf(' - ');
+    if (split >= 0) { name = title.slice(0, split); caption = title.slice(split + 3); }
+  }
+  if (['medal','imgur','streamable'].includes(platform)) caption = title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '');
+  if (!caption && platform === 'reddit' && title !== 'vxReddit') caption = title;
+  return { name, username, caption, media };
+}
+export function metadataFromFx(data, platform) {
+  const post = data.status || data.tweet;
+  if (data.code !== 200 || !post || post.type === 'tombstone' || post.author?.protected) return null;
+  const entries = post.media?.all || [...(post.media?.photos || []), ...(post.media?.videos || [])];
+  const media = entries.map(item => item.url).filter(url => validMedia(url, platform)).slice(0, 10);
+  return { name: post.author?.name || '', username: post.author?.screen_name || '', caption: post.text || '', media };
+}
+async function readBounded(url, fetcher) {
+  let response;
+  try {
+    response = await fetcher(url, { redirect: 'error', signal: AbortSignal.timeout(8000), headers: {
+      'User-Agent': 'Discordbot (Link Embedder public preview)', Accept: 'text/html, application/json' } });
+    if (!response.ok || !/text\/html|application\/json/i.test(response.headers.get('content-type') || '')) return null;
+    const reader = response.body.getReader(); let size = 0; const chunks = [];
+    try {
+      while (true) { const {done, value} = await reader.read(); if (done) break;
+        size += value.byteLength; if (size > 524288) return null; chunks.push(value); }
+    } finally { await reader.cancel().catch(() => {}); }
+    return Buffer.concat(chunks).toString('utf8');
+  } catch { return null; }
+  finally { if (response?.body && !response.body.locked) await response.body.cancel().catch(() => {}); }
+}
+export function simpleCard(link, metadata = null) {
+  const brand = brands[link.platform];
+  const name = typeof metadata?.name === 'string' ? plain(metadata.name).slice(0, 160) : '';
+  const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
+  const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
+  const caption = typeof metadata?.caption === 'string' ? shortCaption(metadata.caption) : '';
+  const text = content => ({type: 10, content});
+  return { type: 17, accent_color: brand.color, components: [
+    text(name ? `**${name}**${user ? ` @\u200b${user}` : ''}` : `**${brand.name}**`),
+    ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
+    ...(caption ? [text(caption)] : []),
+    ...(!media.length && !caption ? [text('Media preview unavailable. Open the original link above.')] : []),
+    text(footer(link.platform))
+  ] };
+}
+export async function simplePayload(content, modes, existingEmbeds = [], fetcher = fetch) {
+  const links = extractLinks(content).filter(link => modes[link.platform] && modes[link.platform] !== 'off');
+  // Native video players (especially YouTube) cannot be copied into a custom card.
+  // Keep native messages intact instead of replacing a playable iframe with a still image.
+  if (!links.length || links.some(link => modes[link.platform] === 'native')) return null;
+  const components = await Promise.all(links.map(async link => {
+    if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
+      const payload = await instagramPayload(link.url, modes, fetcher);
+      if (payload) return payload.components[0];
+    }
+    let metadata = null;
+    if (modes[link.platform] === helperModes[link.platform] && link.platform !== 'instagram') {
+      const original = new URL(link.url);
+      let url = helperUrl(link, modes[link.platform]);
+      if (link.platform === 'twitter') url = `https://api.fxtwitter.com/2/status/${original.pathname.split('/').pop()}`;
+      if (link.platform === 'bluesky') { const p = original.pathname.split('/'); url = `https://api.fxbsky.app/2/status/${encodeURIComponent(p[2])}/${p[4]}`; }
+      const body = await readBounded(url, fetcher);
+      if (body) {
+        try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform); } catch { /* leave original link available */ }
+      }
+    }
+    if (['medal','streamable','imgur','linkedin'].includes(link.platform)) {
+      if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
+      else {
+        const body = await readBounded(link.url, fetcher);
+        if (body) metadata = metadataFromHtml(body, link.platform);
+      }
+    }
+    if (!metadata) {
+      const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
+      if (embed) metadata = { name: embed.author?.name || '', caption: embed.description || embed.title || '', media: [] };
+    }
+    return simpleCard(link, metadata);
+  }));
+  return { flags:32768, components:[{type:10,content:content.slice(0,2000)},...components], allowedMentions:{parse:[],repliedUser:false} };
+}

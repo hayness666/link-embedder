@@ -6,3 +6,6 @@ node_modules/
 coverage/
 .library-transfer-*/
 pilot.env
+
+# Persistent repost ownership metadata
+data/

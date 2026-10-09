@@ -88,7 +88,7 @@ test('multiple native links and canonical aliases are not appended again', () =>
   const result = buildRepostPayload({ ...message, content: original }, {
     content: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=1\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ', embeds: []
   });
-  assert.equal(result.content, original);
+  assert.equal(result.content, original.replace('https://youtu.be/aqz-KE-bpKQ?t=1','https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=1'));
 });
 
 test('Instagram helper replaces its source URL once without duplicate original or footer', () => {
@@ -102,4 +102,10 @@ test('Instagram-only approval leaves all other helpers disabled', () => {
   const config = readConfig({INSTAGRAM_SHARING_APPROVED:'yes'});
   assert.equal(config.modes.instagram, 'oginstagram');
   for (const platform of ['tiktok','twitter','reddit','bluesky','twitch','snapchat']) assert.equal(config.modes[platform], 'card');
+});
+
+test('ownership must persist before original deletion; disk failure rolls back replacement',async()=>{
+ const {message,calls}=fixture(); const owners={put:async()=>{calls.push(['persist']);throw Error('disk');},remove:async()=>calls.push(['remove'])};
+ await createReposter(user,()=>{},owners)(message,preview);
+ assert.deepEqual(calls.map(c=>c[0]),['send','persist','rollback','remove']);
 });

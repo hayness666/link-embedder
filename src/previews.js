@@ -1,4 +1,5 @@
 // Only canonical content routes. No HTTP fetch, redirect resolution, scraping or cookies.
+import { brands } from './platform-brands.js';
 import { cleanPublicUrl, isAmazonHost, parseAmazonProduct } from './urls.js';
 import { parseAdditional, helperUrl } from './adapters.js';
 const hosts = {
@@ -72,7 +73,7 @@ export function buildPayload(content, modes, existingEmbeds = []) {
   return {
     ...(contentLines.length ? { content: contentLines.join('\n') } : {}),
     embeds: cards.map(link => ({
-      title: link.platform === 'instagram' ? 'Instagram' : link.platform === 'amazon' ? `Amazon product · ${link.asin}` : `${{ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', twitter: 'Twitter', bluesky: 'Bluesky', reddit: 'Reddit', twitch: 'Twitch', snapchat: 'Snapchat', rednote: 'RedNote', linkedin: 'LinkedIn', upscrolled: 'UpScrolled', mastodon: 'Mastodon' }[link.platform]} · ${link.kind}`,
+      title: link.platform === 'instagram' ? 'Instagram' : link.platform === 'amazon' ? `Amazon product · ${link.asin}` : `${brands[link.platform]?.name || link.platform} · ${link.kind}`,
       url: link.url,
       description: link.platform === 'amazon'
         ? `Clean product link: ${link.url}\nProduct details, image, price and availability have not been fetched.`

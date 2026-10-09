@@ -1,9 +1,9 @@
 import { extractLinks } from './previews.js';
 import { helperUrl } from './adapters.js';
+import { footer } from './platform-brands.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
-const INSTAGRAM_ICON = '<:instagramlogo:1558170063251574895>';
 export function shortCaption(value) {
   const normalized = value.replace(/#[\p{L}\p{N}_]+/gu, tag => {
     const small = 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ';
@@ -14,10 +14,10 @@ export function shortCaption(value) {
   });
   const clean = normalized.replace(/\[([^\]]*)\]\(https?:\/\/[^\s)]*\)/g, '$1').trim().replace(/\s+/gu, ' ');
   const chars = [...clean];
-  return plain(chars.length > 100 ? chars.slice(0, 99).join('').trimEnd() + '…' : clean);
+  return plain(chars.length > 250 ? chars.slice(0, 249).join('').trimEnd() + '…' : clean);
 }
 // Helper Markdown is untrusted display data. Keep labels, never provider buttons or links.
-function plain(value) {
+export function plain(value) {
   return value.replace(/\[([^\]]*)\]\(https?:\/\/[^\s)]*\)/g, '$1')
     .replace(/<[^>]*>/g, '').replace(/\\([\\*_~`|\[\]<>:#@.])/g, '$1')
     .replace(/[*_~`|\\]/g, c => '\\' + c)
@@ -51,7 +51,7 @@ export function parseInstagramCard(html, link) {
       ...(author ? [text(authorLine)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
-      text(`${INSTAGRAM_ICON}\u00a0\u00a0**Instagram**`)
+      text(footer('instagram'))
     ] };
   } catch { return null; }
 }

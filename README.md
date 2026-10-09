@@ -6,13 +6,13 @@ Automatic, cleaned link previews for public media and Amazon products in Discord
 
 [Add Link Embedder to Discord](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=274877926400&integration_type=0).
 
-This is the saved Discord server-install link for application `1557858203897823304`, not an App Directory listing. **Alpha: online in the configured test channel, verified 9 October 2026 (UTC).** This is a manual status report, not a live uptime monitor. The Silly Development runtime connected successfully; YouTube playback and author-style reposting passed live pilot checks. Instagram uses the approved oginstagram.com helper; other helpers remain off. Instagram playback passed a live pilot check. Installing it alone does not start the service. The Discord profile has the approved icon and a description that labels other site integrations experimental.
+This is the saved Discord server-install link for application `1557858203897823304`, not an App Directory listing. **Alpha: online in the configured test channel, verified 9 October 2026 (UTC).** This is a manual status report, not a live uptime monitor. The Silly Development runtime connected successfully; YouTube playback and author-style reposting passed live pilot checks. The seven documented helpers have operator approval. Instagram playback passed a live pilot check. Installing it alone does not start the service. The Discord profile has the approved icon and a description that labels other site integrations experimental.
 
 [Terms of Service](docs/terms.html), [Privacy Policy](docs/privacy.html), [Help](docs/help.html), and [Contact](docs/contact.html) are in `docs/`. Website: https://hayness666.github.io/link-embedder/. Bot code and website are maintained together in this repository and licensed under [MIT](LICENSE). Third-party dependencies and linked content retain their own licenses and rights.
 
 ## Design your previews
 
-Open the [visual playground](https://hayness666.github.io/link-embedder/playground.html) to edit a basic card, add/remove/reorder fields, try a local image, and export a draft or Discord embed JSON. It is a mockup, not a live Discord connection. Exports do not change the bot. The actual basic-card template is in `src/previews.js` inside `buildPayload`; native video/helper layouts are controlled by Discord and providers.
+Open the [visual playground](https://hayness666.github.io/link-embedder/playground.html) to edit a basic card, add/remove/reorder fields, try a local image, and export a draft or Discord embed JSON. It is a mockup, not a live Discord connection. Exports do not change the bot. Custom media layouts live in `src/simple-cards.js` and `src/instagram-card.js`; brand colors/logos are in `src/platform-brands.js`. `src/previews.js` handles native/mixed fallbacks. The playground exports legacy embed drafts, not Components V2 production cards.
 
 ## Local verification
 
@@ -34,11 +34,13 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 | Facebook reels/photos/posts | Basic link card | Experimental media helper not enabled |
 | LinkedIn / UpScrolled public posts | Basic link card | No verified inline video; narrow public URL shapes only |
 | RedNote / Xiaohongshu notes | Basic link card | Preserves xsec_token/xsec_source; no verified free URL-proxy route implemented |
+| Medal / Streamable / Imgur | Public metadata card | Direct media when public metadata supplies it; full canonical links only |
+| iFunny / Vimeo / GIPHY / Tenor | Native cleaned link | Experimental native availability; no private access or extra helper |
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
 Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the named proxy defaults after explicit approval of the entire recipient list in [PRIVACY.md](PRIVACY.md). This is a local deployment safeguard, **not** a claim that Discord enforces universal informed consent before installation. Installers must see the public privacy/help disclosure. Global `PLATFORM_MODE=card|native|off|<listed helper>` overrides remain available; Mastodon only allows card/off. There are no per-server preference settings.
 
-Cards contain platform/content type and a cleaned link, not invented media or metadata. Amazon cards, if explicitly selected, show its ASIN. No reliable official credential-free Amazon metadata source was verified; this bot does not add Creators API/Associates credentials or scrape Amazon. Discord decides native/helper unfurl results; playable media is not guaranteed. YouTube and Instagram playback passed live pilot checks; other platforms remain unverified. Existing embeds can arrive after MessageCreate, so duplicate native previews can still occur; originals are never suppressed.
+Fallback cards contain platform/content type and a cleaned link, not invented media or metadata. Amazon cards, if explicitly selected, show its ASIN. No reliable official credential-free Amazon metadata source was verified; this bot does not add Creators API/Associates credentials or scrape Amazon. Discord decides native/helper unfurl results; playable media is not guaranteed. YouTube and Instagram playback passed live pilot checks; other platforms remain unverified. Existing embeds can arrive after MessageCreate, so duplicate native previews can still occur; originals are never suppressed.
 
 ## Permissions and routing
 
@@ -54,7 +56,7 @@ Bots do not separately join normal channels. Current and future permitted channe
 
 ## Privacy and resource limits
 
-See [PRIVACY.md](PRIVACY.md) and [HELP.md](HELP.md) for publishable copy. No database or message-body/URL/token logging. Message caching is disabled. Guild-scoped in-memory message IDs expire after ten minutes (max 1,000 per guild), channel cooldowns after three seconds, and burst timestamps after one minute. Idle guild state expires after ten minutes when another event is processed. Global state is capped at 10,000 guilds; additional uncached guilds are skipped while the cap is full. These controls are isolated between servers.
+See [PRIVACY.md](PRIVACY.md) and [HELP.md](HELP.md) for publishable copy. No message-body/URL/token logging. Repost ownership IDs persist locally as described below. Message caching is disabled. Guild-scoped in-memory message IDs expire after ten minutes (max 1,000 per guild), channel cooldowns after three seconds, and burst timestamps after one minute. Idle guild state expires after ten minutes when another event is processed. Global state is capped at 10,000 guilds; additional uncached guilds are skipped while the cap is full. These controls are isolated between servers.
 
 Up to three distinct supported links per message, one response per channel per three seconds, and twenty responses per server per minute. Excess messages are skipped rather than queued. State resets on restart; run one process. No historical backfill, message-edit handling or deletion synchronization. Gateway/SDK keeps operational guild/channel/member metadata in memory; this is not a promise of zero data processing. Bot responses remain in Discord until deleted.
 
@@ -70,7 +72,14 @@ Follow [SETUP.md](SETUP.md). Application creation, Message Content intent and Ar
 
 ## Helper availability
 
-Automatic helper fallback is disabled because Discord’s message API does not reliably expose rendered media. A provider outage may leave a plain helper link; the bot will not rewrite a working preview after a timer.
+There is no delayed backup check or timer that removes an existing preview. Initial metadata failures produce a plain custom card with the original link; mixed native/helper messages may retain a helper URL. Provider outages and expired media URLs can still prevent playback.
 
-### Instagram custom alpha cards
-Single Instagram links use one bounded request to the approved oginstagram.com helper to build a Components V2 card: bold author and adjacent @username, media, a plain caption limited to 100 characters including an ellipsis when truncated, and the Instagram logo with a bold label at bottom left. Stylized hashtags are normalized. No author avatar, statistics, buttons or post timestamp. Discord controls media dimensions. The bot does not download media; Discord loads validated same-post helper media URLs. If the helper response cannot be used, the initial ordinary helper link remains. There is no delayed backup check. Mixed-platform messages keep their existing preview behavior. This depends on the helper response format and remains alpha.
+## Preview and author-control update — 9 October 2026
+
+Custom cards use a platform-colored accent, bold display name with a plain @username when metadata supplies them, media above a plain caption capped at 250 characters, and a platform footer via @Link Embedder. The bot-profile mention does not send a notification. No statistics, dates, author portraits or provider buttons are added. Discord controls gallery width and aspect ratio; vertical videos cannot be forced to fill the card. Unknown author names are not invented.
+
+Instagram, TikTok, Twitter, Bluesky, Reddit, Twitch and Snapchat helpers are approved for the pilot. Their metadata is requested directly with bounded responses and no cookies or redirect following. Medal, Streamable, Imgur and LinkedIn use public first-party metadata only. Media availability is experimental: unavailable metadata produces an honest link card. Facebook, RedNote, UpScrolled and selected Mastodon instances remain limited cards. YouTube, Amazon, iFunny, Vimeo, GIPHY and Tenor retain native previews; mixed messages containing a native platform retain the native/helper route. iFunny returned HTTP 401 in the public metadata check; no bypass is attempted. Imgur albums may show only their published preview image. LinkedIn often requires login. Native availability is controlled by Discord and the source site.
+
+Go to the repost, open its options, choose **Apps**, then **Manage my post**. Only the original poster receives the private **Delete post · Mark NSFW · Dismiss** menu. Dismiss does not remove access: repeat those steps any time. Mark NSFW covers custom-card photos/videos with spoilers; captions and links stay visible. It does not age-restrict anything. Native previews cannot use this media control. Delete post removes the repost permanently and does not restore the original. Only new reposts with saved ownership records can be managed; older posts need a moderator.
+
+Ownership is stored in `data/repost-owners.json` as repost, original-author, server, channel and webhook IDs only. No message text or webhook tokens are stored. Writes are atomic and complete before deleting the original. Keep this directory on persistent host storage and back it up privately; never commit it. Records remain until managed deletion, rollback or an operator-verified deletion request. A missing record denies management; a corrupt store stops startup. Capacity is 10,000 records; reaching it preserves originals instead of silently evicting owners.

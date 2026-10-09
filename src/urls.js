@@ -13,6 +13,7 @@ const socialHosts = new Set([
   'twitter.com', 'www.twitter.com', 'x.com', 'www.x.com', 'bsky.app',
   'reddit.com', 'www.reddit.com', 'old.reddit.com', 'clips.twitch.tv', 'www.twitch.tv', 'twitch.tv',
   'snapchat.com', 'www.snapchat.com', 'xiaohongshu.com', 'www.xiaohongshu.com', 'rednote.com', 'www.rednote.com',
+  'medal.tv', 'www.medal.tv', 'streamable.com', 'www.streamable.com', 'imgur.com', 'www.imgur.com', 'i.imgur.com', 'ifunny.co', 'www.ifunny.co', 'vimeo.com', 'www.vimeo.com', 'giphy.com', 'www.giphy.com', 'tenor.com', 'www.tenor.com',
   'linkedin.com', 'www.linkedin.com', 'share.upscrolled.com', 'mastodon.social', 'mastodon.online'
 ]);
 export function isAmazonHost(host) {

@@ -20,7 +20,7 @@ export function buildRepostPayload(message, preview) {
     if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80 || message.content.length > 2000) return null;
     return { ...preview, withComponents: true, username: name,
       avatarURL: message.member?.displayAvatarURL?.() || message.author?.displayAvatarURL?.(),
-      components: [...(message.content ? [{ type: 10, content: message.content }] : []), ...preview.components],
+      components: [...(message.content && preview.components[0]?.content !== message.content ? [{ type: 10, content: message.content }] : []), ...preview.components],
       allowedMentions: { parse: [], repliedUser: false } };
   }
   // Preserve source text except approved Instagram links replaced by their media helper.
@@ -35,7 +35,11 @@ export function buildRepostPayload(message, preview) {
     if (!token.startsWith('https://')) return token;
     const raw = token.replace(/[.,!?;:)\]}]+$/, '');
     const helper = replacements.get(parseSocialUrl(raw)?.url);
-    if (!helper) return token;
+    if (!helper) {
+      const link = parseSocialUrl(raw);
+      if (link?.platform === 'youtube' && previewLines.includes(link.url)) return link.url + token.slice(raw.length);
+      return token;
+    }
     usedHelpers.add(helper);
     return helper + token.slice(raw.length);
   });
@@ -54,7 +58,7 @@ export function buildRepostPayload(message, preview) {
     allowedMentions: { parse: [], repliedUser: false } };
 }
 
-export function createReposter(user, log = () => {}) {
+export function createReposter(user, log = () => {}, owners = null) {
   return async (message, preview) => {
     if (!canRepost(message, user)) return false;
     const payload = buildRepostPayload(message, preview);
@@ -68,6 +72,7 @@ export function createReposter(user, log = () => {}) {
       // discord.js Webhook.send requests wait=true; require a confirmed message before deletion.
       replacement = await hook.send(payload);
       if (!replacement?.id) throw new Error('No confirmed replacement');
+      if (owners) await owners.put(replacement.id, {ownerId:message.author.id,guildId:message.guildId,channelId:message.channelId,webhookId:hook.id});
       const fresh = await message.channel.messages.fetch({ message: message.id, force: true, cache: false });
       if (!canRepost(fresh, user) || fresh.content !== message.content
         || fresh.editedTimestamp !== message.editedTimestamp) throw new Error('Source changed');
@@ -80,6 +85,7 @@ export function createReposter(user, log = () => {}) {
         try {
           await message.channel.messages.fetch({ message: message.id, force: true, cache: false });
           await hook.deleteMessage(replacement.id);
+          if (owners) await owners.remove(replacement.id);
         } catch { log('repost_cleanup_unconfirmed'); }
       }
       return true; // Do not send another copy after an ambiguous network result.

@@ -3,6 +3,14 @@ export function parseAdditional(u) {
   const host = u.hostname.replace(/^www\./, '');
   const path = u.pathname.replace(/\/$/, '');
   const result = (platform, kind, url = u.href) => ({ platform, kind, url });
+  if (host === 'medal.tv' && /^\/games\/[A-Za-z0-9_-]{1,100}\/clips\/[A-Za-z0-9_-]{1,100}$/.test(path)) return result('medal', 'clip', `https://medal.tv${path}`);
+  if (host === 'streamable.com' && /^\/[a-zA-Z0-9]{6}$/.test(path)) return result('streamable', 'video', `https://streamable.com${path}`);
+  if (host === 'imgur.com' && /^(?:\/(?:a|gallery)\/(?:[A-Za-z0-9_-]{1,180}-)?[A-Za-z0-9]{5,10}|\/[A-Za-z0-9]{5,10})$/.test(path)) return result('imgur', 'post', `https://imgur.com${path}`);
+  if (host === 'i.imgur.com' && /^\/[A-Za-z0-9]{5,10}\.(?:jpg|jpeg|png|gif|webp|mp4)$/.test(path)) return result('imgur', 'media', `https://i.imgur.com${path}`);
+  if (host === 'ifunny.co' && /^\/(?:picture|video|gif|meme)\/[A-Za-z0-9_-]{1,250}$/.test(path)) return result('ifunny', 'post', `https://ifunny.co${path}`);
+  if (host === 'vimeo.com' && /^\/[0-9]{1,20}$/.test(path)) return result('vimeo', 'video', `https://vimeo.com${path}`);
+  if (host === 'giphy.com' && /^\/(?:gifs|clips)\/[A-Za-z0-9_-]{1,250}$/.test(path)) return result('giphy', 'media', `https://giphy.com${path}`);
+  if (host === 'tenor.com' && /^\/view\/[A-Za-z0-9_-]{1,250}$/.test(path)) return result('tenor', 'GIF', `https://tenor.com${path}`);
   if (['youtube.com', 'm.youtube.com', 'youtu.be'].includes(host)) {
     let id = host === 'youtu.be' ? path.slice(1) : path === '/watch' ? u.searchParams.get('v') : /^\/shorts\/([\w-]{11})$/.exec(path)?.[1];
     if (!/^[\w-]{11}$/.test(id ?? '')) return null;

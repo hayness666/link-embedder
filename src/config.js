@@ -8,9 +8,9 @@ export function readConfig(env) {
   const repostEnabled = env.REPOST_AS_AUTHOR === 'yes';
   if (repostEnabled && (!testGuildId || !channels.length)) throw new Error('Reposting requires an explicit server and channel allowlist.');
   const modes = {};
-  for (const platform of ['instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon']) {
+  for (const platform of ['instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon', 'medal', 'streamable', 'imgur', 'ifunny', 'vimeo', 'giphy', 'tenor']) {
     const sharingApproved = env.PROVIDER_SHARING_APPROVED === 'yes' || (platform === 'instagram' && env.INSTAGRAM_SHARING_APPROVED === 'yes');
-    const defaultMode = ['amazon', 'youtube'].includes(platform) ? 'native'
+    const defaultMode = ['amazon', 'youtube', 'ifunny', 'vimeo', 'giphy', 'tenor'].includes(platform) ? 'native'
       : sharingApproved && helperModes[platform] ? helperModes[platform] : 'card';
     const mode = env[`${platform.toUpperCase()}_MODE`] ?? defaultMode;
     if (!['card', 'native', 'off', helperModes[platform]].filter(Boolean).includes(mode)) throw new Error(`Invalid ${platform} mode.`);

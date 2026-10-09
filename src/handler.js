@@ -1,6 +1,6 @@
 import { buildPayload } from './previews.js';
-import { instagramPayload } from './instagram-card.js';
-export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = instagramPayload } = {}) {
+import { simplePayload } from './simple-cards.js';
+export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload } = {}) {
   const guilds = new Map();
   return async function handle(message) {
     // Explicit emergency shutdown only; this is not a content-safety classifier.
@@ -31,7 +31,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.recent.push(time);
     state.lastActive = time;
     try {
-      payload = await makeInstagramPayload(message.content ?? '', config.modes) || payload;
+      payload = await makeInstagramPayload(message.content ?? '', config.modes, message.embeds ?? []) || payload;
       if (config.repostEnabled && repost && await repost(message, payload)) return;
       await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
