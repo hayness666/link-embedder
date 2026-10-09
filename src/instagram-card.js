@@ -33,7 +33,7 @@ export function cardHeading(link, title = '') {
   const isShort = canonical.platform === 'youtube' && /\/shorts\//.test(link.url);
   const label = title || (canonical.platform === 'twitter' ? 'Tweet on Twitter' : isShort ? 'YouTube Short' : `${brand} ${kind}`);
   const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
-  return `### [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
+  return `**[${safe}](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)**`;
 }
 
 export function parseInstagramCard(html, link) {
@@ -61,9 +61,11 @@ export function parseInstagramCard(html, link) {
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
     return { type: 17, accent_color: 0xe1306c, components: [
       text(cardHeading(link)),
+      {type:14,divider:false,spacing:1},
       ...(author ? [text(authorLine)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
+      {type:14,divider:true,spacing:1},
       text(footer('instagram'))
     ] };
   } catch { return null; }

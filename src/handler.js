@@ -47,10 +47,12 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       const expanded = await expandLinks(message.content ?? '', config.modes);
       if (extractLinks(expanded).some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
-      const keepNative = extractLinks(expanded).some(link => config.modes[link.platform] === 'native');
-      if (!payload && !keepNative) return;
+      const previewLinks = extractLinks(expanded);
+      const keepNative = previewLinks.some(link => link.platform !== 'amazon' && config.modes[link.platform] === 'native');
+      const amazon = previewLinks.some(link => link.platform === 'amazon' && config.modes.amazon !== 'off');
+      if (!payload && !keepNative && !amazon) return;
       let availableEmbeds = message.embeds ?? [];
-      if (keepNative && !availableEmbeds.length && message.channel.messages?.fetch) {
+      if ((keepNative || amazon) && !availableEmbeds.length && message.channel.messages?.fetch) {
         for (const delay of [1000,2000]) {
           await new Promise(resolve => setTimeout(resolve,delay));
           try {
@@ -68,6 +70,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
         }
         return; // Preserve the source message and its native player; no deletion/repost.
       }
+      if (!payload) return;
       // Expanded URLs select previews; the visible source remains exactly as written.
       if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = message.content ?? '';
       if (config.repostEnabled && repost && await repost(message, payload, message.content ?? '')) return;

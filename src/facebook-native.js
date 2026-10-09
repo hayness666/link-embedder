@@ -17,8 +17,10 @@ export function facebookNativePayload(content, embeds) {
   return { flags: 32768, allowedMentions: {parse: [], repliedUser: false}, components: [
     {type:10,content}, {type:17,accent_color:0x1877f2,components:[
       {type:10,content:cardHeading(link, embed.title || '')},
+      {type:14,divider:false,spacing:1},
       {type:12,items:[{media:{url:raw}}]},
       ...(embed.description ? [{type:10,content:shortCaption(embed.description)}] : []),
+      {type:14,divider:true,spacing:1},
       {type:10,content:footer('facebook')}
     ]}
   ]};

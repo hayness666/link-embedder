@@ -11,13 +11,13 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 ]}})}</script>`;
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
-  assert.deepEqual(card.components.map(c=>c.type), [10,10,12,10,10]);
-  assert.equal(card.components[4].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram** via <@1557858203897823304>');
-  assert.equal(card.components[1].content, '**Name** @\u200bperson');
+  assert.deepEqual(card.components.filter(c=>c.type!==14).map(c=>c.type), [10,10,12,10,10]);
+  assert.equal(card.components.filter(c=>c.type!==14)[4].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram** via <@1557858203897823304>');
+  assert.equal(card.components.filter(c=>c.type!==14)[1].content, '**Name** @\u200bperson');
   const json = JSON.stringify(card);
   assert.doesNotMatch(json, /❤️|💬|date/);
-  assert.match(card.components[3].content, /#hello/);
-  assert.doesNotMatch(card.components[3].content, /@everyone/);
+  assert.match(card.components.filter(c=>c.type!==14)[3].content, /#hello/);
+  assert.doesNotMatch(card.components.filter(c=>c.type!==14)[3].content, /@everyone/);
 });
 test('rejects media outside same-post HTTPS helper offload URLs', () => {
   for (const url of ['http://oginstagram.com/offload/ABC/1', 'https://evil.test/a',
@@ -67,9 +67,9 @@ test('normalizes stylized hashtag characters', () => {
 });
 
 test('headings use trusted original URLs and distinguish reels from posts',()=>{
- assert.equal(cardHeading({platform:'instagram',url:'https://www.instagram.com/reel/ABC'}),'### [Instagram Reel ↗](<https://www.instagram.com/reel/ABC>)');
- assert.match(cardHeading({platform:'instagram',url:'https://www.instagram.com/p/ABC'}),/Instagram Post ↗/);
- assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/Tweet on Twitter ↗/);
+ assert.equal(cardHeading({platform:'instagram',url:'https://www.instagram.com/reel/ABC'}),'**[Instagram Reel](<https://www.instagram.com/reel/ABC>)**');
+ assert.match(cardHeading({platform:'instagram',url:'https://www.instagram.com/p/ABC'}),/Instagram Post/);
+ assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/Tweet on Twitter/);
  assert.equal(cardHeading({platform:'twitter',url:'https://evil.test/'}),'');
- assert.ok(!cardHeading({platform:'medal',url:'https://medal.tv/games/game/clips/abc'},'[bad](https://evil.test)').includes('[bad]'));
+ assert.ok(!cardHeading({platform:'medal',url:'https://medal.tv/games/game/clips/abc'},'[bad](https://evil.test)').includes('https://evil.test'));
 });

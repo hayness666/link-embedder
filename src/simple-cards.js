@@ -143,12 +143,14 @@ export function simpleCard(link, metadata = null) {
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
+    {type:14,divider:false,spacing:1},
     ...(authorLine ? [text(authorLine)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
     ...(!media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
     ...(quoteText ? [text(quoteText)] : []),
+    {type:14,divider:true,spacing:1},
     text(footer(link.platform))
   ] };
 }
@@ -195,11 +197,11 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     }
     if (!metadata || (!metadata.title && !metadata.name && !metadata.media?.length && !metadata.caption)) {
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
-      if (embed) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: [] };
+      if (embed) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: link.platform === 'amazon' ? [embed.image?.url || embed.thumbnail?.url].filter(u=>u && validMedia(u,'amazon')) : [] };
     }
     // A companion is separate from the untouched source's native player/gallery.
     // Do not add a second thumbnail for sites already showing native media.
-    if (modes[link.platform] === 'native' && existingEmbeds.some(e => parseSocialUrl(e.url || '')?.url === link.url)) {
+    if (link.platform !== 'amazon' && modes[link.platform] === 'native' && existingEmbeds.some(e => parseSocialUrl(e.url || '')?.url === link.url)) {
       if (!metadata) metadata = {};
       metadata = {...metadata,media:[],nativeAvailable:true};
     }

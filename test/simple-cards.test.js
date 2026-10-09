@@ -16,7 +16,7 @@ test('OG media prefers one direct video source and rejects foreign hosts',()=>{
  assert.equal(metadataFromFx({code:200,status:{author:{protected:true}}},'twitter'),null);
 });
 test('custom card keeps name bold, handle plain, caption after media and Twitter text above 250 characters',()=>{
- const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components[0].content,'**Person** @\u200btest');assert.equal(card.components[1].type,12);assert.equal([...card.components[2].content].length,251);assert.match(card.components.at(-1).content,/via <@1557858203897823304>/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
+ const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components.filter(c=>c.type!==14)[0].content,'**Person** @\u200btest');assert.equal(card.components.filter(c=>c.type!==14)[1].type,12);assert.equal([...card.components.filter(c=>c.type!==14)[2].content].length,251);assert.match(card.components.filter(c=>c.type!==14).at(-1).content,/via <@1557858203897823304>/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
 });
 test('unapproved helpers are never requested; native players remain intact',async()=>{
  let calls=0;const fetcher=async()=>{calls++;throw Error('offline');};
@@ -26,8 +26,8 @@ test('unapproved helpers are never requested; native players remain intact',asyn
 test('public Medal and Imgur metadata use the simple layout and original link once',async()=>{
  const url='https://medal.tv/games/roblox/clips/abc';let target;
  const result=await simplePayload(url,readConfig({}).modes,[],async(u,opts)=>{target=u;assert.equal(opts.redirect,'error');return html('<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://medal.tv/api/content/abc/socialVideoUrl"><meta property="og:title" content="Good clip - Clipped Roblox with Medal.tv">');});
- assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components[1].type,12);assert.equal(result.components[1].components[0].content,'### [Good clip ↗](<https://medal.tv/games/roblox/clips/abc>)');
- const direct=await simplePayload('https://i.imgur.com/abcdefg.mp4',readConfig({}).modes,[],()=>{throw Error('must not fetch media');});assert.equal(direct.components[1].components[1].items[0].media.url,'https://i.imgur.com/abcdefg.mp4');
+ assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components.filter(c=>c.type!==14)[1].type,12);assert.equal(result.components[1].components.filter(c=>c.type!==14)[0].content,'**[Good clip](<https://medal.tv/games/roblox/clips/abc>)**');
+ const direct=await simplePayload('https://i.imgur.com/abcdefg.mp4',readConfig({}).modes,[],()=>{throw Error('must not fetch media');});assert.equal(direct.components[1].components.filter(c=>c.type!==14)[1].items[0].media.url,'https://i.imgur.com/abcdefg.mp4');
 });
 test('provider errors and oversized bodies yield an honest fallback without throwing',async()=>{
  const modes=readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes;
@@ -41,7 +41,7 @@ test('Medal uses its published direct CDN video instead of its redirect endpoint
 
 test('Reddit author line includes subreddit below title and does not repeat as caption',()=>{
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
- assert.equal(card.components[0].content,'### [A cat ↗](<https://www.reddit.com/r/cats/comments/abc/a_cat>)');assert.equal(card.components[1].content,'**r/cats**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
+ assert.equal(card.components.filter(c=>c.type!==14)[0].content,'**[A cat](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components.filter(c=>c.type!==14)[1].content,'**r/cats**');assert.equal(card.components.filter(c=>c.type!==14)[2].type,12);assert.equal(card.components.filter(c=>c.type!==14).length,4);
 });
 
 test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
@@ -56,7 +56,7 @@ test('Facebook photo metadata preserves identity and uses only validated thumbna
 
 test('Twitter retains full text and places a quote in an indented block',()=>{
  const m=metadataFromFx({code:200,tweet:{text:'a'.repeat(1500),author:{name:'Person'},quote:{text:'Quoted text',url:'https://twitter.com/person/status/456',author:{name:'Quoted author',screen_name:'person'}}}},'twitter');
- const card=simpleCard({platform:'twitter'},m);assert.ok(card.components.some(c=>c.content==='a'.repeat(1500)));assert.ok(card.components.some(c=>c.content?.includes('> Quoted text')&&!c.content.includes('https://twitter.com/person/status/456')));
+ const card=simpleCard({platform:'twitter'},m);assert.ok(card.components.filter(c=>c.type!==14).some(c=>c.content==='a'.repeat(1500)));assert.ok(card.components.filter(c=>c.type!==14).some(c=>c.content?.includes('> Quoted text')&&!c.content.includes('https://twitter.com/person/status/456')));
 });
 test('oversized Twitter cards preserve the original/helper route instead of truncating',async()=>{
  const p=await simplePayload('https://twitter.com/test/status/123',readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes,[],async()=>new Response(JSON.stringify({code:200,tweet:{text:'a'.repeat(6000),author:{name:'Person'}}}),{headers:{'Content-Type':'application/json'}}));assert.equal(p,null);
@@ -64,8 +64,8 @@ test('oversized Twitter cards preserve the original/helper route instead of trun
 
 test('quoted Twitter text is capped at 250 characters while main text stays full',()=>{
  const card=simpleCard({platform:'twitter'},{caption:'m'.repeat(1200),quote:{name:'Quoted author',username:'quoted',text:'q'.repeat(251),url:'https://twitter.com/quoted/status/456'}});
- assert.ok(card.components.some(c=>c.content==='m'.repeat(1200)));
- const quote=card.components.find(c=>c.content?.includes('**Quoted author**')).content;
+ assert.ok(card.components.filter(c=>c.type!==14).some(c=>c.content==='m'.repeat(1200)));
+ const quote=card.components.filter(c=>c.type!==14).find(c=>c.content?.includes('**Quoted author**')).content;
  assert.ok(quote.endsWith('> '+'q'.repeat(249)+'…'));
  assert.ok(!quote.includes('https://twitter.com/quoted/status/456'));
  const exact=simpleCard({platform:'twitter'},{quote:{text:'😀'.repeat(250),url:'https://twitter.com/quoted/status/456'}}).components.find(c=>c.content?.includes('Quoted post')).content;
@@ -75,14 +75,14 @@ test('quoted Twitter text is capped at 250 characters while main text stays full
 test('Reddit extracts actual helper author and renders plain handle under title',()=>{
  const m=metadataFromHtml('<meta property="og:title" content="Flock down!"><meta property="og:site_name" content="u/whiplashsaxifrage on r/GoldenCO - stats">','reddit');
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/GoldenCO/comments/1wzioal/flock_down'},m);
- assert.equal(card.components[1].content,'**r/GoldenCO** u/whiplashsaxifrage');
- assert.ok(card.components[0].content.startsWith('### [Flock down! ↗]'));
+ assert.equal(card.components.filter(c=>c.type!==14)[1].content,'**r/GoldenCO** u/whiplashsaxifrage');
+ assert.ok(card.components.filter(c=>c.type!==14)[0].content.startsWith('**[Flock down!]'));
 });
 
 test('Facebook reels show only requested notice and photos stay native',async()=>{
  const modes=readConfig({}).modes;let calls=0;const fetcher=async()=>{calls++;throw Error('must not fetch');};
  const p=await simplePayload('https://www.facebook.com/reel/123',modes,[],fetcher);
- assert.deepEqual(p.components[1].components,[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]);
+ assert.deepEqual(p.components[1].components.filter(c=>c.type!==14),[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]);
  assert.equal(await simplePayload('https://www.facebook.com/photo?fbid=123',modes,[],fetcher),null);assert.equal(calls,0);
 });
 
@@ -92,5 +92,19 @@ test('Reddit unavailable video links to validated video page',()=>{const link={p
 
 test('Reddit website-only posts omit thumbnail and offer destination link',()=>{const m=metadataFromHtml('<meta property="og:description" content="https://shademap.app"><meta property="og:image" content="https://external-preview.redd.it/thumb.jpg">','reddit');assert.deepEqual(m.media,[]);const c=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/test/comments/abc/post'},m);assert.ok(c.components.some(x=>x.content==='<https://shademap.app/>'));assert.ok(!c.components.some(x=>x.type===12||x.content==='Media preview unavailable.'));});
 
-test('all native families receive a custom card without inventing media',async()=>{for(const url of ['https://www.amazon.com/dp/B07812QWNH','https://www.youtube.com/watch?v=aqz-KE-bpKQ','https://vimeo.com/123456','https://ifunny.co/picture/test123','https://giphy.com/gifs/test123','https://tenor.com/view/test123']){const p=await simplePayload(url,readConfig({}).modes,[],async()=>new Response('',{status:403}));assert.equal(p.flags,32768,url);assert.ok(p.components[1].components.some(c=>c.content?.includes('↗')),url);assert.ok(!p.components[1].components.some(c=>c.type===12),url);}});
-test('YouTube companion uses official author and title without extracting player HTML',async()=>{const p=await simplePayload('https://www.youtube.com/watch?v=aqz-KE-bpKQ',readConfig({}).modes,[],async(url,options)=>{assert.ok(url.startsWith('https://www.youtube.com/oembed?'));assert.equal(options.redirect,'error');return new Response(JSON.stringify({title:'Film',author_name:'Channel',author_url:'https://www.youtube.com/@channel',html:'<iframe>untrusted</iframe>'}),{headers:{'content-type':'application/json'}});});const s=JSON.stringify(p);assert.match(s,/Film/);assert.match(s,/Channel/);assert.ok(!s.includes('iframe'));assert.ok(!p.components[1].components.some(c=>c.type===12));});
+test('all native families receive a custom card without inventing media',async()=>{for(const url of ['https://www.amazon.com/dp/B07812QWNH','https://www.youtube.com/watch?v=aqz-KE-bpKQ','https://vimeo.com/123456','https://ifunny.co/picture/test123','https://giphy.com/gifs/test123','https://tenor.com/view/test123']){const p=await simplePayload(url,readConfig({}).modes,[],async()=>new Response('',{status:403}));assert.equal(p.flags,32768,url);assert.ok(p.components[1].components.filter(c=>c.type!==14).some(c=>c.content?.startsWith('**[')),url);assert.ok(!p.components[1].components.filter(c=>c.type!==14).some(c=>c.type===12),url);}});
+test('YouTube companion uses official author and title without extracting player HTML',async()=>{const p=await simplePayload('https://www.youtube.com/watch?v=aqz-KE-bpKQ',readConfig({}).modes,[],async(url,options)=>{assert.ok(url.startsWith('https://www.youtube.com/oembed?'));assert.equal(options.redirect,'error');return new Response(JSON.stringify({title:'Film',author_name:'Channel',author_url:'https://www.youtube.com/@channel',html:'<iframe>untrusted</iframe>'}),{headers:{'content-type':'application/json'}});});const s=JSON.stringify(p);assert.match(s,/Film/);assert.match(s,/Channel/);assert.ok(!s.includes('iframe'));assert.ok(!p.components[1].components.filter(c=>c.type!==14).some(c=>c.type===12));});
+
+test('custom layout has a bold linked title without arrows, title spacing and one footer divider',()=>{
+ const c=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/test/comments/abc/post'},{title:'Real title',caption:'Caption'});
+ assert.equal(c.components[0].content,'**[Real title](<https://www.reddit.com/r/test/comments/abc/post>)**');
+ assert.deepEqual(c.components[1],{type:14,divider:false,spacing:1});
+ assert.deepEqual(c.components.at(-2),{type:14,divider:true,spacing:1});
+ assert.equal(c.components.filter(x=>x.type===14&&x.divider).length,1);
+});
+
+test('Amazon reuses matching native product title and image for its custom repost',async()=>{
+ const url='https://www.amazon.com/dp/B07812QWNH';
+ const p=await simplePayload(url,readConfig({}).modes,[{url,title:'Product name',thumbnail:{url:'https://m.media-amazon.com/images/I/product.jpg'}}],async()=>new Response('',{status:403}));
+ const c=p.components[1];assert.match(c.components[0].content,/Product name/);assert.equal(c.components.find(x=>x.type===12).items[0].media.url,'https://m.media-amazon.com/images/I/product.jpg');
+});
