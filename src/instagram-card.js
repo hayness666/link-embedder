@@ -5,7 +5,14 @@ const LIMIT = 262144;
 const text = content => ({ type: 10, content });
 const INSTAGRAM_ICON = '<:Instagram:1556597080229810266>';
 export function shortCaption(value) {
-  const words = plain(value).trim().split(/\s+/u).filter(Boolean);
+  const normalized = value.replace(/#[\p{L}\p{N}_]+/gu, tag => {
+    const small = 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ';
+    return [...tag.normalize('NFKC')].map(c => {
+      const i = small.indexOf(c);
+      return i < 0 ? c : 'abcdefghijklmnopqrstuvwxyz'[i];
+    }).join('');
+  });
+  const words = plain(normalized).trim().split(/\s+/u).filter(Boolean);
   return words.slice(0, 20).join(' ') + (words.length > 20 ? '…' : '');
 }
 // Helper Markdown is untrusted display data. Keep labels, never provider buttons or links.
@@ -41,7 +48,7 @@ export function parseInstagramCard(html, link) {
       ...(author ? [text(`**${author}**`)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
-      text(`-# ${INSTAGRAM_ICON} Instagram`)
+      text(`${INSTAGRAM_ICON} **Instagram**`)
     ] };
   } catch { return null; }
 }

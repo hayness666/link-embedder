@@ -12,7 +12,7 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
   assert.deepEqual(card.components.map(c=>c.type), [10,12,10,10]);
-  assert.equal(card.components[3].content, '-# <:Instagram:1556597080229810266> Instagram');
+  assert.equal(card.components[3].content, '<:Instagram:1556597080229810266> **Instagram**');
   assert.equal(card.components[0].content, '**Name @\u200bperson**');
   const json = JSON.stringify(card);
   assert.doesNotMatch(json, /❤️|💬|OGInstagram|accessory|date|https:\/\/www.instagram/);
@@ -61,4 +61,8 @@ test('caption limit counts visible words and adds ellipsis only beyond twenty', 
   assert.equal(shortCaption(twenty), twenty);
   assert.equal(shortCaption(twenty+' extra'), twenty+'…');
   assert.equal(shortCaption('hello [#tag](https://instagram.com/tags/tag/)'), 'hello #tag');
+});
+
+test('normalizes stylized hashtag characters', () => {
+  assert.equal(shortCaption('#sɪɴɢᴇʀsᴏɴɢᴡʀɪᴛᴇʀ #ｍｕｓｉｃ'), '#singersongwriter #music');
 });
