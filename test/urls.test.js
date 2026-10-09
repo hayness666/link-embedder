@@ -104,3 +104,7 @@ test('YouTube visible cleanup removes trackers and preserves playback and untouc
  assert.equal(cleanYouTubeLinks('https://www.youtube.com/shorts/aqz-KE-bpKQ?si=abc'),'https://www.youtube.com/shorts/aqz-KE-bpKQ');
  for(const url of ['https://youtube.com.evil.test/watch?v=aqz-KE-bpKQ&si=abc','https://www.youtube.com/account?si=abc','https://youtu.be/aqz-KE-bpKQ?t=42']) assert.equal(cleanYouTubeLinks(url),url);
 });
+
+test('Facebook photo card target removes album context but preserves photo identity', () => {
+  assert.equal(parseSocialUrl('https://www.facebook.com/photo?fbid=1806517487514738&set=a.638414764325022').url, 'https://www.facebook.com/photo.php?fbid=1806517487514738');
+});

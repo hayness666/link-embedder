@@ -46,7 +46,7 @@ test('Reddit author line includes subreddit below title and does not repeat as c
 
 test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
  const url='https://www.facebook.com/photo?fbid=1806517487514738&set=a.638414764325022';
- assert.equal(parseSocialUrl(url).url,'https://www.facebook.com/photo.php?fbid=1806517487514738&set=a.638414764325022');
+ assert.equal(parseSocialUrl(url).url,'https://www.facebook.com/photo.php?fbid=1806517487514738');
  const media='https://scontent-den2-1.xx.fbcdn.net/photo.jpg';
  const m=metadataFromHtml(`<meta property="og:image" content="${media}"><meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://scontent-den2-1.xx.fbcdn.net/video.mp4">`,'facebook');assert.deepEqual(m.media,[media]);
  for(const raw of ['https://scontent-den2-1.xx.fbcdn.net.evil.test/photo.jpg','https://evil.fbcdn.net/photo.jpg','http://scontent-den2-1.xx.fbcdn.net/photo.jpg'])assert.equal(validMedia(raw,'facebook'),false);
