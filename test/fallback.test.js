@@ -9,9 +9,10 @@ test('missing and error-only helper embeds fall back to native source exactly on
   assert.equal(fallbackPayload(payload,[{url,title:'Error'}]).content,`Look ${original}`);
   assert.equal(fallbackPayload({content:`${url}\nOriginal: <${original}>`}).content, original);
 });
-test('matching photo or video prevents fallback, unrelated media does not', () => {
+test('working media prevents fallback even when Discord rewrites its source URL', () => {
   for (const type of ['image','video']) assert.equal(fallbackPayload(payload,[{url:original,[type]:{url:'https://cdn.example/media'}}]),null);
-  assert.ok(fallbackPayload(payload,[{url:'https://www.youtube.com/watch?v=aqz-KE-bpKQ',video:{url:'https://cdn.example/media'}}]));
+  assert.equal(fallbackPayload(payload,[{url:'https://oginstagram.com/offload/ABC/1',video:{url:'https://cdn.example/media'}}]),null);
+  assert.equal(fallbackPayload(payload,[{image:{url:'https://cdn.example/image'}}]),null);
 });
 test('native and unrecognized URLs never trigger helper fallback', () => {
   assert.equal(fallbackPayload({content:original}),null);

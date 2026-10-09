@@ -12,6 +12,9 @@ function originalUrl(raw) {
   } catch { return null; }
 }
 export function fallbackPayload(payload, embeds = []) {
+  // Discord can split a helper video into embeds with absent or rewritten source URLs.
+  // Preserve any working media rather than erase a successful preview on an uncertain match.
+  if (embeds.some(embed => embed.image?.url || embed.video?.url)) return null;
   const replacements = new Map();
   for (const match of (payload.content || '').matchAll(/https:\/\/[^\s<>]+/gi)) {
     const raw = match[0].replace(/[.,!?;:)\]}]+$/, '');
