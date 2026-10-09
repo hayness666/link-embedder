@@ -105,3 +105,6 @@ Reddit video posts require playable media from the approved helper. A bare v.red
 
 
 Live check, 9 October 2026: the smallest heading style visibly enlarged custom-card titles toward normal message size, and Reddit u/ attribution passed. The dog-video example supplied no playable media via the approved helper. The new Facebook test supplied no native preview during the bounded wait, so its original message stayed untouched; successful Facebook image reuse remains unverified.
+
+
+Reddit website-only posts use a compact card with a clickable Visit website link and no thumbnail gallery.

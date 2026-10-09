@@ -40,3 +40,6 @@ Facebook policy: single photo/post messages can reuse an image from Discord’s 
 
 
 Reddit video posts require playable media from the approved helper. A bare v.redd.it URL returned as description is not playable media; when no image/video is supplied but a valid v.redd.it address is available, the card offers “View video on Reddit ↗” instead. Other missing media still shows “Media preview unavailable.” Reddit authors use u/username.
+
+
+Reddit website-only posts use a compact card with a clickable Visit website link and no thumbnail gallery.
