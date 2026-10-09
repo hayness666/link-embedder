@@ -1,6 +1,6 @@
-# Operator setup
+# Alpha operator setup
 
-Prelaunch: the bot remains offline. Node.js 24.17+ is required. Install with `npm ci --ignore-scripts`, then run `npm test` and `npm run check`.
+Alpha: the bot is online in one configured test channel on Silly Development, verified 9 October 2026 (UTC). This is a manual status report, not a live uptime monitor. The instructions below also apply to fresh deployments. Node.js 24.17+ is required. Install with `npm ci --ignore-scripts`, then run `npm test` and `npm run check`.
 
 1. Read the provider recipients and processing details in [the privacy policy](docs/privacy.html). External helper activation requires operator approval; native/basic cards remain available without it.
 2. Configure only View Channel, Send Messages, Embed Links and Send Messages in Threads. Enable Message Content intent; do not request Administrator or member/presence intents.

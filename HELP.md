@@ -1,6 +1,6 @@
-# Link Embedder help
+# Link Embedder Alpha help
 
-Share a canonical HTTPS link to a supported public post or Amazon product. Link Embedder automatically posts a cleaned preview in channels and active threads where it has permission. No commands or per-server setup are required. It does not change the original message.
+Share a canonical HTTPS link to a supported public post or Amazon product. Link Embedder automatically posts a cleaned preview in channels and active threads where it has permission. No commands or per-server setup are required. Default reply mode preserves the original. The current alpha pilot uses optional author-style reposts; see [REPOST.md](REPOST.md). It is restricted to one configured test channel.
 
 Ordinary supported public links also work in age-restricted Discord channels. Channel labels do not tell the bot whether a linked image or video is explicit, and the bot has no media classifier. Use it for ordinary non-explicit content; no guarantee of automatic explicit-content filtering is made. It supports no dedicated adult-site adapters and never bypasses a source site's age, login or privacy restrictions.
 
@@ -18,6 +18,6 @@ Private threads require access through Discord's normal membership controls; the
 
 No preview? Check its View Channel, Embed Links and Send Messages permissions (Send Messages in Threads for threads). Archived/locked or unjoined private threads are skipped. Wait a few seconds if messages were rapid. Use a canonical full link: short redirects, private posts, deleted posts, login-only/age-restricted media and unsupported routes can fail. Native/helper availability varies by platform. No account cookies or private-account access will fix this through Link Embedder.
 
-Supported route families: Instagram reels/posts; TikTok videos/photos; Twitter posts; Bluesky posts; Reddit posts; Twitch clips; public Snapchat Spotlight/moments/profiles; YouTube videos/Shorts; Amazon products; selected Facebook reels/photos/posts; LinkedIn/UpScrolled public posts; RedNote full note URLs; Mastodon posts on the currently reviewed instance allowlist. Media rendering has not yet been verified live for this release.
+Supported route families: Instagram reels/posts; TikTok videos/photos; Twitter posts; Bluesky posts; Reddit posts; Twitch clips; public Snapchat Spotlight/moments/profiles; YouTube videos/Shorts; Amazon products; selected Facebook reels/photos/posts; LinkedIn/UpScrolled public posts; RedNote full note URLs; Mastodon posts on the currently reviewed instance allowlist. YouTube playback passed a live alpha check; other media playback remains unverified.
 
-Existing previews remain after a source-message edit/deletion. Ask a moderator to delete the bot response if needed. Public support/contact information must be added by the operator before launch.
+Existing previews remain after a source-message edit/deletion. Ask a moderator to delete the bot response if needed. Support is available at https://hayness666.github.io/link-embedder/contact.html.

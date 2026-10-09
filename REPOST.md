@@ -1,5 +1,7 @@
 # Optional author-style reposts
 
+Release stage: **Alpha**. Experimental; currently limited to the configured test channel.
+
 Disabled by default. Set REPOST_AS_AUTHOR=yes only after the server owner approves deletion and webhook creation in the explicitly configured TEST_GUILD_ID / TEST_CHANNEL_IDS. This mode refuses an unrestricted configuration.
 
 Discord webhooks can display the sender's name and avatar, but remain webhook-authored. Each replacement states “Reposted by Link Embedder”. The original author cannot directly edit/delete the webhook post as their own; moderators can remove it. This changes message IDs and timestamps and does not preserve reply links. Tell participating members before enabling.
