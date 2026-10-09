@@ -130,3 +130,5 @@ test('expanded preview lookup keeps exact original message text in custom respon
  await h(message({content:original,channel:{send:async p=>{sent=p;}}}));
  assert.equal(sent.components[0].content,original);
 });
+
+test('native companions preserve original player and do not repost or duplicate source',async()=>{let sent;let reposts=0;const content='My exact text https://www.youtube.com/watch?v=aqz-KE-bpKQ';const h=createHandler({...config,repostEnabled:true},{canSend:()=>true,repost:async()=>{reposts++;},makeInstagramPayload:async text=>({flags:32768,components:[{type:10,content:text},{type:17,components:[{type:10,content:'Channel'}]}]})});await h(message({content,embeds:[{url:'https://www.youtube.com/watch?v=aqz-KE-bpKQ'}],channel:{send:async p=>{sent=p;}}}));assert.equal(reposts,0);assert.equal(sent.components.length,1);assert.equal(sent.reply.messageReference,'345678901234567890');assert.equal(sent.content,undefined);});

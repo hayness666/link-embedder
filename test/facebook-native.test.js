@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {facebookNativePayload,waitForFacebookPreview} from '../src/facebook-native.js';
+import {facebookNativePayload,waitForFacebookPreview,cleanFacebookPhotoSets} from '../src/facebook-native.js';
 const url='https://www.facebook.com/photo?fbid=123&set=a.456';
 const embed={url,title:'A photo',description:'Caption',thumbnail:{url:'https://scontent-test.xx.fbcdn.net/photo.jpg'}};
 test('native Facebook rebuild uses matching Discord image and exact source',()=>{
@@ -15,3 +15,5 @@ test('native preview waits boundedly and preserves source on edits or no image',
  m.channel.messages.fetch=async()=>({...m,content:'changed',embeds:[embed]});assert.equal(await waitForFacebookPreview(m,async()=>{}),null);
  calls=0;m.channel.messages.fetch=async()=>{calls++;return m;};assert.equal(await waitForFacebookPreview(m,async()=>{}),null);assert.equal(calls,3);
 });
+
+test('Facebook photo cleanup removes album set only',()=>{assert.equal(cleanFacebookPhotoSets('hello https://www.facebook.com/photo?fbid=123&set=a.456&foo=keep'),'hello https://www.facebook.com/photo?fbid=123&foo=keep');assert.equal(cleanFacebookPhotoSets('https://www.youtube.com/watch?v=abc&set=keep'),'https://www.youtube.com/watch?v=abc&set=keep');});

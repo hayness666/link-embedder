@@ -49,7 +49,8 @@ test('ordinary public links work across channel age labels while inaccessible an
   const sent = [];
   const user = { id: 'bot' };
   const handle = createHandler(readConfig({ PREVIEWS_DISABLED: 'no' }), {
-    canSend: message => canSendPreview(message, user)
+    canSend: message => canSendPreview(message, user),
+    makeInstagramPayload: async content => ({flags:32768,components:[{type:10,content},{type:17,components:[{type:10,content:'YouTube'}]}]})
   });
   const base = { isTextBased: () => true, isSendable: () => true, isThread: () => false,
     nsfw: false, permissionsFor: () => ({ has: () => true }), send: async payload => sent.push(payload) };
@@ -65,7 +66,7 @@ test('ordinary public links work across channel age labels while inaccessible an
       content: 'https://youtube.com/watch?v=dQw4w9WgXcQ&si=tracking', channel: { ...base, ...channel } });
   }
   assert.equal(sent.length, 6);
-  assert.equal(sent[0].content, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  assert.equal(sent[0].reply.messageReference,'id0');assert.equal(sent[0].components[0].type,17);assert.equal(sent[0].content,undefined);
 });
 
 test('public routing accepts multiple guilds and isolates dedupe and server burst limits', async () => {

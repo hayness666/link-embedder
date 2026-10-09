@@ -14,7 +14,11 @@ const mediaHosts = {
   reddit: ['i.redd.it', 'v.redd.it', 'preview.redd.it', 'external-preview.redd.it', 'vxreddit.com', 'www.vxreddit.com'],
   twitch: ['clips-media-assets2.twitch.tv', 'production.assets.clips.twitchcdn.net', 'clips-media-assets.twitch.tv'],
   snapchat: ['cf-st.sc-cdn.net'],
-  facebook: [], amazon: [], rednote: [], linkedin: ['media.licdn.com'], upscrolled: [], mastodon: []
+  youtube: ['i.ytimg.com','img.youtube.com'],
+  vimeo: ['i.vimeocdn.com'], ifunny: ['img.ifunny.co'],
+  giphy: ['media.giphy.com','i.giphy.com','media0.giphy.com','media1.giphy.com','media2.giphy.com','media3.giphy.com','media4.giphy.com'],
+  tenor: ['media.tenor.com','c.tenor.com'],
+  facebook: [], amazon: ['m.media-amazon.com','images-na.ssl-images-amazon.com'], rednote: [], linkedin: ['media.licdn.com'], upscrolled: [], mastodon: []
 };
 export function validMedia(raw, platform) {
   try {
@@ -66,7 +70,7 @@ export function metadataFromHtml(html, platform) {
   let videoPage = '', destinationUrl = '';
   let name = '', username = '', caption = get('og:description') || '';
   let title = get('og:title');
-  let cardTitle = ['medal','imgur','streamable','reddit','linkedin'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
+  let cardTitle = ['medal','imgur','streamable','reddit','linkedin','amazon','youtube','vimeo','ifunny','giphy','tenor'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
   if (['medal','imgur','streamable'].includes(platform)) caption = '';
   if (caption.trim() === cardTitle.trim()) caption = '';
   if (platform === 'reddit') {
@@ -143,7 +147,7 @@ export function simpleCard(link, metadata = null) {
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`[Visit website ↗](<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>)`)] : []),
-    ...(!media.length && !caption && !destination ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
+    ...(!media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
     ...(quoteText ? [text(quoteText)] : []),
     text(footer(link.platform))
   ] };
@@ -152,7 +156,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
   const links = extractLinks(content).filter(link => modes[link.platform] && modes[link.platform] !== 'off');
   // Native video players (especially YouTube) cannot be copied into a custom card.
   // Keep native messages intact instead of replacing a playable iframe with a still image.
-  if (!links.length || links.some(link => modes[link.platform] === 'native' || (link.platform === 'facebook' && link.kind !== 'reel'))) return null;
+  if (!links.length || links.some(link => link.platform === 'facebook' && link.kind !== 'reel')) return null;
   const components = await Promise.all(links.map(async link => {
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);
@@ -169,16 +173,35 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform); } catch { /* leave original link available */ }
       }
     }
-    if (['medal','streamable','imgur','linkedin'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
+    if (['medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
       if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
       else {
         const body = await readBounded(link.url, fetcher);
         if (body) metadata = metadataFromHtml(body, link.platform);
       }
     }
-    if (!metadata) {
+    if (['youtube','vimeo'].includes(link.platform)) {
+      const endpoint = link.platform === 'youtube' ? 'https://www.youtube.com/oembed' : 'https://vimeo.com/api/oembed.json';
+      const body = await readBounded(`${endpoint}?url=${encodeURIComponent(link.url)}&format=json`, fetcher);
+      if (body) try {
+        const data = JSON.parse(body);
+        if (typeof data.title === 'string') metadata = {title:data.title,name:typeof data.author_name === 'string' ? data.author_name : '',caption:'',media:[]};
+        // Use only a real handle supplied by the provider; do not invent one from a name.
+        if (metadata && typeof data.author_url === 'string') {
+          const author = new URL(data.author_url);
+          if (link.platform === 'youtube' && ['www.youtube.com','youtube.com'].includes(author.hostname) && /^\/@[A-Za-z0-9_.-]+$/.test(author.pathname)) metadata.username=author.pathname.slice(2);
+        }
+      } catch { /* Native player remains on the original message. */ }
+    }
+    if (!metadata || (!metadata.title && !metadata.name && !metadata.media?.length && !metadata.caption)) {
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
       if (embed) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: [] };
+    }
+    // A companion is separate from the untouched source's native player/gallery.
+    // Do not add a second thumbnail for sites already showing native media.
+    if (modes[link.platform] === 'native' && existingEmbeds.some(e => parseSocialUrl(e.url || '')?.url === link.url)) {
+      if (!metadata) metadata = {};
+      metadata = {...metadata,media:[],nativeAvailable:true};
     }
     return simpleCard(link, metadata);
   }));

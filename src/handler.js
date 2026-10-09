@@ -1,6 +1,6 @@
 import { buildPayload, extractLinks } from './previews.js';
 import {shortLinks,expandShortLinks} from './short-links.js';
-import { waitForFacebookPreview } from './facebook-native.js';
+import { waitForFacebookPreview, cleanFacebookPhotoSets } from './facebook-native.js';
 import { simplePayload } from './simple-cards.js';
 export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks, nativeFacebook = waitForFacebookPreview } = {}) {
   const guilds = new Map();
@@ -28,8 +28,9 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     for (const [id, expiry] of cooldown) if (expiry <= time) cooldown.delete(id);
     state.recent = state.recent.filter(t => t > time - 60000);
     if (seen.has(message.id) || cooldown.has(message.channelId) || state.recent.length >= 20) return;
+    const nativeLinks = originalLinks.some(link => config.modes[link.platform] === 'native');
     let payload = buildPayload(message.content ?? '', config.modes, message.embeds ?? []);
-    if (!payload && !facebookPost && !shortLinks(message.content ?? '').length) return;
+    if (!payload && !facebookPost && !nativeLinks && !shortLinks(message.content ?? '').length) return;
     seen.set(message.id, time + 600000);
     if (seen.size > 1000) seen.delete(seen.keys().next().value);
     cooldown.set(message.channelId, time + 3000);
@@ -38,14 +39,35 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     try {
       if (facebookPost) {
         const native = await nativeFacebook(message);
-        if (native) await repost(message, native, message.content);
+        const display = cleanFacebookPhotoSets(message.content);
+        if (native) { native.components[0].content = display; await repost(message, native, display); }
+        else if (display !== message.content) await repost(message, {content:'',allowedMentions:{parse:[],repliedUser:false}}, display);
         return; // On failure preserve the original native preview; never send a duplicate.
       }
       const expanded = await expandLinks(message.content ?? '', config.modes);
       if (extractLinks(expanded).some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
-      if (!payload) return;
-      payload = await makeInstagramPayload(expanded, config.modes, message.embeds ?? []) || payload;
+      const keepNative = extractLinks(expanded).some(link => config.modes[link.platform] === 'native');
+      if (!payload && !keepNative) return;
+      let availableEmbeds = message.embeds ?? [];
+      if (keepNative && !availableEmbeds.length && message.channel.messages?.fetch) {
+        for (const delay of [1000,2000]) {
+          await new Promise(resolve => setTimeout(resolve,delay));
+          try {
+            const fresh = await message.channel.messages.fetch({message:message.id,force:true,cache:false});
+            if (fresh.content !== message.content || fresh.flags?.has(4)) return;
+            availableEmbeds = fresh.embeds ?? [];
+            if (availableEmbeds.length) break;
+          } catch { return; }
+        }
+      }
+      payload = await makeInstagramPayload(expanded, config.modes, availableEmbeds) || payload;
+      if (keepNative) {
+        if (payload?.flags === 32768) {
+          await message.channel.send({...payload,components:payload.components.slice(1),reply:{messageReference:message.id,failIfNotExists:false}});
+        }
+        return; // Preserve the source message and its native player; no deletion/repost.
+      }
       // Expanded URLs select previews; the visible source remains exactly as written.
       if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = message.content ?? '';
       if (config.repostEnabled && repost && await repost(message, payload, message.content ?? '')) return;

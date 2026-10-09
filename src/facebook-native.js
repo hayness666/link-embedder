@@ -39,3 +39,12 @@ export async function waitForFacebookPreview(message, pause = ms => new Promise(
   }
   return null;
 }
+
+// Explicit user-requested exception: remove album context only, keep photo identity and prose.
+export function cleanFacebookPhotoSets(content) {
+  return content.replace(/https:\/\/[^\s<>]+/g, raw => {
+    const link = parseSocialUrl(raw);
+    if (link?.platform !== 'facebook' || link.kind !== 'photo') return raw;
+    return raw.replace(/([?&])set=[^&#\s]*/gi, (_, prefix) => prefix === '?' ? '?' : '').replace(/\?&/g,'?').replace(/\?$/,'');
+  });
+}
