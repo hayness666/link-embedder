@@ -40,9 +40,22 @@ export function readMeta(html) {
   return tags;
 }
 export function metadataFromHtml(html, platform) {
+  // Medal publishes a direct CDN URL in its public VideoObject metadata.
+  // Its og:video endpoint is a redirect that Discord galleries may reject.
+  if (platform === 'medal') {
+    for (const [, raw] of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+      try {
+        const item = JSON.parse(raw);
+        if (item['@type'] === 'VideoObject' && item.isFamilyFriendly !== false && validMedia(item.contentUrl, platform)
+          && new URL(item.contentUrl).hostname === 'cdn.medal.tv' && new URL(item.contentUrl).pathname.endsWith('.mp4')) {
+          return {name: typeof item.author?.name === 'string' ? item.author.name : '', caption: typeof item.name === 'string' ? item.name : '', media:[item.contentUrl]};
+        }
+      } catch { /* malformed public metadata is not usable */ }
+    }
+  }
   const tags = readMeta(html), get = name => tags.get(name)?.[0] || '';
   const type = get('og:video:type') || get('twitter:player:stream:content_type');
-  const videos = type === 'video/mp4' ? [...(tags.get('og:video:secure_url') || []), ...(tags.get('og:video') || []), ...(tags.get('twitter:player:stream') || [])] : [];
+  const videos = type === 'video/mp4' ? [...(tags.get('og:video') || []), ...(tags.get('og:video:secure_url') || []), ...(tags.get('twitter:player:stream') || [])] : [];
   const validVideos = videos.filter(url => validMedia(url, platform));
   const media = validVideos.length ? [validVideos[0]] : [...new Set((tags.get('og:image') || []).filter(url => validMedia(url, platform)))].slice(0, 10);
   let name = '', username = '', caption = get('og:description') || '';

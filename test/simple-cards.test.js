@@ -33,3 +33,8 @@ test('provider errors and oversized bodies yield an honest fallback without thro
  const modes=readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes;
  for(const response of [new Response('error',{status:503}),html('x'.repeat(524289))]){const p=await simplePayload('https://twitter.com/test/status/123',modes,[],async()=>response);assert.match(JSON.stringify(p),/Media preview unavailable/);}
 });
+
+test('Medal uses its published direct CDN video instead of its redirect endpoint',()=>{
+ const m=metadataFromHtml('<script type="application/ld+json">'+JSON.stringify({'@type':'VideoObject',name:'Clip',author:{name:'Person'},contentUrl:'https://cdn.medal.tv/mediac/abc.mp4?auth=public-signature'})+'</script>','medal');
+ assert.equal(m.name,'Person');assert.equal(m.media[0],'https://cdn.medal.tv/mediac/abc.mp4?auth=public-signature');
+});
