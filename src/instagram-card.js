@@ -31,7 +31,7 @@ export function cardHeading(link, title = '') {
     : canonical.kind === 'clip' ? 'Clip' : canonical.kind === 'video' ? 'Video' : 'Post';
   const label = title || `View ${kind.toLowerCase()} on ${brands[link.platform]?.name || link.platform}`;
   const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
-  return `**[${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)**`;
+  return `### [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
 }
 
 export function parseInstagramCard(html, link) {

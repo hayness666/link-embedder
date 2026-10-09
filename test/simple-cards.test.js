@@ -26,7 +26,7 @@ test('unapproved helpers are never requested; native players remain intact',asyn
 test('public Medal and Imgur metadata use the simple layout and original link once',async()=>{
  const url='https://medal.tv/games/roblox/clips/abc';let target;
  const result=await simplePayload(url,readConfig({}).modes,[],async(u,opts)=>{target=u;assert.equal(opts.redirect,'error');return html('<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://medal.tv/api/content/abc/socialVideoUrl"><meta property="og:title" content="Good clip - Clipped Roblox with Medal.tv">');});
- assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components[1].type,12);assert.equal(result.components[1].components[0].content,'**[Good clip ↗](<https://medal.tv/games/roblox/clips/abc>)**');
+ assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components[1].type,12);assert.equal(result.components[1].components[0].content,'### [Good clip ↗](<https://medal.tv/games/roblox/clips/abc>)');
  const direct=await simplePayload('https://i.imgur.com/abcdefg.mp4',readConfig({}).modes,[],()=>{throw Error('must not fetch media');});assert.equal(direct.components[1].components[1].items[0].media.url,'https://i.imgur.com/abcdefg.mp4');
 });
 test('provider errors and oversized bodies yield an honest fallback without throwing',async()=>{
@@ -41,7 +41,7 @@ test('Medal uses its published direct CDN video instead of its redirect endpoint
 
 test('Reddit author line includes subreddit below title and does not repeat as caption',()=>{
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
- assert.equal(card.components[0].content,'**[A cat ↗](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components[1].content,'**r/cats**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
+ assert.equal(card.components[0].content,'### [A cat ↗](<https://www.reddit.com/r/cats/comments/abc/a_cat>)');assert.equal(card.components[1].content,'**r/cats**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
 });
 
 test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
@@ -75,8 +75,8 @@ test('quoted Twitter text is capped at 250 characters while main text stays full
 test('Reddit extracts actual helper author and renders plain handle under title',()=>{
  const m=metadataFromHtml('<meta property="og:title" content="Flock down!"><meta property="og:site_name" content="u/whiplashsaxifrage on r/GoldenCO - stats">','reddit');
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/GoldenCO/comments/1wzioal/flock_down'},m);
- assert.equal(card.components[1].content,'**r/GoldenCO** @\u200bwhiplashsaxifrage');
- assert.ok(card.components[0].content.startsWith('**[Flock down! ↗]'));
+ assert.equal(card.components[1].content,'**r/GoldenCO** u/whiplashsaxifrage');
+ assert.ok(card.components[0].content.startsWith('### [Flock down! ↗]'));
 });
 
 test('Facebook reels show only requested notice and photos stay native',async()=>{
@@ -85,3 +85,5 @@ test('Facebook reels show only requested notice and photos stay native',async()=
  assert.deepEqual(p.components[1].components,[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]);
  assert.equal(await simplePayload('https://www.facebook.com/photo?fbid=123',modes,[],fetcher),null);assert.equal(calls,0);
 });
+
+test('Reddit bare video URL without media is not a caption',()=>{const m=metadataFromHtml('<meta property="og:description" content="https://v.redd.it/78lucvocveo31">','reddit');assert.equal(m.caption,'');assert.deepEqual(m.media,[]);});

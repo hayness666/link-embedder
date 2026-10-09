@@ -71,6 +71,7 @@ export function metadataFromHtml(html, platform) {
   if (platform === 'reddit') {
     const author = /^u\/([A-Za-z0-9_-]{1,30}) on r\/[A-Za-z0-9_]+(?: |$)/.exec(get('og:site_name'));
     if (author) username = author[1];
+    if (!media.length && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(caption.trim())) caption = '';
   } else if (platform === 'tiktok') {
     const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
     if (author) [, name, username] = author;
@@ -115,7 +116,7 @@ export function simpleCard(link, metadata = null) {
   let title = typeof metadata?.title === 'string' ? metadata.title.trim() : '';
   const community = link.platform === 'reddit' ? /^\/r\/([A-Za-z0-9_]{1,30})\//.exec(new URL(link.url).pathname)?.[1] : '';
   if (community) title = title.replace(new RegExp(`^r/${community}:\\s*`, 'i'), '');
-  const authorLine = community ? `**r/${plain(community)}**${user ? ` @\u200b${user}` : ''}`
+  const authorLine = community ? `**r/${plain(community)}**${user ? ` u/${user}` : ''}`
     : `${name ? `**${name}**` : ''}${user ? `${name ? ' ' : ''}@\u200b${user}` : ''}`;
   const titleLine = title ? plain([...title].slice(0,256).join('')) : '';
   const caption = typeof metadata?.caption === 'string' ? (link.platform === 'twitter' ? plain(metadata.caption) : shortCaption(metadata.caption)) : '';

@@ -1,7 +1,8 @@
 import { buildPayload, extractLinks } from './previews.js';
 import {shortLinks,expandShortLinks} from './short-links.js';
+import { waitForFacebookPreview } from './facebook-native.js';
 import { simplePayload } from './simple-cards.js';
-export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks } = {}) {
+export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks, nativeFacebook = waitForFacebookPreview } = {}) {
   const guilds = new Map();
   return async function handle(message) {
     // Explicit emergency shutdown only; this is not a content-safety classifier.
@@ -10,8 +11,9 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       || (config.channelIds.size && !config.channelIds.has(message.channelId))
       || message.author?.bot || message.webhookId || message.system || message.flags?.has(4)) return;
     if (!canSend(message)) return;
-    // Preserve Facebook's native post/photo preview, including mixed messages.
-    if (extractLinks(message.content ?? '').some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
+    const originalLinks = extractLinks(message.content ?? '');
+    const facebookPost = originalLinks.some(link => link.platform === 'facebook' && link.kind !== 'reel');
+    if (facebookPost && (!config.modes.facebook || config.modes.facebook === 'off' || originalLinks.length !== 1 || !config.repostEnabled || !repost)) return;
     const time = now();
     for (const [id, state] of guilds) if (time - state.lastActive > 600000) guilds.delete(id);
     let state = guilds.get(message.guildId);
@@ -27,13 +29,18 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.recent = state.recent.filter(t => t > time - 60000);
     if (seen.has(message.id) || cooldown.has(message.channelId) || state.recent.length >= 20) return;
     let payload = buildPayload(message.content ?? '', config.modes, message.embeds ?? []);
-    if (!payload && !shortLinks(message.content ?? '').length) return;
+    if (!payload && !facebookPost && !shortLinks(message.content ?? '').length) return;
     seen.set(message.id, time + 600000);
     if (seen.size > 1000) seen.delete(seen.keys().next().value);
     cooldown.set(message.channelId, time + 3000);
     state.recent.push(time);
     state.lastActive = time;
     try {
+      if (facebookPost) {
+        const native = await nativeFacebook(message);
+        if (native) await repost(message, native, message.content);
+        return; // On failure preserve the original native preview; never send a duplicate.
+      }
       const expanded = await expandLinks(message.content ?? '', config.modes);
       if (extractLinks(expanded).some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
