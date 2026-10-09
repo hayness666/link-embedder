@@ -51,7 +51,7 @@ test('Facebook photo metadata preserves identity and uses only validated thumbna
  const m=metadataFromHtml(`<meta property="og:image" content="${media}"><meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://scontent-den2-1.xx.fbcdn.net/video.mp4">`,'facebook');assert.deepEqual(m.media,[media]);
  for(const raw of ['https://scontent-den2-1.xx.fbcdn.net.evil.test/photo.jpg','https://evil.fbcdn.net/photo.jpg','http://scontent-den2-1.xx.fbcdn.net/photo.jpg'])assert.equal(validMedia(raw,'facebook'),false);
  assert.equal(metadataFromHtml('<meta property="og:image" content="'+media+'">Log in to continue','facebook'),null);
- const p=await simplePayload(url,readConfig({}).modes,[],async()=>html(`<meta property="og:image" content="${media}">`));assert.equal(p.components[1].components[1].items[0].media.url,media);
+ const p=await simplePayload(url,readConfig({}).modes,[],async()=>html(`<meta property="og:image" content="${media}">`));assert.equal(p,null);
 });
 
 test('Twitter retains full text and places a quote in an indented block',()=>{
@@ -77,4 +77,11 @@ test('Reddit extracts actual helper author and renders plain handle under title'
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/GoldenCO/comments/1wzioal/flock_down'},m);
  assert.equal(card.components[1].content,'**r/GoldenCO** @\u200bwhiplashsaxifrage');
  assert.ok(card.components[0].content.startsWith('**[Flock down! ↗]'));
+});
+
+test('Facebook reels show only requested notice and photos stay native',async()=>{
+ const modes=readConfig({}).modes;let calls=0;const fetcher=async()=>{calls++;throw Error('must not fetch');};
+ const p=await simplePayload('https://www.facebook.com/reel/123',modes,[],fetcher);
+ assert.deepEqual(p.components[1].components,[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]);
+ assert.equal(await simplePayload('https://www.facebook.com/photo?fbid=123',modes,[],fetcher),null);assert.equal(calls,0);
 });

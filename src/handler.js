@@ -1,4 +1,4 @@
-import { buildPayload } from './previews.js';
+import { buildPayload, extractLinks } from './previews.js';
 import {shortLinks,expandShortLinks} from './short-links.js';
 import { simplePayload } from './simple-cards.js';
 export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks } = {}) {
@@ -10,6 +10,8 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       || (config.channelIds.size && !config.channelIds.has(message.channelId))
       || message.author?.bot || message.webhookId || message.system || message.flags?.has(4)) return;
     if (!canSend(message)) return;
+    // Preserve Facebook's native post/photo preview, including mixed messages.
+    if (extractLinks(message.content ?? '').some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
     const time = now();
     for (const [id, state] of guilds) if (time - state.lastActive > 600000) guilds.delete(id);
     let state = guilds.get(message.guildId);
@@ -33,6 +35,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.lastActive = time;
     try {
       const expanded = await expandLinks(message.content ?? '', config.modes);
+      if (extractLinks(expanded).some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
       if (!payload) return;
       payload = await makeInstagramPayload(expanded, config.modes, message.embeds ?? []) || payload;

@@ -117,3 +117,16 @@ test('API failures log only a static code, without message content or credential
   await handle(message({ channel: { send: async () => { throw new Error('TOKEN message body secret'); } } }));
   assert.deepEqual(logs, ['preview_send_failed']);
 });
+
+test('Facebook photos including mixed messages remain untouched without metadata requests',async()=>{
+ let touched=0;
+ const h=createHandler(config,{canSend:()=>true,repost:async()=>{touched++;},makeInstagramPayload:async()=>{touched++;},expandLinks:async()=>{touched++;}});
+ await h(message({content:'Keep exactly https://www.facebook.com/photo?fbid=123&set=a.456 '+ig,channel:{send:async()=>{touched++;}}}));
+ assert.equal(touched,0);
+});
+test('expanded preview lookup keeps exact original message text in custom response',async()=>{
+ const original='  My text\nhttps://www.instagram.com/share/reel/ABC?utm_source=test';let sent;
+ const h=createHandler(config,{canSend:()=>true,expandLinks:async()=>ig,makeInstagramPayload:async()=>({flags:32768,components:[{type:10,content:ig},{type:17,components:[]} ]})});
+ await h(message({content:original,channel:{send:async p=>{sent=p;}}}));
+ assert.equal(sent.components[0].content,original);
+});

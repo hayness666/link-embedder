@@ -108,6 +108,7 @@ async function readBounded(url, fetcher) {
 }
 export function simpleCard(link, metadata = null) {
   const brand = brands[link.platform];
+  if (link.platform === 'facebook' && link.kind === 'reel') return {type:17,accent_color:brand.color,components:[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]};
   const name = typeof metadata?.name === 'string' ? plain(metadata.name).slice(0, 160) : '';
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
   const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
@@ -137,7 +138,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
   const links = extractLinks(content).filter(link => modes[link.platform] && modes[link.platform] !== 'off');
   // Native video players (especially YouTube) cannot be copied into a custom card.
   // Keep native messages intact instead of replacing a playable iframe with a still image.
-  if (!links.length || links.some(link => modes[link.platform] === 'native')) return null;
+  if (!links.length || links.some(link => modes[link.platform] === 'native' || (link.platform === 'facebook' && link.kind !== 'reel'))) return null;
   const components = await Promise.all(links.map(async link => {
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);
