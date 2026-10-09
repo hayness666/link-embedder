@@ -56,10 +56,9 @@ test('component repost retains source once, disables mentions and supplies webho
   assert.deepEqual(result.allowedMentions,{parse:[],repliedUser:false});
 });
 
-test('caption limit counts visible words and adds ellipsis only beyond twenty', () => {
-  const twenty = Array.from({length:20},(_,i)=>`word${i}`).join(' ');
-  assert.equal(shortCaption(twenty), twenty);
-  assert.equal(shortCaption(twenty+' extra'), twenty+'…');
+test('caption limit is 100 characters including ellipsis', () => {
+  assert.equal(shortCaption('a'.repeat(100)), 'a'.repeat(100));
+  assert.equal(shortCaption('a'.repeat(101)), 'a'.repeat(99)+'…');
   assert.equal(shortCaption('hello [#tag](https://instagram.com/tags/tag/)'), 'hello #tag');
 });
 

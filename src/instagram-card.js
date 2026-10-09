@@ -12,8 +12,9 @@ export function shortCaption(value) {
       return i < 0 ? c : 'abcdefghijklmnopqrstuvwxyz'[i];
     }).join('');
   });
-  const words = plain(normalized).trim().split(/\s+/u).filter(Boolean);
-  return words.slice(0, 20).join(' ') + (words.length > 20 ? '…' : '');
+  const clean = normalized.replace(/\[([^\]]*)\]\(https?:\/\/[^\s)]*\)/g, '$1').trim().replace(/\s+/gu, ' ');
+  const chars = [...clean];
+  return plain(chars.length > 100 ? chars.slice(0, 99).join('').trimEnd() + '…' : clean);
 }
 // Helper Markdown is untrusted display data. Keep labels, never provider buttons or links.
 function plain(value) {
