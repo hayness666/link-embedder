@@ -12,10 +12,10 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
   assert.deepEqual(card.components.map(c=>c.type), [10,12,10,10]);
-  assert.equal(card.components[3].content, '<:Instagram:1556597080229810266> **Instagram**');
+  assert.equal(card.components[3].content, '<:OGInstagram:1556597080229810266> **Instagram**');
   assert.equal(card.components[0].content, '**Name @\u200bperson**');
   const json = JSON.stringify(card);
-  assert.doesNotMatch(json, /❤️|💬|OGInstagram|date|https:\/\/www.instagram/);
+  assert.doesNotMatch(json, /❤️|💬|date|https:\/\/www.instagram/);
   assert.match(card.components[2].content, /#hello/);
   assert.doesNotMatch(card.components[2].content, /@everyone/);
 });

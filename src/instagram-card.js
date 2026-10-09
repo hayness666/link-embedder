@@ -3,7 +3,7 @@ import { helperUrl } from './adapters.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
-const INSTAGRAM_ICON = '<:Instagram:1556597080229810266>';
+const INSTAGRAM_ICON = '<:OGInstagram:1556597080229810266>';
 export function shortCaption(value) {
   const normalized = value.replace(/#[\p{L}\p{N}_]+/gu, tag => {
     const small = 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ';
