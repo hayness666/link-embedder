@@ -25,7 +25,7 @@ test('repost must be explicitly enabled and limited to a server and channels', (
 test('preserves text, uses author identity, prevents pings without adding a repost footer', () => {
   const { message } = fixture();
   const result = buildRepostPayload(message, preview);
-  assert.ok(result.content.startsWith(message.content));
+  assert.equal(result.content, 'Hello @everyone https://oginstagram.com/p/abc');
   assert.equal(result.username, 'Person');
   assert.deepEqual(result.allowedMentions, { parse: [], repliedUser: false });
   assert.doesNotMatch(result.content, /Reposted by Link Embedder/);
@@ -89,4 +89,17 @@ test('multiple native links and canonical aliases are not appended again', () =>
     content: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=1\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ', embeds: []
   });
   assert.equal(result.content, original);
+});
+
+test('Instagram helper replaces its source URL once without duplicate original or footer', () => {
+  const { message } = fixture();
+  const result = buildRepostPayload({...message, content: 'Look https://www.instagram.com/reel/ABC/?utm_source=share'}, {
+    content: 'https://oginstagram.com/reel/ABC\nOriginal: <https://www.instagram.com/reel/ABC>', embeds: []
+  });
+  assert.equal(result.content, 'Look https://oginstagram.com/reel/ABC');
+});
+test('Instagram-only approval leaves all other helpers disabled', () => {
+  const config = readConfig({INSTAGRAM_SHARING_APPROVED:'yes'});
+  assert.equal(config.modes.instagram, 'oginstagram');
+  for (const platform of ['tiktok','twitter','reddit','bluesky','twitch','snapchat']) assert.equal(config.modes[platform], 'card');
 });

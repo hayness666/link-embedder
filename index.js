@@ -8,7 +8,7 @@ try { loadEnvFile('.env'); } catch (error) {
 // Non-secret pilot controls can be changed without opening the token file.
 try {
   const pilot = parseEnv(readFileSync('pilot.env', 'utf8'));
-  const allowed = new Set(['TEST_GUILD_ID', 'TEST_CHANNEL_IDS', 'PROVIDER_SHARING_APPROVED', 'PREVIEWS_DISABLED', 'REPOST_AS_AUTHOR']);
+  const allowed = new Set(['TEST_GUILD_ID', 'TEST_CHANNEL_IDS', 'PROVIDER_SHARING_APPROVED', 'INSTAGRAM_SHARING_APPROVED', 'PREVIEWS_DISABLED', 'REPOST_AS_AUTHOR']);
   if (Object.keys(pilot).some(key => !allowed.has(key))) throw new Error('Invalid pilot setting');
   Object.assign(process.env, pilot);
 } catch (error) {

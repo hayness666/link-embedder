@@ -9,12 +9,13 @@ export function readConfig(env) {
   if (repostEnabled && (!testGuildId || !channels.length)) throw new Error('Reposting requires an explicit server and channel allowlist.');
   const modes = {};
   for (const platform of ['instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon']) {
+    const sharingApproved = env.PROVIDER_SHARING_APPROVED === 'yes' || (platform === 'instagram' && env.INSTAGRAM_SHARING_APPROVED === 'yes');
     const defaultMode = ['amazon', 'youtube'].includes(platform) ? 'native'
-      : env.PROVIDER_SHARING_APPROVED === 'yes' && helperModes[platform] ? helperModes[platform] : 'card';
+      : sharingApproved && helperModes[platform] ? helperModes[platform] : 'card';
     const mode = env[`${platform.toUpperCase()}_MODE`] ?? defaultMode;
     if (!['card', 'native', 'off', helperModes[platform]].filter(Boolean).includes(mode)) throw new Error(`Invalid ${platform} mode.`);
     if (platform === 'mastodon' && mode === 'native') throw new Error('Mastodon native media requires content-warning verification; use card or off.');
-    if (mode === helperModes[platform] && env.PROVIDER_SHARING_APPROVED !== 'yes') throw new Error('Provider sharing must be approved before selecting proxy modes.');
+    if (mode === helperModes[platform] && !sharingApproved) throw new Error('Provider sharing must be approved before selecting proxy modes.');
     modes[platform] = mode;
   }
   return { testGuildId, channelIds: new Set(channels), modes, repostEnabled,

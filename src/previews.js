@@ -72,13 +72,13 @@ export function buildPayload(content, modes, existingEmbeds = []) {
   return {
     ...(contentLines.length ? { content: contentLines.join('\n') } : {}),
     embeds: cards.map(link => ({
-      title: link.platform === 'amazon' ? `Amazon product · ${link.asin}` : `${{ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', twitter: 'Twitter', bluesky: 'Bluesky', reddit: 'Reddit', twitch: 'Twitch', snapchat: 'Snapchat', rednote: 'RedNote', linkedin: 'LinkedIn', upscrolled: 'UpScrolled', mastodon: 'Mastodon' }[link.platform]} · ${link.kind}`,
+      title: link.platform === 'instagram' ? 'Instagram' : link.platform === 'amazon' ? `Amazon product · ${link.asin}` : `${{ instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', twitter: 'Twitter', bluesky: 'Bluesky', reddit: 'Reddit', twitch: 'Twitch', snapchat: 'Snapchat', rednote: 'RedNote', linkedin: 'LinkedIn', upscrolled: 'UpScrolled', mastodon: 'Mastodon' }[link.platform]} · ${link.kind}`,
       url: link.url,
       description: link.platform === 'amazon'
         ? `Clean product link: ${link.url}\nProduct details, image, price and availability have not been fetched.`
         : 'Open the original post. Media preview and public availability have not been verified.',
-      color: 0x5865f2,
-      footer: { text: 'Link Embedder · link card · no media fetched' }
+      color: link.platform === 'instagram' ? 0xf359a3 : 0x5865f2,
+      footer: { text: link.platform === 'instagram' ? 'via @Link Embedder' : 'Link Embedder · link card · no media fetched' }
     })),
     allowedMentions: { parse: [], repliedUser: false }
   };

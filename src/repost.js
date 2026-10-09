@@ -1,5 +1,6 @@
 import { PermissionFlagsBits as P, ChannelType } from 'discord.js';
 import { extractLinks, parseSocialUrl } from './previews.js';
+import { helperUrl } from './adapters.js';
 
 // Destructive replacement is deliberately restricted to plain text in opted-in text channels.
 export function canRepost(message, user) {
@@ -14,13 +15,29 @@ export function canRepost(message, user) {
 }
 
 export function buildRepostPayload(message, preview) {
-  // Preserve every character of the source text; never truncate to make a replacement fit.
-  const sourceUrls = new Set(extractLinks(message.content).map(link => link.url));
-  const extraLines = (preview.content || '').split('\n').filter(line => {
-    const canonical = parseSocialUrl(line)?.url;
+  // Preserve source text except approved Instagram links replaced by their media helper.
+  const links = extractLinks(message.content);
+  const sourceUrls = new Set(links.map(link => link.url));
+  const previewLines = (preview.content || '').split('\n');
+  const replacements = new Map(links.filter(link => link.platform === 'instagram')
+    .map(link => [link.url, helperUrl(link, 'oginstagram')])
+    .filter(([, helper]) => previewLines.includes(helper)));
+  const usedHelpers = new Set();
+  const source = message.content.replace(/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|\[[^\]]*\]\([^)]*\)|https:\/\/[^\s<>]+/gi, token => {
+    if (!token.startsWith('https://')) return token;
+    const raw = token.replace(/[.,!?;:)\]}]+$/, '');
+    const helper = replacements.get(parseSocialUrl(raw)?.url);
+    if (!helper) return token;
+    usedHelpers.add(helper);
+    return helper + token.slice(raw.length);
+  });
+  const extraLines = previewLines.filter(line => {
+    if (usedHelpers.has(line)) return false;
+    const original = /^Original: <(https:\/\/[^>]+)>$/.exec(line)?.[1];
+    const canonical = parseSocialUrl(original || line)?.url;
     return line && !(canonical && sourceUrls.has(canonical));
   });
-  const content = [message.content, extraLines.join('\n')].filter(Boolean).join('\n\n');
+  const content = [source, extraLines.join('\n')].filter(Boolean).join('\n\n');
   if (content.length > 2000) return null;
   const name = message.member?.displayName || message.author?.globalName || message.author?.username || 'Member';
   if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80) return null;
