@@ -15,6 +15,14 @@ export function canRepost(message, user) {
 }
 
 export function buildRepostPayload(message, preview) {
+  if (preview.flags === 32768) {
+    const name = message.member?.displayName || message.author?.globalName || message.author?.username || 'Member';
+    if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80 || message.content.length > 2000) return null;
+    return { ...preview, withComponents: true, username: name,
+      avatarURL: message.member?.displayAvatarURL?.() || message.author?.displayAvatarURL?.(),
+      components: [...(message.content ? [{ type: 10, content: message.content }] : []), ...preview.components],
+      allowedMentions: { parse: [], repliedUser: false } };
+  }
   // Preserve source text except approved Instagram links replaced by their media helper.
   const links = extractLinks(message.content);
   const sourceUrls = new Set(links.map(link => link.url));

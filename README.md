@@ -6,7 +6,7 @@ Automatic, cleaned link previews for public media and Amazon products in Discord
 
 [Add Link Embedder to Discord](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=274877926400&integration_type=0).
 
-This is the saved Discord server-install link for application `1557858203897823304`, not an App Directory listing. **Alpha: online in the configured test channel, verified 9 October 2026 (UTC).** This is a manual status report, not a live uptime monitor. The Silly Development runtime connected successfully; YouTube playback and author-style reposting passed live pilot checks. Instagram uses the approved oginstagram.com helper; other helpers remain off. Instagram playback is pending live verification. Installing it alone does not start the service. The Discord profile has the approved icon and a description that labels other site integrations experimental.
+This is the saved Discord server-install link for application `1557858203897823304`, not an App Directory listing. **Alpha: online in the configured test channel, verified 9 October 2026 (UTC).** This is a manual status report, not a live uptime monitor. The Silly Development runtime connected successfully; YouTube playback and author-style reposting passed live pilot checks. Instagram uses the approved oginstagram.com helper; other helpers remain off. Instagram playback passed a live pilot check. Installing it alone does not start the service. The Discord profile has the approved icon and a description that labels other site integrations experimental.
 
 [Terms of Service](docs/terms.html), [Privacy Policy](docs/privacy.html), [Help](docs/help.html), and [Contact](docs/contact.html) are in `docs/`. Website: https://hayness666.github.io/link-embedder/. Bot code and website are maintained together in this repository and licensed under [MIT](LICENSE). Third-party dependencies and linked content retain their own licenses and rights.
 
@@ -38,7 +38,7 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 
 Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the named proxy defaults after explicit approval of the entire recipient list in [PRIVACY.md](PRIVACY.md). This is a local deployment safeguard, **not** a claim that Discord enforces universal informed consent before installation. Installers must see the public privacy/help disclosure. Global `PLATFORM_MODE=card|native|off|<listed helper>` overrides remain available; Mastodon only allows card/off. There are no per-server preference settings.
 
-Cards contain platform/content type and a cleaned link, not invented media or metadata. Amazon cards, if explicitly selected, show its ASIN. No reliable official credential-free Amazon metadata source was verified; this bot does not add Creators API/Associates credentials or scrape Amazon. Discord decides native/helper unfurl results; playable media is not guaranteed. YouTube playback passed a live pilot check; other platforms remain unverified. Existing embeds can arrive after MessageCreate, so duplicate native previews can still occur; originals are never suppressed.
+Cards contain platform/content type and a cleaned link, not invented media or metadata. Amazon cards, if explicitly selected, show its ASIN. No reliable official credential-free Amazon metadata source was verified; this bot does not add Creators API/Associates credentials or scrape Amazon. Discord decides native/helper unfurl results; playable media is not guaranteed. YouTube and Instagram playback passed live pilot checks; other platforms remain unverified. Existing embeds can arrive after MessageCreate, so duplicate native previews can still occur; originals are never suppressed.
 
 ## Permissions and routing
 
@@ -71,3 +71,6 @@ Follow [SETUP.md](SETUP.md). Application creation, Message Content intent and Ar
 ## Helper availability
 
 Automatic helper fallback is disabled because Discord’s message API does not reliably expose rendered media. A provider outage may leave a plain helper link; the bot will not rewrite a working preview after a timer.
+
+### Instagram custom alpha cards
+Single Instagram links use one bounded request to the approved oginstagram.com helper to build a Components V2 card: plain author text, media, plain caption, and Instagram footer. No avatar, statistics, buttons or post timestamp. Discord controls media dimensions. The bot does not download media; Discord loads validated same-post helper media URLs. If the helper response cannot be used, the initial ordinary helper link remains. There is no delayed backup check. Mixed-platform messages keep their existing preview behavior. This depends on the helper response format and remains alpha.

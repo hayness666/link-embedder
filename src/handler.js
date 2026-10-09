@@ -1,5 +1,6 @@
 import { buildPayload } from './previews.js';
-export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now } = {}) {
+import { instagramPayload } from './instagram-card.js';
+export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = instagramPayload } = {}) {
   const guilds = new Map();
   return async function handle(message) {
     // Explicit emergency shutdown only; this is not a content-safety classifier.
@@ -22,7 +23,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     for (const [id, expiry] of cooldown) if (expiry <= time) cooldown.delete(id);
     state.recent = state.recent.filter(t => t > time - 60000);
     if (seen.has(message.id) || cooldown.has(message.channelId) || state.recent.length >= 20) return;
-    const payload = buildPayload(message.content ?? '', config.modes, message.embeds ?? []);
+    let payload = buildPayload(message.content ?? '', config.modes, message.embeds ?? []);
     if (!payload) return;
     seen.set(message.id, time + 600000);
     if (seen.size > 1000) seen.delete(seen.keys().next().value);
@@ -30,6 +31,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.recent.push(time);
     state.lastActive = time;
     try {
+      payload = await makeInstagramPayload(message.content ?? '', config.modes) || payload;
       if (config.repostEnabled && repost && await repost(message, payload)) return;
       await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
