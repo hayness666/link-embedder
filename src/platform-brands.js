@@ -7,7 +7,7 @@ export const brands = {
   vimeo: {name:'Vimeo', color:0x1ab7ea},
   giphy: {name:'GIPHY', color:0x00ff99},
   tenor: {name:'Tenor', color:0x007add},
-  instagram: { name: 'Instagram', color: 0xf359a3, emoji: 'instagramlogo:1558170063251574895' },
+  instagram: { name: 'Instagram', color: 0xe1306c, emoji: 'instagramlogo:1558170063251574895' },
   tiktok: { emoji: 'tiktok:1558173224842567840', name: 'TikTok', color: 0x25f4ee },
   facebook: { emoji: 'facebook:1558173225760854106', name: 'Facebook', color: 0x0866ff },
   amazon: { emoji: 'amazon:1558173227283644426', name: 'Amazon', color: 0xff9900 },

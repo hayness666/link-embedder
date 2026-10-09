@@ -59,7 +59,7 @@ export function parseInstagramCard(html, link) {
     const authorParts = author.split(/ (?=@\u200b)/);
     const authorLine = authorParts.length > 1 ? `**${authorParts[0]}** ${authorParts.slice(1).join(' ')}` : `**${author}**`;
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
-    return { type: 17, accent_color: 0xf359a3, components: [
+    return { type: 17, accent_color: 0xe1306c, components: [
       text(cardHeading(link)),
       ...(author ? [text(authorLine)] : []),
       { type: 12, items },
