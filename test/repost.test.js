@@ -22,13 +22,13 @@ test('repost must be explicitly enabled and limited to a server and channels', (
   assert.throws(() => readConfig({ REPOST_AS_AUTHOR: 'yes' }));
   assert.throws(() => readConfig({ REPOST_AS_AUTHOR: 'yes', TEST_GUILD_ID: '123456789012345678' }));
 });
-test('preserves text, uses author identity, prevents pings and labels the bot repost', () => {
+test('preserves text, uses author identity, prevents pings without adding a repost footer', () => {
   const { message } = fixture();
   const result = buildRepostPayload(message, preview);
   assert.ok(result.content.startsWith(message.content));
   assert.equal(result.username, 'Person');
   assert.deepEqual(result.allowedMentions, { parse: [], repliedUser: false });
-  assert.match(result.content, /Reposted by Link Embedder/);
+  assert.doesNotMatch(result.content, /Reposted by Link Embedder/);
   assert.equal(buildRepostPayload({ ...message, content: 'x'.repeat(2000) }, preview), null);
 });
 test('never replaces attachments, replies, polls, threads, reactions or suppressed messages', () => {
@@ -80,4 +80,13 @@ test('an identical native URL appears only once in the repost', () => {
   const url = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
   const payload = buildRepostPayload({ ...message, content: 'Test ' + url }, { content: url, embeds: [] });
   assert.equal(payload.content.split(url).length - 1, 1);
+});
+
+test('multiple native links and canonical aliases are not appended again', () => {
+  const { message } = fixture();
+  const original = 'Watch https://youtu.be/aqz-KE-bpKQ?t=1 and https://www.youtube.com/watch?v=dQw4w9WgXcQ.';
+  const result = buildRepostPayload({ ...message, content: original }, {
+    content: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ&t=1\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ', embeds: []
+  });
+  assert.equal(result.content, original);
 });

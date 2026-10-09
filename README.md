@@ -1,6 +1,6 @@
 # Link Embedder — Alpha
 
-Automatic, cleaned link previews for public media and Amazon products in Discord. Public multi-server routing needs **no per-server settings**: after installation, the bot handles new human messages wherever its actual channel permissions allow. Default reply mode preserves originals. Optional author-style reposts replace eligible originals after sending a labelled replacement; see [REPOST.md](REPOST.md). It never forces access, joins private threads, or requests Administrator. The current alpha is restricted to one configured test channel.
+Automatic, cleaned link previews for public media and Amazon products in Discord. Public multi-server routing needs **no per-server settings**: after installation, the bot handles new human messages wherever its actual channel permissions allow. Default reply mode preserves originals. Optional author-style reposts replace eligible originals after sending a webhook replacement; see [REPOST.md](REPOST.md). It never forces access, joins private threads, or requests Administrator. The current alpha is restricted to one configured test channel.
 
 ## Bot link and release status
 

@@ -4,11 +4,11 @@ Release stage: **Alpha**. Experimental; currently limited to the configured test
 
 Disabled by default. Set REPOST_AS_AUTHOR=yes only after the server owner approves deletion and webhook creation in the explicitly configured TEST_GUILD_ID / TEST_CHANNEL_IDS. This mode refuses an unrestricted configuration.
 
-Discord webhooks can display the sender's name and avatar, but remain webhook-authored. Each replacement states “Reposted by Link Embedder”. The original author cannot directly edit/delete the webhook post as their own; moderators can remove it. This changes message IDs and timestamps and does not preserve reply links. Tell participating members before enabling.
+Discord webhooks can display the sender's name and avatar, but remain webhook-authored. Discord displays its APP badge; no extra attribution footer is appended. The original author cannot directly edit/delete the webhook post as their own; moderators can remove it. This changes message IDs and timestamps and does not preserve reply links. Tell participating members before enabling.
 
 Required effective channel permissions: View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, Manage Webhooks. No Administrator. Grant the extra permissions to this bot only in the pilot text channel; do not expand the shared robots role. The developer portal permission calculator does not grant permissions. An existing installation needs actual server/channel permission updates.
 
-Only ordinary plain-text posts are eligible. Attachments, stickers, replies, polls, pins, threads, components, reactions, suppressed previews, overlong messages and unsupported display names keep their original post and use the ordinary preview response. Preserve all original text; append preview URLs/cards without additional mentions. The existing provider-sharing approval still applies.
+Only ordinary plain-text posts are eligible. Attachments, stickers, replies, polls, pins, threads, components, reactions, suppressed previews, overlong messages and unsupported display names keep their original post and use the ordinary preview response. Preserve all original text; avoid appending native links already present, and add preview cards without additional mentions. The existing provider-sharing approval still applies.
 
 The bot creates/reuses its own Link Embedder Reposts webhook in an enabled channel. Webhook credentials stay in process memory and are never printed or persisted by this code. Discord retains the webhook until a server administrator removes it under Channel Settings → Integrations. Disable reposts before removing it or the bot can recreate it.
 
