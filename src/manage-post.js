@@ -1,6 +1,6 @@
 export const COMMAND = 'Manage my post';
 export const REOPEN = 'To open this menu again, go to the post, open its options, choose **Apps**, choose **Link Embedder** if shown, then **Manage my post**.';
-const deny = 'Only the original poster can manage this repost. Older reposts without a saved ownership record cannot be managed.';
+const deny = 'This repost cannot be managed here. Older reposts without a saved ownership record cannot be managed.';
 const privateReply = content => ({content,flags:64,allowedMentions:{parse:[]}});
 
 export function spoilerComponents(components) {
@@ -18,11 +18,10 @@ export function spoilerComponents(components) {
   const result = components.map(visit);
   return mediaCount ? result : null;
 }
-export function managementMenu(id) {
-  return {...privateReply('**Manage your post**\n\n**Delete post** removes the whole repost; your original message will not be restored.\n**Mark NSFW** covers photos/videos with a spoiler. It does not age-restrict the post or channel.\n**Dismiss** closes this menu.\n\n'+REOPEN),components:[{type:1,components:[
-    {type:2,style:4,label:'Delete post',custom_id:`manage:delete:${id}`},
-    {type:2,style:2,label:'Mark NSFW',custom_id:`manage:nsfw:${id}`},
-    {type:2,style:2,label:'Dismiss',custom_id:`manage:dismiss:${id}`}
+export function managementMenu(id, isOwner = true) {
+  return {...privateReply('**MANAGE YOUR POST**\n\nAnyone can mark media NSFW. Only the original poster can delete the repost.\n\n'+REOPEN),components:[{type:1,components:[
+    ...(isOwner ? [{type:2,style:4,label:'Delete Post',custom_id:`manage:delete:${id}`}] : []),
+    {type:2,style:2,label:'Mark NSFW',custom_id:`manage:nsfw:${id}`}
   ]}]};
 }
 export function createManagementHandler(store, config, log = () => {}) {
@@ -33,12 +32,16 @@ export function createManagementHandler(store, config, log = () => {}) {
     if (!command && !button) return;
     const [,action,id] = command ? [null,'menu',interaction.targetId] : interaction.customId.split(':');
     const row = store.get(id);
-    if (!row || row.ownerId !== interaction.user.id || row.guildId !== interaction.guildId || row.channelId !== interaction.channelId
+    if (!row || row.guildId !== interaction.guildId || row.channelId !== interaction.channelId
       || row.guildId !== config.testGuildId || !config.channelIds.has(row.channelId)) {
       await interaction.reply(privateReply(deny)); return;
     }
+    const isOwner = row.ownerId === interaction.user.id;
+    if (action === 'delete' && !isOwner) {
+      await interaction.reply(privateReply('Only the original poster can delete this repost. Anyone can mark its media NSFW.')); return;
+    }
     if (action === 'dismiss') { await interaction.update({content:'Menu dismissed. '+REOPEN,components:[]}); return; }
-    if (action === 'menu') { await interaction.reply(managementMenu(id)); return; }
+    if (action === 'menu') { await interaction.reply(managementMenu(id, isOwner)); return; }
     if (busy.has(id)) { await interaction.reply(privateReply('An action on this post is already in progress.')); return; }
     busy.add(id);
     try {

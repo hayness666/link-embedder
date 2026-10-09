@@ -26,15 +26,17 @@ function fixture(action='menu') {
   reply:async p=>calls.push(p),update:async p=>calls.push(p),deferUpdate:async()=>{},editReply:async p=>calls.push(p)};
  return {calls,store,interaction,hook};
 }
-test('all actions reject other users before message or webhook access',async()=>{
- for(const action of ['menu','delete','nsfw','dismiss']){const f=fixture(action);f.interaction.user.id='wrong';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.length,1);assert.equal(f.calls[0].flags,64);assert.match(f.calls[0].content,/Only the original poster/);}
+test('non-owner can open NSFW-only menu and mark media, but cannot delete',async()=>{
+ const menu=fixture();menu.interaction.user.id='other';await createManagementHandler(menu.store,config)(menu.interaction);assert.deepEqual(menu.calls[0].components[0].components.map(c=>c.label),['Mark NSFW']);assert.equal(menu.calls[0].flags,64);
+ const f=fixture('nsfw');f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls[1].components[0].components[1].items[0].spoiler,true);assert.deepEqual(f.store.get(id),row);
+ const d=fixture('delete');d.interaction.user.id='other';await createManagementHandler(d.store,config)(d.interaction);assert.equal(d.calls.length,1);assert.match(d.calls[0].content,/Only the original poster can delete/);assert.deepEqual(d.store.get(id),row);
 });
 test('scope and missing ownership fail closed',async()=>{
- for(const patch of [{guildId:'wrong'},{channelId:'wrong'}]){const f=fixture();Object.assign(f.interaction,patch);await createManagementHandler(f.store,config)(f.interaction);assert.match(f.calls[0].content,/Only the original poster/);}
+ for(const patch of [{guildId:'wrong'},{channelId:'wrong'}]){const f=fixture();Object.assign(f.interaction,patch);await createManagementHandler(f.store,config)(f.interaction);assert.match(f.calls[0].content,/cannot be managed here/);}
  const f=fixture();f.store.get=()=>null;await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.length,1);
 });
 test('private menu labels and reopening directions match the requested flow',()=>{
- const menu=managementMenu(id);assert.equal(menu.flags,64);assert.deepEqual(menu.components[0].components.map(c=>c.label),['Delete post','Mark NSFW','Dismiss']);assert.match(menu.content,/go to the post, open its options, choose \*\*Apps\*\*, choose \*\*Link Embedder\*\* if shown, then \*\*Manage my post\*\*/);
+ const menu=managementMenu(id);assert.equal(menu.flags,64);assert.ok(menu.content.startsWith('**MANAGE YOUR POST**'));assert.doesNotMatch(menu.content,/removes the whole|covers photos|Dismiss/);assert.deepEqual(menu.components[0].components.map(c=>c.label),['Delete Post','Mark NSFW']);assert.match(menu.content,/go to the post, open its options, choose \*\*Apps\*\*, choose \*\*Link Embedder\*\* if shown, then \*\*Manage my post\*\*/);
 });
 test('dismiss keeps ownership and allows reopening',async()=>{const f=fixture('dismiss');await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.store.get(id),row);assert.deepEqual(f.calls[0].components,[]);});
 test('owner deletion removes the record only after confirmed webhook delete',async()=>{const f=fixture('delete');await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.calls.slice(0,3),['fetch','delete','remove']);assert.equal(f.store.get(id),null);});
