@@ -1,6 +1,5 @@
 import { PermissionFlagsBits as P, ChannelType } from 'discord.js';
 import { extractLinks, parseSocialUrl } from './previews.js';
-import { helperUrl } from './adapters.js';
 
 // Destructive replacement is deliberately restricted to plain text in opted-in text channels.
 export function canRepost(message, user) {
@@ -23,28 +22,12 @@ export function buildRepostPayload(message, preview, displayContent = message.co
       components: [...(displayContent && preview.components[0]?.content !== displayContent ? [{ type: 10, content: displayContent }] : []), ...preview.components],
       allowedMentions: { parse: [], repliedUser: false } };
   }
-  // Preserve source text except approved Instagram links replaced by their media helper.
+  // Preserve the sender's text exactly; helper/native URLs are separate preview data.
   const links = extractLinks(displayContent);
   const sourceUrls = new Set(links.map(link => link.url));
   const previewLines = (preview.content || '').split('\n');
-  const replacements = new Map(links.filter(link => link.platform === 'instagram')
-    .map(link => [link.url, helperUrl(link, 'oginstagram')])
-    .filter(([, helper]) => previewLines.includes(helper)));
-  const usedHelpers = new Set();
-  const source = displayContent.replace(/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|\[[^\]]*\]\([^)]*\)|https:\/\/[^\s<>]+/gi, token => {
-    if (!token.startsWith('https://')) return token;
-    const raw = token.replace(/[.,!?;:)\]}]+$/, '');
-    const helper = replacements.get(parseSocialUrl(raw)?.url);
-    if (!helper) {
-      const link = parseSocialUrl(raw);
-      if (link?.platform === 'youtube' && previewLines.includes(link.url)) return link.url + token.slice(raw.length);
-      return token;
-    }
-    usedHelpers.add(helper);
-    return helper + token.slice(raw.length);
-  });
+  const source = displayContent;
   const extraLines = previewLines.filter(line => {
-    if (usedHelpers.has(line)) return false;
     const original = /^Original: <(https:\/\/[^>]+)>$/.exec(line)?.[1];
     const canonical = parseSocialUrl(original || line)?.url;
     return line && !(canonical && sourceUrls.has(canonical));

@@ -67,9 +67,9 @@ test('normalizes stylized hashtag characters', () => {
 });
 
 test('headings use trusted original URLs and distinguish reels from posts',()=>{
- assert.equal(cardHeading({platform:'instagram',url:'https://www.instagram.com/reel/ABC'}),'**[Reel on Instagram ↗](<https://www.instagram.com/reel/ABC>)**');
- assert.match(cardHeading({platform:'instagram',url:'https://www.instagram.com/p/ABC'}),/Post on Instagram ↗/);
- assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/Tweet on Twitter ↗/);
+ assert.equal(cardHeading({platform:'instagram',url:'https://www.instagram.com/reel/ABC'}),'**[View reel on Instagram ↗](<https://www.instagram.com/reel/ABC>)**');
+ assert.match(cardHeading({platform:'instagram',url:'https://www.instagram.com/p/ABC'}),/View post on Instagram ↗/);
+ assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/View tweet on Twitter ↗/);
  assert.equal(cardHeading({platform:'twitter',url:'https://evil.test/'}),'');
  assert.ok(!cardHeading({platform:'medal',url:'https://medal.tv/games/game/clips/abc'},'[bad](https://evil.test)').includes('[bad]'));
 });

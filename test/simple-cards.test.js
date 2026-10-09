@@ -39,9 +39,9 @@ test('Medal uses its published direct CDN video instead of its redirect endpoint
  assert.equal(m.name,'Person');assert.equal(m.media[0],'https://cdn.medal.tv/mediac/abc.mp4?auth=public-signature');
 });
 
-test('Reddit title includes subreddit above media and does not repeat as caption',()=>{
+test('Reddit author line includes subreddit below title and does not repeat as caption',()=>{
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
- assert.equal(card.components[0].content,'**[r/cats: A cat ↗](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components[1].content,'**Poster**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
+ assert.equal(card.components[0].content,'**[A cat ↗](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components[1].content,'**r/cats**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
 });
 
 test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
@@ -70,4 +70,11 @@ test('quoted Twitter text is capped at 250 characters while main text stays full
  assert.ok(!quote.includes('https://twitter.com/quoted/status/456'));
  const exact=simpleCard({platform:'twitter'},{quote:{text:'😀'.repeat(250),url:'https://twitter.com/quoted/status/456'}}).components.find(c=>c.content?.includes('Quoted post')).content;
  assert.ok(exact.includes('😀'.repeat(250)));assert.ok(!exact.includes('…'));
+});
+
+test('Reddit extracts actual helper author and renders plain handle under title',()=>{
+ const m=metadataFromHtml('<meta property="og:title" content="Flock down!"><meta property="og:site_name" content="u/whiplashsaxifrage on r/GoldenCO - stats">','reddit');
+ const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/GoldenCO/comments/1wzioal/flock_down'},m);
+ assert.equal(card.components[1].content,'**r/GoldenCO** @\u200bwhiplashsaxifrage');
+ assert.ok(card.components[0].content.startsWith('**[Flock down! ↗]'));
 });

@@ -68,7 +68,10 @@ export function metadataFromHtml(html, platform) {
   let cardTitle = ['medal','imgur','streamable','reddit','linkedin'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
   if (['medal','imgur','streamable'].includes(platform)) caption = '';
   if (caption.trim() === cardTitle.trim()) caption = '';
-  if (platform === 'tiktok') {
+  if (platform === 'reddit') {
+    const author = /^u\/([A-Za-z0-9_-]{1,30}) on r\/[A-Za-z0-9_]+(?: |$)/.exec(get('og:site_name'));
+    if (author) username = author[1];
+  } else if (platform === 'tiktok') {
     const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
     if (author) [, name, username] = author;
   } else if (platform === 'twitch') {
@@ -109,10 +112,10 @@ export function simpleCard(link, metadata = null) {
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
   const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
   let title = typeof metadata?.title === 'string' ? metadata.title.trim() : '';
-  if (title && link.platform === 'reddit') {
-    const community = new URL(link.url).pathname.split('/')[2];
-    if (!title.toLowerCase().startsWith(`r/${community.toLowerCase()}:`)) title = `r/${community}: ${title}`;
-  }
+  const community = link.platform === 'reddit' ? /^\/r\/([A-Za-z0-9_]{1,30})\//.exec(new URL(link.url).pathname)?.[1] : '';
+  if (community) title = title.replace(new RegExp(`^r/${community}:\\s*`, 'i'), '');
+  const authorLine = community ? `**r/${plain(community)}**${user ? ` @\u200b${user}` : ''}`
+    : `${name ? `**${name}**` : ''}${user ? `${name ? ' ' : ''}@\u200b${user}` : ''}`;
   const titleLine = title ? plain([...title].slice(0,256).join('')) : '';
   const caption = typeof metadata?.caption === 'string' ? (link.platform === 'twitter' ? plain(metadata.caption) : shortCaption(metadata.caption)) : '';
   const text = content => ({type: 10, content});
@@ -122,10 +125,10 @@ export function simpleCard(link, metadata = null) {
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
-    ...(name ? [text(`**${name}**${user ? ` @\u200b${user}` : ''}`)] : titleLine || cardHeading(link, title) ? [] : [text(`**${brand.name}**`)]),
+    ...(authorLine ? [text(authorLine)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
-    ...(!media.length && !caption ? [text('Media preview unavailable. Open the original link above.')] : []),
+    ...(!media.length && !caption ? [text('Media preview unavailable.')] : []),
     ...(quoteText ? [text(quoteText)] : []),
     text(footer(link.platform))
   ] };

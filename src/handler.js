@@ -36,7 +36,9 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
       if (!payload) return;
       payload = await makeInstagramPayload(expanded, config.modes, message.embeds ?? []) || payload;
-      if (config.repostEnabled && repost && await repost(message, payload, expanded)) return;
+      // Expanded URLs select previews; the visible source remains exactly as written.
+      if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = message.content ?? '';
+      if (config.repostEnabled && repost && await repost(message, payload, message.content ?? '')) return;
       await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
   };
