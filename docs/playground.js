@@ -1,0 +1,33 @@
+'use strict';
+const $ = id => document.getElementById(id);
+const keys = ['title','url','description','color','placement','footer'];
+const defaults = Object.fromEntries(keys.map(k => [k,$(k).value]));
+let fields = [], imageUrl = null;
+function validUrl(value) { try {const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;} }
+function data(){return {...Object.fromEntries(keys.map(k=>[k,$(k).value])),fields:fields.map(f=>({...f}))};}
+function render(){
+ const d=data();$('preview-title').textContent=d.title;$('preview-description').textContent=d.description;$('preview-footer').textContent=d.footer;$('embed').style.borderLeftColor=d.color;
+ for(const type of ['image','thumbnail']){const img=$('preview-'+type);img.hidden=!imageUrl||d.placement!==type;if(imageUrl)img.src=imageUrl;else img.removeAttribute('src');}
+ $('preview-fields').replaceChildren(...fields.map(f=>{const box=document.createElement('div');box.className='preview-field'+(f.inline?' inline':'');const name=document.createElement('strong');name.textContent=f.name;const value=document.createElement('span');value.textContent=f.value;box.append(name,value);return box;}));
+ $('add-field').disabled=fields.length>=25;
+}
+function editors(){
+ $('fields').replaceChildren();fields.forEach((f,i)=>{const box=document.createElement('div');box.className='field';
+ for(const [key,limit] of [['name',256],['value',1024]]){const label=document.createElement('label');label.textContent=`Field ${i+1} ${key}`;const input=document.createElement(key==='value'?'textarea':'input');input.value=f[key];input.maxLength=limit;input.addEventListener('input',()=>{f[key]=input.value;render();});label.append(input);box.append(label);}
+ const label=document.createElement('label');label.className='inline';const check=document.createElement('input');check.type='checkbox';check.checked=f.inline;check.addEventListener('change',()=>{f.inline=check.checked;render();});label.append(check,document.createTextNode('Show beside other inline fields'));box.append(label);
+ const actions=document.createElement('div');actions.className='field-actions';for(const [text,offset] of [['↑',-1],['↓',1],['Remove',0]]){const b=document.createElement('button');b.textContent=text;b.setAttribute('aria-label',`${text==='Remove'?'Remove':offset<0?'Move up':'Move down'} field ${i+1}`);b.disabled=offset!==0&&(i+offset<0||i+offset>=fields.length);b.addEventListener('click',()=>{if(offset)[fields[i],fields[i+offset]]=[fields[i+offset],fields[i]];else fields.splice(i,1);editors();render();});actions.append(b);}box.append(actions);$('fields').append(box);
+ });render();
+}
+function removeImage(){if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=null;$('image').value='';render();}
+function download(name,object){const url=URL.createObjectURL(new Blob([JSON.stringify(object,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+keys.forEach(k=>$(k).addEventListener('input',render));
+$('add-field').addEventListener('click',()=>{if(fields.length<25){fields.push({name:'Field name',value:'Your text here',inline:false});editors();}});
+$('remove-image').addEventListener('click',removeImage);
+$('image').addEventListener('change',()=>{const file=$('image').files[0];if(!file)return;if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>10*1024*1024){$('status').textContent='Choose a PNG, JPEG, WebP or GIF under 10 MB.';return;}if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=URL.createObjectURL(file);render();});
+$('width').addEventListener('click',()=>{$('width').setAttribute('aria-pressed',String($('discord').classList.toggle('phone')));});
+$('theme').addEventListener('click',()=>{$('theme').setAttribute('aria-pressed',String($('discord').classList.toggle('light')));});
+$('reset').addEventListener('click',()=>{keys.forEach(k=>$(k).value=defaults[k]);fields=[];removeImage();editors();$('status').textContent='Reset to the current basic-card style.';});
+$('download').addEventListener('click',()=>{download('link-embedder-alpha-draft.json',{format:'link-embedder-alpha-draft',version:1,...data()});$('status').textContent='Draft saved. Local image files are not included; choose your image again when reopening.';});
+$('import').addEventListener('change',async()=>{const file=$('import').files[0];if(!file)return;try{if(file.size>100000)throw Error();const d=JSON.parse(await file.text());if(d.format!=='link-embedder-alpha-draft'||d.version!==1||!Array.isArray(d.fields)||d.fields.length>25)throw Error();for(const k of keys)if(typeof d[k]!=='string')throw Error();if(!/^#[0-9a-f]{6}$/i.test(d.color)||!['image','thumbnail','none'].includes(d.placement))throw Error();for(const f of d.fields)if(typeof f.name!=='string'||typeof f.value!=='string'||f.name.length>256||f.value.length>1024||typeof f.inline!=='boolean')throw Error();for(const [k,max]of [['title',256],['url',2048],['description',4096],['footer',2048]])if(d[k].length>max)throw Error();keys.forEach(k=>$(k).value=d[k]);fields=d.fields.map(({name,value,inline})=>({name,value,inline}));removeImage();editors();$('status').textContent='Draft opened. Choose a local image again if needed.';}catch{$('status').textContent='That file is not a supported Link Embedder draft.';}finally{$('import').value='';}});
+$('export').addEventListener('click',()=>{const d=data();if(d.url&&!validUrl(d.url)){$('status').textContent='Use a public HTTPS link without a username or password.';return;}if(fields.some(f=>!f.name.trim()||!f.value.trim())){$('status').textContent='Every field needs a name and value, or remove the empty field.';return;}const count=d.title.length+d.description.length+d.footer.length+fields.reduce((n,f)=>n+f.name.length+f.value.length,0);if(count>6000){$('status').textContent='Discord limits embed text to 6,000 characters. Shorten this card before exporting.';return;}if(!d.title.trim()&&!d.description.trim()&&!d.footer.trim()&&!fields.length){$('status').textContent='Add some text before exporting; local images are not included.';return;}const embed={color:parseInt(d.color.slice(1),16)};for(const k of ['title','url','description'])if(d[k])embed[k]=d[k];if(d.footer)embed.footer={text:d.footer};if(fields.length)embed.fields=fields.map(f=>({...f}));download('link-embedder-embed.json',{embeds:[embed],allowedMentions:{parse:[],repliedUser:false}});$('status').textContent='JSON exported. Local images are omitted. This is a design template; it has not been applied to the live bot.';});
+render();

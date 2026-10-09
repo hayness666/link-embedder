@@ -10,6 +10,10 @@ This is the saved Discord server-install link for application `15578582038978233
 
 [Terms of Service](docs/terms.html), [Privacy Policy](docs/privacy.html), [Help](docs/help.html), and [Contact](docs/contact.html) are in `docs/`. Website: https://hayness666.github.io/link-embedder/. Bot code and website are maintained together in this repository and licensed under [MIT](LICENSE). Third-party dependencies and linked content retain their own licenses and rights.
 
+## Design your previews
+
+Open the [visual playground](https://hayness666.github.io/link-embedder/playground.html) to edit a basic card, add/remove/reorder fields, try a local image, and export a draft or Discord embed JSON. It is a mockup, not a live Discord connection. Exports do not change the bot. The actual basic-card template is in `src/previews.js` inside `buildPayload`; native video/helper layouts are controlled by Discord and providers.
+
 ## Local verification
 
 Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, and `npm run check`. Tests mock messages and never contact Discord or providers. `npm start` requires an approved `DISCORD_TOKEN` secret. No token is included; the alpha runtime is deployed separately on Silly Development. The dependency lockfile pins discord.js.
