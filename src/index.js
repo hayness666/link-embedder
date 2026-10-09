@@ -29,9 +29,9 @@ const handle = createHandler(config, {
 client.on(Events.MessageCreate, message => { void handle(message).catch(() => console.warn('message_handler_failed')); });
 client.once(Events.ClientReady, async () => {
   console.info('link_embedder_ready');
-  if (config.repostEnabled && config.testGuildId) {
+  if (config.repostEnabled) {
     try {
-      await client.application.commands.create({name:COMMAND,type:3}, config.testGuildId);
+      await client.application.commands.create({name:COMMAND,type:3,integrationTypes:[0],contexts:[0]}, config.testGuildId || undefined);
       console.info('manage_post_command_ready');
     } catch { console.warn('manage_post_command_registration_failed'); }
   }

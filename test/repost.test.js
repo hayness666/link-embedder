@@ -17,10 +17,10 @@ function fixture() {
     delete: async () => calls.push(['delete']) };
   return { calls, hook, message };
 }
-test('repost must be explicitly enabled and limited to a server and channels', () => {
+test('repost must be explicitly enabled and permits optional test scope', () => {
   assert.equal(readConfig({}).repostEnabled, false);
-  assert.throws(() => readConfig({ REPOST_AS_AUTHOR: 'yes' }));
-  assert.throws(() => readConfig({ REPOST_AS_AUTHOR: 'yes', TEST_GUILD_ID: '123456789012345678' }));
+  assert.equal(readConfig({ REPOST_AS_AUTHOR: 'yes' }).repostEnabled, true);
+  assert.equal(readConfig({ REPOST_AS_AUTHOR: 'yes', TEST_GUILD_ID: '123456789012345678' }).testGuildId, '123456789012345678');
 });
 test('preserves text, uses author identity, prevents pings without adding a repost footer', () => {
   const { message } = fixture();

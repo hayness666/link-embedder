@@ -42,3 +42,9 @@ test('dismiss keeps ownership and allows reopening',async()=>{const f=fixture('d
 test('owner deletion removes the record only after confirmed webhook delete',async()=>{const f=fixture('delete');await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.calls.slice(0,3),['fetch','delete','remove']);assert.equal(f.store.get(id),null);});
 test('spoiler covers gallery media without changing caption or permitting mentions',async()=>{const f=fixture('nsfw');await createManagementHandler(f.store,config)(f.interaction);const payload=f.calls[1];assert.equal(payload.components[0].components[1].items[0].spoiler,true);assert.equal(payload.components[0].components[0].content,'Caption remains');assert.deepEqual(payload.allowedMentions.parse,[]);assert.equal(payload.components[0].components[1].items[0].media.proxy_url,undefined);assert.equal(spoilerComponents([{type:10,content:'native'}]),null);});
 test('failed delete preserves ownership and avoids claiming success',async()=>{const f=fixture('delete');f.hook.deleteMessage=async()=>{throw Error('secret');};await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.store.get(id),row);assert.match(f.calls.at(-1).content,/could not confirm/);});
+
+test('public configuration permits matching saved records across guilds but rejects cross-guild actions',async()=>{
+ const publicConfig={testGuildId:null,channelIds:new Set()};
+ const f=fixture('nsfw');f.interaction.user.id='other';await createManagementHandler(f.store,publicConfig)(f.interaction);assert.equal(f.calls[1].components[0].components[1].items[0].spoiler,true);
+ const wrong=fixture('delete');wrong.interaction.guildId='another';await createManagementHandler(wrong.store,publicConfig)(wrong.interaction);assert.equal(wrong.calls.length,1);assert.match(wrong.calls[0].content,/cannot be managed here/);
+});

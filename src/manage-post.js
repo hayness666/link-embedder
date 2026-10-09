@@ -33,7 +33,7 @@ export function createManagementHandler(store, config, log = () => {}) {
     const [,action,id] = command ? [null,'menu',interaction.targetId] : interaction.customId.split(':');
     const row = store.get(id);
     if (!row || row.guildId !== interaction.guildId || row.channelId !== interaction.channelId
-      || row.guildId !== config.testGuildId || !config.channelIds.has(row.channelId)) {
+      || (config.testGuildId && row.guildId !== config.testGuildId) || (config.channelIds.size && !config.channelIds.has(row.channelId))) {
       await interaction.reply(privateReply(deny)); return;
     }
     const isOwner = row.ownerId === interaction.user.id;
