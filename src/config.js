@@ -7,7 +7,7 @@ export function readConfig(env) {
   if (channels.some(id => !snowflake.test(id)) || (channels.length && !testGuildId)) throw new Error('Test channels require valid IDs and a test server.');
   const repostEnabled = env.REPOST_AS_AUTHOR === 'yes';
   const modes = {};
-  for (const platform of ['primevideo', 'netflix', 'instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon', 'medal', 'streamable', 'imgur', 'ifunny', 'vimeo', 'giphy', 'tenor']) {
+  for (const platform of ['threads', 'primevideo', 'netflix', 'instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon', 'medal', 'streamable', 'imgur', 'ifunny', 'vimeo', 'giphy', 'tenor']) {
     const sharingApproved = env.PROVIDER_SHARING_APPROVED === 'yes' || (platform === 'instagram' && env.INSTAGRAM_SHARING_APPROVED === 'yes');
     const defaultMode = ['amazon', 'youtube', 'ifunny', 'vimeo', 'giphy', 'tenor'].includes(platform) ? 'native'
       : sharingApproved && helperModes[platform] ? helperModes[platform] : 'card';

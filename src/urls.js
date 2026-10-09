@@ -7,6 +7,7 @@ export const amazonMarkets = new Set([
   'amazon.ae', 'amazon.sa', 'amazon.com.tr', 'amazon.eg', 'amazon.co.za'
 ]);
 const socialHosts = new Set([
+  'threads.com', 'www.threads.com', 'threads.net', 'www.threads.net',
   'netflix.com', 'www.netflix.com', 'primevideo.com', 'www.primevideo.com',
   'instagram.com', 'www.instagram.com', 'tiktok.com', 'www.tiktok.com',
   'facebook.com', 'www.facebook.com', 'm.facebook.com',

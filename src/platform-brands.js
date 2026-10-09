@@ -1,5 +1,6 @@
 // Representative site brand colors; Discord places the accent on the left.
 export const brands = {
+  threads: {name:'Threads', color:0x181818},
   primevideo: {name:'Prime Video', color:0x00a8e1},
   netflix: {name:'Netflix', color:0xe50914},
   medal: {emoji:'medal:1558178735574745229', name:'Medal', color:0xffcc00},

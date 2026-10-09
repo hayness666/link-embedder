@@ -43,6 +43,7 @@ User prose is preserved. Preview URLs may be canonicalized independently. Explic
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
 | Twitter Spaces / Lists / Communities | Linked resource card | Matching Discord metadata when available; no audio player or private membership access |
+| Threads public posts | Custom card | Public post text and allowlisted photo/MP4 metadata when exposed; otherwise linked unavailable card. No login or third-party helper. |
 | Netflix / Prime Video | Linked title or storefront card | Matching Discord metadata/image when available; no embedded playback |
 
 Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the seven documented helpers after approval of the recipients in [PRIVACY.md](PRIVACY.md). Installers should see the privacy/help disclosure. Platform overrides use `PLATFORM_MODE=card|native|off|<listed helper>`; Mastodon allows card/off only. Native-only modes other than Amazon are left untouched in replacement mode. Legacy reply mode remains available in code but is not the requested replacement-only deployment behavior.

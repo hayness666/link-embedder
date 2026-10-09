@@ -4,6 +4,7 @@ export function parseAdditional(u) {
   const host = u.hostname.replace(/^www\./, '');
   const path = u.pathname.replace(/\/$/, '');
   const result = (platform, kind, url = u.href) => ({ platform, kind, url });
+  if (['threads.com', 'threads.net'].includes(host) && /^\/(?:@[A-Za-z0-9_.]{1,30}\/post|t)\/[A-Za-z0-9_-]{1,64}$/.test(path)) return result('threads', 'post', `https://www.threads.com${path}`);
   if (host === 'primevideo.com' && primeVideoPath(path)) return result('primevideo', path.includes('/storefront/') ? 'storefront' : 'title', `https://www.primevideo.com${path}`);
   if (host === 'netflix.com' && /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:watch|title)\/\d{1,12}$/.test(path)) return result('netflix', 'title', `https://www.netflix.com${path}`);
   if (host === 'medal.tv' && /^\/games\/[A-Za-z0-9_-]{1,100}\/clips\/[A-Za-z0-9_-]{1,100}$/.test(path)) return result('medal', 'clip', `https://medal.tv${path}`);

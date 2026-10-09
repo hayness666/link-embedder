@@ -26,7 +26,7 @@ export function validMedia(raw, platform) {
   try {
     const u = new URL(raw);
     return typeof raw === 'string' && raw.length <= 2048 && u.protocol === 'https:' && !u.username && !u.password && !u.port && !u.hash
-      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'netflix' && /^occ-[a-z0-9-]+\.[0-9]+\.nflxso\.net$/.test(u.hostname)) || (platform === 'facebook' && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
+      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'netflix' && /^occ-[a-z0-9-]+\.[0-9]+\.nflxso\.net$/.test(u.hostname)) || (['facebook','threads'].includes(platform) && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
   } catch { return false; }
 }
 const decode = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
@@ -45,7 +45,7 @@ export function readMeta(html) {
   }
   return tags;
 }
-export function metadataFromHtml(html, platform) {
+export function metadataFromHtml(html, platform, expectedUrl) {
   // Medal publishes a direct CDN URL in its public VideoObject metadata.
   // Its og:video endpoint is a redirect that Discord galleries may reject.
   if (platform === 'medal') {
@@ -60,6 +60,21 @@ export function metadataFromHtml(html, platform) {
     }
   }
   const tags = readMeta(html), get = name => tags.get(name)?.[0] || '';
+  if (platform === 'threads') {
+    // A profile image and generic shell are not post media. Require matching
+    // public post identity and actual post text before accepting OG images.
+    const canonical = parseSocialUrl(get('og:url'));
+    if (!expectedUrl || canonical?.platform !== 'threads' || canonical.url !== expectedUrl
+      || /log in to continue|login required|content isn't available/i.test(get('og:title') + ' ' + get('og:description'))) return null;
+    const caption = get('og:description').trim();
+    if (!caption || /^(?:join|log in to|sign up for|view on) threads/i.test(caption)) return null;
+    const author = /^(.*?)\s*\(@([A-Za-z0-9_.]{1,30})\) on Threads$/.exec(get('og:title'));
+    const video = get('og:video:type') === 'video/mp4'
+      ? [get('og:video:secure_url'), get('og:video')].find(url => validMedia(url, platform)) : null;
+    // t39.92108 assets are profile pictures, including the observed public shell.
+    const images = [...new Set(tags.get('og:image') || [])].filter(url => validMedia(url, platform) && !url.includes('/t39.92108-'));
+    return {name:author?.[1] || '', username:author?.[2] || '', caption, media:video ? [video] : images.slice(0,10)};
+  }
   if (platform === 'facebook') {
     if (/temporarily blocked|log in to continue|login required/i.test(html)) return null;
     // Public Open Graph thumbnails only, not private media or playable videos.
@@ -207,14 +222,14 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
       if (link.platform === 'bluesky') { const p = original.pathname.split('/'); url = `https://api.fxbsky.app/2/status/${encodeURIComponent(p[2])}/${p[4]}`; }
       const body = await readBounded(url, fetcher);
       if (body) {
-        try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform); } catch { /* leave original link available */ }
+        try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform, link.url); } catch { /* leave original link available */ }
       }
     }
-    if (['medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
+    if (['threads','medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
       if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
       else {
         const body = await readBounded(link.url, fetcher);
-        if (body) metadata = metadataFromHtml(body, link.platform);
+        if (body) metadata = metadataFromHtml(body, link.platform, link.url);
       }
     }
     if (['youtube','vimeo'].includes(link.platform)) {
@@ -232,7 +247,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     }
     if (!metadata || (!metadata.title && !metadata.name && !metadata.media?.length && !metadata.caption)) {
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
-      if (embed) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: link.platform === 'amazon' ? [embed.image?.url || embed.thumbnail?.url].filter(u=>u && validMedia(u,'amazon')) : [] };
+      if (embed && link.platform !== 'threads') metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: link.platform === 'amazon' ? [embed.image?.url || embed.thumbnail?.url].filter(u=>u && validMedia(u,'amazon')) : [] };
     }
     // A companion is separate from the untouched source's native player/gallery.
     // Do not add a second thumbnail for sites already showing native media.
