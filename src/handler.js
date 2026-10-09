@@ -1,6 +1,7 @@
 import { buildPayload } from './previews.js';
+import {shortLinks,expandShortLinks} from './short-links.js';
 import { simplePayload } from './simple-cards.js';
-export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload } = {}) {
+export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks } = {}) {
   const guilds = new Map();
   return async function handle(message) {
     // Explicit emergency shutdown only; this is not a content-safety classifier.
@@ -24,15 +25,18 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.recent = state.recent.filter(t => t > time - 60000);
     if (seen.has(message.id) || cooldown.has(message.channelId) || state.recent.length >= 20) return;
     let payload = buildPayload(message.content ?? '', config.modes, message.embeds ?? []);
-    if (!payload) return;
+    if (!payload && !shortLinks(message.content ?? '').length) return;
     seen.set(message.id, time + 600000);
     if (seen.size > 1000) seen.delete(seen.keys().next().value);
     cooldown.set(message.channelId, time + 3000);
     state.recent.push(time);
     state.lastActive = time;
     try {
-      payload = await makeInstagramPayload(message.content ?? '', config.modes, message.embeds ?? []) || payload;
-      if (config.repostEnabled && repost && await repost(message, payload)) return;
+      const expanded = await expandLinks(message.content ?? '', config.modes);
+      payload = buildPayload(expanded, config.modes, message.embeds ?? []);
+      if (!payload) return;
+      payload = await makeInstagramPayload(expanded, config.modes, message.embeds ?? []) || payload;
+      if (config.repostEnabled && repost && await repost(message, payload, expanded)) return;
       await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
   };

@@ -14,24 +14,24 @@ export function canRepost(message, user) {
     ]));
 }
 
-export function buildRepostPayload(message, preview) {
+export function buildRepostPayload(message, preview, displayContent = message.content) {
   if (preview.flags === 32768) {
     const name = message.member?.displayName || message.author?.globalName || message.author?.username || 'Member';
-    if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80 || message.content.length > 2000) return null;
+    if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80 || displayContent.length > 2000) return null;
     return { ...preview, withComponents: true, username: name,
       avatarURL: message.member?.displayAvatarURL?.() || message.author?.displayAvatarURL?.(),
-      components: [...(message.content && preview.components[0]?.content !== message.content ? [{ type: 10, content: message.content }] : []), ...preview.components],
+      components: [...(displayContent && preview.components[0]?.content !== displayContent ? [{ type: 10, content: displayContent }] : []), ...preview.components],
       allowedMentions: { parse: [], repliedUser: false } };
   }
   // Preserve source text except approved Instagram links replaced by their media helper.
-  const links = extractLinks(message.content);
+  const links = extractLinks(displayContent);
   const sourceUrls = new Set(links.map(link => link.url));
   const previewLines = (preview.content || '').split('\n');
   const replacements = new Map(links.filter(link => link.platform === 'instagram')
     .map(link => [link.url, helperUrl(link, 'oginstagram')])
     .filter(([, helper]) => previewLines.includes(helper)));
   const usedHelpers = new Set();
-  const source = message.content.replace(/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|\[[^\]]*\]\([^)]*\)|https:\/\/[^\s<>]+/gi, token => {
+  const source = displayContent.replace(/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|\[[^\]]*\]\([^)]*\)|https:\/\/[^\s<>]+/gi, token => {
     if (!token.startsWith('https://')) return token;
     const raw = token.replace(/[.,!?;:)\]}]+$/, '');
     const helper = replacements.get(parseSocialUrl(raw)?.url);
@@ -59,9 +59,9 @@ export function buildRepostPayload(message, preview) {
 }
 
 export function createReposter(user, log = () => {}, owners = null) {
-  return async (message, preview) => {
+  return async (message, preview, displayContent = message.content) => {
     if (!canRepost(message, user)) return false;
-    const payload = buildRepostPayload(message, preview);
+    const payload = buildRepostPayload(message, preview, displayContent);
     if (!payload) return false;
     let replacement;
     let hook;

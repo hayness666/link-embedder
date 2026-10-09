@@ -15,8 +15,8 @@ test('OG media prefers one direct video source and rejects foreign hosts',()=>{
  for(const url of ['https://video.twimg.com.evil.test/a.mp4','https://user:password@video.twimg.com/a.mp4','http://video.twimg.com/a.mp4','https://127.0.0.1/a'])assert.equal(validMedia(url,'twitter'),false);
  assert.equal(metadataFromFx({code:200,status:{author:{protected:true}}},'twitter'),null);
 });
-test('custom card keeps name bold, handle plain, caption after media and 250 characters',()=>{
- const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components[0].content,'**Person** @\u200btest');assert.equal(card.components[1].type,12);assert.equal([...card.components[2].content].length,250);assert.match(card.components.at(-1).content,/via <@1557858203897823304>/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
+test('custom card keeps name bold, handle plain, caption after media and Twitter text above 250 characters',()=>{
+ const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components[0].content,'**Person** @\u200btest');assert.equal(card.components[1].type,12);assert.equal([...card.components[2].content].length,251);assert.match(card.components.at(-1).content,/via <@1557858203897823304>/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
 });
 test('unapproved helpers are never requested; native players remain intact',async()=>{
  let calls=0;const fetcher=async()=>{calls++;throw Error('offline');};
@@ -42,4 +42,32 @@ test('Medal uses its published direct CDN video instead of its redirect endpoint
 test('Reddit title includes subreddit above media and does not repeat as caption',()=>{
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
  assert.equal(card.components[0].content,'**r/cats: A cat**');assert.equal(card.components[1].content,'**Poster**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
+});
+
+test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
+ const url='https://www.facebook.com/photo?fbid=1806517487514738&set=a.638414764325022';
+ assert.equal(parseSocialUrl(url).url,'https://www.facebook.com/photo.php?fbid=1806517487514738&set=a.638414764325022');
+ const media='https://scontent-den2-1.xx.fbcdn.net/photo.jpg';
+ const m=metadataFromHtml(`<meta property="og:image" content="${media}"><meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://scontent-den2-1.xx.fbcdn.net/video.mp4">`,'facebook');assert.deepEqual(m.media,[media]);
+ for(const raw of ['https://scontent-den2-1.xx.fbcdn.net.evil.test/photo.jpg','https://evil.fbcdn.net/photo.jpg','http://scontent-den2-1.xx.fbcdn.net/photo.jpg'])assert.equal(validMedia(raw,'facebook'),false);
+ assert.equal(metadataFromHtml('<meta property="og:image" content="'+media+'">Log in to continue','facebook'),null);
+ const p=await simplePayload(url,readConfig({}).modes,[],async()=>html(`<meta property="og:image" content="${media}">`));assert.equal(p.components[1].components[1].items[0].media.url,media);
+});
+
+test('Twitter retains full text and places a quote in an indented block',()=>{
+ const m=metadataFromFx({code:200,tweet:{text:'a'.repeat(1500),author:{name:'Person'},quote:{text:'Quoted text',url:'https://twitter.com/person/status/456',author:{name:'Quoted author',screen_name:'person'}}}},'twitter');
+ const card=simpleCard({platform:'twitter'},m);assert.ok(card.components.some(c=>c.content==='a'.repeat(1500)));assert.ok(card.components.some(c=>c.content?.includes('> Quoted text')&&!c.content.includes('https://twitter.com/person/status/456')));
+});
+test('oversized Twitter cards preserve the original/helper route instead of truncating',async()=>{
+ const p=await simplePayload('https://twitter.com/test/status/123',readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes,[],async()=>new Response(JSON.stringify({code:200,tweet:{text:'a'.repeat(6000),author:{name:'Person'}}}),{headers:{'Content-Type':'application/json'}}));assert.equal(p,null);
+});
+
+test('quoted Twitter text is capped at 250 characters while main text stays full',()=>{
+ const card=simpleCard({platform:'twitter'},{caption:'m'.repeat(1200),quote:{name:'Quoted author',username:'quoted',text:'q'.repeat(251),url:'https://twitter.com/quoted/status/456'}});
+ assert.ok(card.components.some(c=>c.content==='m'.repeat(1200)));
+ const quote=card.components.find(c=>c.content?.includes('**Quoted author**')).content;
+ assert.ok(quote.endsWith('> '+'q'.repeat(249)+'…'));
+ assert.ok(!quote.includes('https://twitter.com/quoted/status/456'));
+ const exact=simpleCard({platform:'twitter'},{quote:{text:'😀'.repeat(250),url:'https://twitter.com/quoted/status/456'}}).components.find(c=>c.content?.includes('Quoted post')).content;
+ assert.ok(exact.includes('😀'.repeat(250)));assert.ok(!exact.includes('…'));
 });

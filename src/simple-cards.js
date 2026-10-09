@@ -20,7 +20,7 @@ export function validMedia(raw, platform) {
   try {
     const u = new URL(raw);
     return typeof raw === 'string' && raw.length <= 2048 && u.protocol === 'https:' && !u.username && !u.password && !u.port && !u.hash
-      && (mediaHosts[platform] || []).includes(u.hostname);
+      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'facebook' && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
   } catch { return false; }
 }
 const decode = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
@@ -54,6 +54,11 @@ export function metadataFromHtml(html, platform) {
     }
   }
   const tags = readMeta(html), get = name => tags.get(name)?.[0] || '';
+  if (platform === 'facebook') {
+    if (/temporarily blocked|log in to continue|login required/i.test(html)) return null;
+    // Public Open Graph thumbnails only, not private media or playable videos.
+    return {media:(tags.get('og:image') || []).filter(url => validMedia(url, platform)).slice(0,1)};
+  }
   const type = get('og:video:type') || get('twitter:player:stream:content_type');
   const videos = type === 'video/mp4' ? [...(tags.get('og:video') || []), ...(tags.get('og:video:secure_url') || []), ...(tags.get('twitter:player:stream') || [])] : [];
   const validVideos = videos.filter(url => validMedia(url, platform));
@@ -78,7 +83,10 @@ export function metadataFromFx(data, platform) {
   if (data.code !== 200 || !post || post.type === 'tombstone' || post.author?.protected) return null;
   const entries = post.media?.all || [...(post.media?.photos || []), ...(post.media?.videos || [])];
   const media = entries.map(item => item.url).filter(url => validMedia(url, platform)).slice(0, 10);
-  return { name: post.author?.name || '', username: post.author?.screen_name || '', caption: post.text || '', media };
+  const q = post.quote;
+  const quotedUrl = typeof q?.url === 'string' ? parseSocialUrl(q.url) : null;
+  const quote = platform === 'twitter' && q && !q.author?.protected && quotedUrl?.platform === 'twitter' ? {name:q.author?.name || '',username:q.author?.screen_name || '',text:typeof q.text === 'string' ? q.text : '',url:quotedUrl.url} : null;
+  return { name: post.author?.name || '', username: post.author?.screen_name || '', caption: post.text || '', media, quote };
 }
 async function readBounded(url, fetcher) {
   let response;
@@ -106,14 +114,19 @@ export function simpleCard(link, metadata = null) {
     if (!title.toLowerCase().startsWith(`r/${community.toLowerCase()}:`)) title = `r/${community}: ${title}`;
   }
   const titleLine = title ? plain([...title].slice(0,256).join('')) : '';
-  const caption = typeof metadata?.caption === 'string' ? shortCaption(metadata.caption) : '';
+  const caption = typeof metadata?.caption === 'string' ? (link.platform === 'twitter' ? plain(metadata.caption) : shortCaption(metadata.caption)) : '';
   const text = content => ({type: 10, content});
+  const quote = metadata?.quote;
+  const quotedUrl = typeof quote?.url === 'string' ? parseSocialUrl(quote.url) : null;
+  const quoteText = link.platform === 'twitter' && quotedUrl?.platform === 'twitter'
+    ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : ''; 
   return { type: 17, accent_color: brand.color, components: [
     ...(titleLine ? [text(`**${titleLine}**`)] : []),
     ...(name ? [text(`**${name}**${user ? ` @\u200b${user}` : ''}`)] : titleLine ? [] : [text(`**${brand.name}**`)]),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(!media.length && !caption ? [text('Media preview unavailable. Open the original link above.')] : []),
+    ...(quoteText ? [text(quoteText)] : []),
     text(footer(link.platform))
   ] };
 }
@@ -138,7 +151,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform); } catch { /* leave original link available */ }
       }
     }
-    if (['medal','streamable','imgur','linkedin'].includes(link.platform)) {
+    if (['medal','streamable','imgur','linkedin'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
       if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
       else {
         const body = await readBounded(link.url, fetcher);
@@ -151,5 +164,9 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     }
     return simpleCard(link, metadata);
   }));
-  return { flags:32768, components:[{type:10,content:content.slice(0,2000)},...components], allowedMentions:{parse:[],repliedUser:false} };
+  const all = [{type:10,content:content.slice(0,2000)},...components];
+  const textSize = nodes => nodes.reduce((n,c)=>n+(c.type===10 ? c.content.length : 0)+(c.components ? textSize(c.components):0),0);
+  // Never silently truncate long Twitter text; preserve the original/helper route instead.
+  if (textSize(all)>4000) return null;
+  return { flags:32768, components:all, allowedMentions:{parse:[],repliedUser:false} };
 }

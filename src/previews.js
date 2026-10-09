@@ -26,6 +26,8 @@ export function parseSocialUrl(raw) {
     kind = 'reel';
   } else if (platform === 'facebook' && ['/photo', '/photo.php'].includes(path) && /^\d{1,30}$/.test(u.searchParams.get('fbid') ?? '')) {
     kind = 'photo'; query = `?fbid=${u.searchParams.get('fbid')}`; path = '/photo.php';
+    const album = u.searchParams.get('set');
+    if (/^(?:a\.)?\d{1,30}$/.test(album ?? '')) query += `&set=${album}`;
   } else if (platform === 'facebook' && /^\/[A-Za-z0-9.]+\/photos\/(?:[A-Za-z0-9._-]+\/)?\d{1,30}$/.test(path)) {
     kind = 'photo';
   } else if (platform === 'facebook' && ['/story.php', '/permalink.php'].includes(path)

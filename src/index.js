@@ -23,7 +23,7 @@ const manage = createManagementHandler(owners, config, event => console.warn(eve
 client.on(Events.InteractionCreate, interaction => { void manage(interaction).catch(() => console.warn('manage_interaction_failed')); });
 const handle = createHandler(config, {
   log: event => console.warn(event),
-  repost: (message, payload) => createReposter(client.user, event => console.warn(event), owners)(message, payload),
+  repost: (message, payload, displayContent) => createReposter(client.user, event => console.warn(event), owners)(message, payload, displayContent),
   canSend: message => canSendPreview(message, client.user)
 });
 client.on(Events.MessageCreate, message => { void handle(message).catch(() => console.warn('message_handler_failed')); });
