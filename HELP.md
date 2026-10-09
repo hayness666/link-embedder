@@ -1,5 +1,7 @@
 # Link Embedder Alpha help
 
+We know Twitter’s name has legally changed, but we still call it Twitter.
+
 Share a canonical HTTPS link to a supported public post or Amazon product. Link Embedder automatically posts a cleaned preview in channels and active threads where it has permission. No commands or per-server setup are required. Default reply mode preserves the original. The public alpha uses author-style reposts; see [REPOST.md](REPOST.md). Anyone with permission to install apps can add it to a server; channel permissions determine where it works.
 
 Ordinary supported public links also work in age-restricted Discord channels. Channel labels do not tell the bot whether a linked image or video is explicit, and the bot has no media classifier. Use it for ordinary non-explicit content; no guarantee of automatic explicit-content filtering is made. It supports no dedicated adult-site adapters and never bypasses a source site's age, login or privacy restrictions.

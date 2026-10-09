@@ -1,5 +1,7 @@
 # Link Embedder — Alpha
 
+We know Twitter’s name has legally changed, but we still call it Twitter.
+
 Automatic previews for supported public links in Discord. **Public alpha — anyone with permission to install apps can add Link Embedder to a server. Give it the required permissions in every channel where you want it to work.** This project is in pre-release alpha. Repository behavior and the hosted bot can differ until deployment; this README is not a live uptime report or release log.
 
 ## Install and setup
