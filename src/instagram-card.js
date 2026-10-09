@@ -29,9 +29,11 @@ export function cardHeading(link, title = '') {
   if (!canonical || canonical.platform !== link.platform) return '';
   const kind = canonical.platform === 'amazon' ? 'Product' : canonical.platform === 'twitter' ? 'Tweet' : canonical.kind === 'reel' ? 'Reel'
     : canonical.kind === 'clip' ? 'Clip' : canonical.kind === 'video' ? 'Video' : 'Post';
-  const label = title || `View ${kind.toLowerCase()} on ${brands[link.platform]?.name || link.platform}`;
+  const brand = brands[link.platform]?.name || link.platform;
+  const isShort = canonical.platform === 'youtube' && /\/shorts\//.test(link.url);
+  const label = title || (canonical.platform === 'twitter' ? 'Tweet on Twitter' : isShort ? 'YouTube Short' : `${brand} ${kind.toLowerCase()}`);
   const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
-  return `### [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
+  return `## [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
 }
 
 export function parseInstagramCard(html, link) {

@@ -146,7 +146,7 @@ export function simpleCard(link, metadata = null) {
     ...(authorLine ? [text(authorLine)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
-    ...(destination ? [text(`[Visit website ↗](<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>)`)] : []),
+    ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
     ...(!media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
     ...(quoteText ? [text(quoteText)] : []),
     text(footer(link.platform))
