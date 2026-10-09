@@ -6,7 +6,7 @@ let fields = [], imageUrl = null;
 function validUrl(value) { try {const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;} }
 function data(){return {...Object.fromEntries(keys.map(k=>[k,$(k).value])),fields:fields.map(f=>({...f}))};}
 function render(){
- const d=data();$('preview-title').textContent=d.title;$('preview-description').textContent=d.description;$('preview-footer').textContent=d.footer;const colorValid=/^#[0-9a-f]{6}$/i.test(d.color);$('color').setAttribute('aria-invalid',String(!colorValid));$('color').setCustomValidity(colorValid?'':'Enter a hex color like #5865F2.');$('download').disabled=!colorValid;$('export').disabled=!colorValid;if(colorValid)$('embed').style.borderLeftColor=d.color;
+ const d=data();$('preview-title').textContent=d.title;$('preview-description').textContent=d.description;$('preview-footer').textContent=d.footer;const colorValid=/^#[0-9a-f]{6}$/i.test(d.color);$('color').setAttribute('aria-invalid',String(!colorValid));$('color').setCustomValidity(colorValid?'':'Enter a hex color like #5865F2.');$('download').disabled=!colorValid;$('export').disabled=!colorValid;if(colorValid){$('embed').style.borderLeftColor=d.color;$('color-picker').value=d.color;}
  for(const type of ['image','thumbnail']){const img=$('preview-'+type);img.hidden=!imageUrl||d.placement!==type;if(imageUrl)img.src=imageUrl;else img.removeAttribute('src');}
  $('preview-fields').replaceChildren(...fields.map(f=>{const box=document.createElement('div');box.className='preview-field'+(f.inline?' inline':'');const name=document.createElement('strong');name.textContent=f.name;const value=document.createElement('span');value.textContent=f.value;box.append(name,value);return box;}));
  $('add-field').disabled=fields.length>=25;
@@ -21,6 +21,7 @@ function editors(){
 function removeImage(){if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=null;$('image').value='';render();}
 function download(name,object){const url=URL.createObjectURL(new Blob([JSON.stringify(object,null,2)+'\n'],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 keys.forEach(k=>$(k).addEventListener('input',render));
+$('color-picker').addEventListener('input',()=>{$('color').value=$('color-picker').value.toUpperCase();render();});
 $('add-field').addEventListener('click',()=>{if(fields.length<25){fields.push({name:'Field name',value:'Your text here',inline:false});editors();}});
 $('remove-image').addEventListener('click',removeImage);
 $('image').addEventListener('change',()=>{const file=$('image').files[0];if(!file)return;if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>10*1024*1024){$('status').textContent='Choose a PNG, JPEG, WebP or GIF under 10 MB.';return;}if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=URL.createObjectURL(file);render();});
