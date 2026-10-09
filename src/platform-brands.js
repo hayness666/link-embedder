@@ -1,5 +1,7 @@
 // Representative site brand colors; Discord places the accent on the left.
 export const brands = {
+  primevideo: {name:'Prime Video', color:0x00a8e1},
+  netflix: {name:'Netflix', color:0xe50914},
   medal: {emoji:'medal:1558178735574745229', name:'Medal', color:0xffcc00},
   streamable: {emoji:'streamable:1558178736963190804', name:'Streamable', color:0x0f90fa},
   imgur: {emoji:'imgur:1558178738162893030', name:'Imgur', color:0x1bb76e},
@@ -25,5 +27,5 @@ export const brands = {
 
 export function footer(platform) {
   const brand = brands[platform];
-  return `${brand.emoji ? `<:${brand.emoji}>\u00a0\u00a0` : ''}**${brand.name}** via <@1557858203897823304>`;
+  return `${brand.emoji ? `<:${brand.emoji}>\u00a0\u00a0` : ''}**${brand.name}** via [Link Embedder](<https://discord.com/users/1557858203897823304>)`;
 }

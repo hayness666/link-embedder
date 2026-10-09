@@ -1,14 +1,14 @@
 # Link Embedder — Alpha
 
-Automatic, cleaned link previews for public media and Amazon products in Discord. Public multi-server routing needs **no per-server settings**: after installation, the bot handles new human messages wherever its actual channel permissions allow. Default reply mode preserves originals. Optional author-style reposts replace eligible originals after sending a webhook replacement; see [REPOST.md](REPOST.md). It never forces access, joins private threads, or requests Administrator. The current alpha is restricted to one configured test channel.
+Automatic previews for supported public links in Discord. **Public alpha — anyone with permission to install apps can add Link Embedder to a server. Give it the required permissions in every channel where you want it to work.** This project is in pre-release alpha. Repository behavior and the hosted bot can differ until deployment; this README is not a live uptime report or release log.
 
-## Bot link and release status
+## Install and setup
 
-[Add Link Embedder to Discord](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=274877926400&integration_type=0).
+[Add Link Embedder to Discord](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=274877926400&integration_type=0). This is a server-install link, not an App Directory listing. Installation alone does not start the hosting process or grant every replacement permission. Follow [SETUP.md](SETUP.md) and [REPOST.md](REPOST.md).
 
-This is the saved Discord server-install link for application `1557858203897823304`, not an App Directory listing. **Alpha: online in the configured test channel, verified 9 October 2026 (UTC).** This is a manual status report, not a live uptime monitor. The Silly Development runtime connected successfully; YouTube playback and author-style reposting passed live pilot checks. The seven documented helpers have operator approval. Instagram playback passed a live pilot check. Installing it alone does not start the service. The Discord profile has the approved icon and a description that labels other site integrations experimental.
+The app supports installed servers without a per-server allowlist. Effective channel permissions determine where it works. The hosted service is deployed separately on Silly Development. Keep the bot token in approved secret storage; never commit it.
 
-[Terms of Service](docs/terms.html), [Privacy Policy](docs/privacy.html), [Help](docs/help.html), and [Contact](docs/contact.html) are in `docs/`. Website: https://hayness666.github.io/link-embedder/. Bot code and website are maintained together in this repository and licensed under [MIT](LICENSE). Third-party dependencies and linked content retain their own licenses and rights.
+[Terms](docs/terms.html), [Privacy](docs/privacy.html), [Help](docs/help.html), and [Contact](docs/contact.html) are in `docs/`. Website: https://hayness666.github.io/link-embedder/. Code and documentation use the [MIT License](LICENSE); third-party content retains its own rights.
 
 ## Design your previews
 
@@ -20,6 +20,10 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 
 ## Behavior and providers
 
+With `REPOST_AS_AUTHOR=yes`, eligible messages are replaced through an author-style webhook. The replacement must be confirmed before deleting the original. If replacement is unavailable, the bot does not send a separate reply. Network ambiguity is handled conservatively to avoid deleting the only confirmed copy. Discord shows the APP badge. No extra “Reposted by Link Embedder” line is appended.
+
+User prose is preserved. Preview URLs may be canonicalized independently. Explicit visible URL cleanup applies to Facebook photo album context, Netflix, Prime Video and YouTube tracking parameters. Functional IDs, timestamps and access parameters must not be indiscriminately stripped.
+
 | Platform | Default before provider approval | Approved proxy default / limits |
 | --- | --- | --- |
 | Instagram Reels/posts | Basic link card | `oginstagram` → oginstagram.com; preserves carousel selection |
@@ -29,8 +33,8 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 | Reddit posts | Basic link card | `vxreddit` → vxreddit.com; upstream can be fragile |
 | Twitch clips | Basic link card | `fxtwitch` → fxtwitch.seria.moe/clip/…; no streams/VODs |
 | Snapchat public links | Basic link card | `snapchatez` → snapchatez.com; Spotlight, public shared moments and profile routes only |
-| YouTube videos/Shorts | Native cleaned URL | Preserves video/list/time IDs; skips a matching embed already present |
-| Amazon products | Native canonical /dp/ASIN URL | Keeps marketplace and ASIN; no custom card suppressing native media |
+| YouTube videos/Shorts | Tracking cleanup only | Plain-text replacement only when trackers are removed; Discord supplies native previews |
+| Amazon products | Custom product card in replacement mode | Available public/native title, description and image; store only if verified |
 | Facebook photos / reels | Photos/posts can reuse Discord native images; reels receive an unavailable notice | No Facebook media metadata fetch |
 | LinkedIn / UpScrolled public posts | Basic link card | No verified inline video; narrow public URL shapes only |
 | RedNote / Xiaohongshu notes | Basic link card | Preserves xsec_token/xsec_source; no verified free URL-proxy route implemented |
@@ -38,21 +42,40 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 | iFunny / Vimeo / GIPHY / Tenor | Native cleaned link | Experimental native availability; no private access or extra helper |
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
-Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the named proxy defaults after explicit approval of the entire recipient list in [PRIVACY.md](PRIVACY.md). This is a local deployment safeguard, **not** a claim that Discord enforces universal informed consent before installation. Installers must see the public privacy/help disclosure. Global `PLATFORM_MODE=card|native|off|<listed helper>` overrides remain available; Mastodon only allows card/off. There are no per-server preference settings.
+| Twitter Spaces / Lists / Communities | Linked resource card | Matching Discord metadata when available; no audio player or private membership access |
+| Netflix / Prime Video | Linked title or storefront card | Matching Discord metadata/image when available; no embedded playback |
 
-Fallback cards contain platform/content type and a cleaned link, not invented media or metadata. Amazon cards, if explicitly selected, show its ASIN. No reliable official credential-free Amazon metadata source was verified; this bot does not add Creators API/Associates credentials or scrape Amazon. Discord decides native/helper unfurl results; playable media is not guaranteed. YouTube and Instagram playback passed live pilot checks; other platforms remain unverified. Existing embeds can arrive after MessageCreate, so duplicate native previews can still occur; originals are never suppressed.
+Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the seven documented helpers after approval of the recipients in [PRIVACY.md](PRIVACY.md). Installers should see the privacy/help disclosure. Platform overrides use `PLATFORM_MODE=card|native|off|<listed helper>`; Mastodon allows card/off only. Native-only modes other than Amazon are left untouched in replacement mode. Legacy reply mode remains available in code but is not the requested replacement-only deployment behavior.
 
-## Permissions and routing
+YouTube cleanup preserves video IDs, timestamps, playlists, fragments and other functional parameters. Already-clean links are untouched. YouTube-containing messages use plain text, no custom card or helper request; Discord controls whether its native player appears.
 
-Deployment status: A pilot installation has been confirmed. Message Content intent is enabled, Public Bot is on, and installation context is server-only. The alpha runtime is deployed on Silly Development and connected. YouTube playback and author-style reposting were verified in the configured test channel. Runtime server/channel restrictions are removed for public alpha operation.
+Facebook single photo/post messages reuse matching Discord image metadata when available, otherwise use a custom link card. Photo cleanup removes album `set` while preserving `fbid`. Mixed Facebook post messages remain untouched. Reels show an unavailable-preview notice; this does not claim all Facebook embedding is prohibited.
 
-Normal configuration enables supported ordinary public links wherever effective permissions allow, including age-restricted Discord channels and their threads. Channel age labels are not content classifications and do not trigger a blanket exclusion. The bot cannot classify linked images/videos or guarantee non-explicit previews. Use is intended for ordinary non-explicit public content; no dedicated adult-site adapters, classifiers, scrapers, media downloads or access-gate bypasses are implemented. The public alpha uses effective channel permissions across installed servers. `PREVIEWS_DISABLED=yes` is an emergency disabled-bot mode that stops EVERY preview, not a functioning safety mode. `.env.example` uses `PREVIEWS_DISABLED=no`. The old `REQUIRE_VERIFIED_SAFE_CONTENT=yes` setting is retained only as a deprecated shutdown alias; remove it from older local configuration to restore normal behavior.
+Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. When the helper supplies only a v.redd.it address rather than playable media, a link to the video page is shown. Availability of Reddit video playback is not guaranteed.
 
-Request only View Channel, Send Messages, Embed Links, and Send Messages in Threads (bitfield `274877926400`). Effective permissions are checked from current Discord state for every message. Forum/media posts are threads: the bot can respond inside accessible active post threads, but never creates a forum post. Archived/locked threads, private threads it has not joined, non-sendable channels, DMs, bots, webhooks, system messages, code, spoilers, masked links and suppressed links are ignored. Discord remains authoritative if permissions change between check and send; failed sends produce a static error code and no access escalation.
+Netflix and Prime Video cards do not fetch authenticated playback. Storefront links remain storefronts rather than being presented as film titles. Known trackers and handoff parameters such as Netflix `trackId`/`tctx` and Prime Video `xdsso`/`ref_` are removed from visible repost URLs; other parameters are preserved.
 
-Production defaults cover all guilds. `TEST_GUILD_ID` and optional `TEST_CHANNEL_IDS` provide local isolation. Legacy `DISCORD_GUILD_ID`/`DISCORD_CHANNEL_IDS` are accepted as test aliases only. No channel allowlist is needed in production; owners control scope using standard Discord permissions.
+## Card presentation
 
-Bots do not separately join normal channels. Current and future permitted channels work automatically; restricted channel/category overrides still require an administrator's choice. See HELP.md for exact instructions. No permission mutation, hidden-channel enumeration, settings UI, automatic DM or live onboarding notice is implemented. A single optional installation notice can use the text in SETUP.md after deployment/delivery authorization; it is not sent per channel or on reconnect.
+Custom cards use bold linked titles in regular card text, no decorative title arrows, a small gap below the title and a divider above the footer. Real titles are preferred; untitled content uses labels such as Instagram Reel, Instagram Post and Post on Twitter. Platform colors identify the card; Instagram uses #E1306C. Discord controls final media sizing; there is no supported arbitrary width/height setting.
+
+Display names are bold and handles are plain, without mentions. Reddit uses a bold r/subreddit beside a plain u/username below the title. Missing author data is omitted. Cards omit engagement counts, dates, author portraits and provider buttons. The platform footer includes a fixed-label Link Embedder profile hyperlink rather than a mention; the visible name does not depend on Discord resolving a user in forwarded messages. Profile navigation still depends on the Discord client.
+
+Media normally appears above the caption. Captions are limited to 250 characters. Twitter keeps the main post text above its media without applying that caption limit; quoted text is indented below the media and capped at 250 characters. No separate quote link is added. A linked Space section may appear inside a Twitter post; direct Spaces, Lists and Communities have linked resource cards. Their titles, availability and audio are not invented. The total Discord text budget can still prevent creation of an oversized custom card.
+
+## Managing reposts
+
+Open a recorded repost’s options, then Apps and the Link Embedder management command. Choose **Manage Post**. The private menu contains only **MANAGE YOUR POST** and its buttons. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice or DM.
+
+Mark NSFW adds spoilers to supported custom-card media, not captions or links, and does not age-restrict the channel. Native previews are not covered by that control. Deleting removes the repost and does not restore the original. Unrecorded originals, old companion replies and reposts without ownership records cannot be managed through the command.
+
+Ownership is stored in `data/repost-owners.json` as repost, original-author, server, channel and webhook IDs only. No message text or webhook tokens are stored. Writes are atomic and complete before deleting the original. Keep this directory on persistent host storage and back it up privately; never commit it. Records remain until managed deletion, rollback or an operator-verified deletion request. A missing record denies management; a corrupt store stops startup. Capacity is 10,000 records; reaching it preserves originals instead of silently evicting owners.## Permissions and routing
+
+Replacement requires View Channel, Send Messages, Embed Links, Read Message History, Manage Messages and Manage Webhooks. The saved installation link requests basic preview permissions; channel administrators must supply the additional replacement permissions. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
+
+Production scope uses empty `TEST_GUILD_ID` and `TEST_CHANNEL_IDS`. Optional test scope and legacy test aliases remain supported. Replacement accepts eligible ordinary guild-text messages; replies, attachments, polls, pinned messages, messages with threads/reactions/components and unsupported channel types are left alone. DMs, bots, webhooks, system messages and suppressed previews are ignored. Age-restricted channel labels do not classify media or guarantee safe previews.
+
+`PREVIEWS_DISABLED=yes` stops previews. The deprecated `REQUIRE_VERIFIED_SAFE_CONTENT=yes` alias also shuts down processing; it is not a content classifier. No automatic permission changes or first-use notices are implemented.
 
 ## Privacy and resource limits
 
@@ -62,61 +85,10 @@ Up to three distinct supported links per message, one response per channel per t
 
 HTTPS and exact-host checks reject credentials, all explicit ports, encoded host tricks and unknown hosts. Known trackers are removed from generated links, including helper fallbacks. Platform canonicalization preserves content IDs, Facebook story/photo IDs, Instagram image selection and RedNote share-access parameters. Recognized short links for Amazon, TikTok, Instagram, Facebook, Reddit, Twitter, LinkedIn, RedNote and Snapchat can expand through up to four HTTPS redirects within six seconds. Only known same-platform routes are followed; unresolved links stay unchanged. No cookies, login access or JavaScript challenges are used. YouTube short links normalize directly.
 
-## Setup and hosting
+## Provider availability
 
-Follow [SETUP.md](SETUP.md). Application creation, Message Content intent and Area 666 installation are complete. The alpha is deployed and connected in the configured test channel. Native YouTube playback and author-style reposting passed live checks. Broader channel rollout and third-party helper activation remain pending.
+Public helpers and media URLs can fail or expire. Initial metadata failure uses an honest linked fallback where supported. There is no delayed backup timer removing working previews. No cookies, private-content access, login-gate bypasses, paid APIs or guessed metadata are used. LinkedIn may require login; Imgur albums may expose only a preview image; unapproved media redirects are not followed.
 
 ## Sources
 
 [Discord permissions](https://docs.discord.com/developers/topics/permissions), [Message Content intent](https://docs.discord.com/developers/events/gateway), [June 2026 intent review rules](https://support-dev.discord.com/hc/en-us/articles/40281523410967-Changes-to-Privileged-Intent-Access-for-Discord-Apps), [OGInstagram](https://github.com/seirenkr/OGInstagram), [fxTikTok](https://github.com/okdargy/fxTikTok), [FxEmbed](https://github.com/FxEmbed/FxEmbed), [vxReddit](https://github.com/dylanpdx/vxReddit), [FxTwitch](https://github.com/seriaati/fxtwitch), [FxMastodon](https://github.com/Someguy123/fxmastodon), [Snapchat provider](https://embedez.com/snapchat), [RedNote provider](https://embedez.com/xiaohongshu), [Amazon ASIN](https://sell.amazon.com/blog/what-is-an-asin).
-
-## Helper availability
-
-There is no delayed backup check or timer that removes an existing preview. Initial metadata failures produce a plain custom card with the original link; mixed native/helper messages may retain a helper URL. Provider outages and expired media URLs can still prevent playback.
-
-## Preview and author-control update — 9 October 2026
-
-Custom cards put an available bold linked post title with ↗ above the media (Reddit: post title, then bold r/subname and plain u/username), then the creator. Identical title/caption text is shown once. Custom cards use a platform-colored accent, bold display name with a plain @username when metadata supplies them, media above a plain caption capped at 250 characters (main Twitter text is exempt), and a platform footer via @Link Embedder. The bot-profile mention does not send a notification. No statistics, dates, author portraits or provider buttons are added. Discord controls gallery width and aspect ratio; vertical videos cannot be forced to fill the card. Unknown author names are not invented.
-
-Instagram, TikTok, Twitter, Bluesky, Reddit, Twitch and Snapchat helpers are approved for this deployment. Their metadata is requested directly with bounded responses and no cookies or redirect following. Medal, Streamable, Imgur and LinkedIn use public first-party metadata only. Media availability is experimental: unavailable metadata produces an honest link card. Facebook single photo/post messages can reuse Discord-provided native image metadata; unavailable and mixed messages stay untouched. Reels show an unavailable notice. RedNote, UpScrolled and selected Mastodon instances remain limited cards. YouTube, iFunny, Vimeo, GIPHY and Tenor keep the original native preview and receive a separate custom companion card. Mixed messages containing a native platform also keep their source and receive custom companion cards. iFunny returned HTTP 401 in the public metadata check; no bypass is attempted. Imgur albums may show only their published preview image. LinkedIn often requires login. Native availability is controlled by Discord and the source site.
-
-Go to the repost, open its options, choose **Apps**, choose **Link Embedder** if shown, then **Manage my post**. Anyone with access to the repost channel can open the private **MANAGE YOUR POST** menu and use **Mark NSFW**. Only the original poster sees **Delete Post**, and ownership is checked again before deletion. There is no custom Dismiss button; Discord’s own Dismiss message control closes the menu. Repeat those steps any time to reopen it. Mark NSFW covers custom-card photos/videos with spoilers; captions and links stay visible. It does not age-restrict anything. Native previews cannot use this media control. Delete post removes the repost permanently and does not restore the original. Only reposts with saved ownership records can be managed; older posts need a moderator.
-
-Ownership is stored in `data/repost-owners.json` as repost, original-author, server, channel and webhook IDs only. No message text or webhook tokens are stored. Writes are atomic and complete before deleting the original. Keep this directory on persistent host storage and back it up privately; never commit it. Records remain until managed deletion, rollback or an operator-verified deletion request. A missing record denies management; a corrupt store stops startup. Capacity is 10,000 records; reaching it preserves originals instead of silently evicting owners.
-
-Public metadata probes on 9 October 2026 returned media for Twitter, Medal and Streamable. Twitch returned an additional spoo.me video redirect, which is not approved or accepted; it remains a link/caption card for that response. No extra redirect provider was enabled.
-
-Live pilot verification: on 9 October 2026, the private author menu, media spoiler action, Dismiss, and ownership after a host restart passed. Medal direct video playback advanced normally. Streamable rendered a video player; full playback was not checked. Delete and unauthorized-user rejection are covered by automated tests, not a live destructive/second-account check. Titles use the approved title-before-media layout; Reddit places r/subname beside u/username below the title. Signed media URLs can expire.
-
-
-Twitter cards keep the main tweet in full. Quoted tweets appear as an indented block with up to 250 caption characters, including an ellipsis when shortened. Use the main tweet link to reach the quoted post; no separate quote link is added. Discord does not support a nested card. Posts exceeding the combined card text budget retain the original/helper route instead of silently truncating the main tweet.
-
-
-Custom preview titles link to the original post without a decorative arrow: an available post title (Reddit places r/subname beside the author below the title), otherwise Instagram Reel, Instagram Post, Tweet on Twitter, or the matching platform/type label. Native YouTube and Amazon cards keep Discord/site-supplied clickable titles; the bot cannot rewrite their internal title or append an arrow without replacing the native preview.
-
-Playback verification, 9 October 2026: a fresh card for the public Instagram Reel DeQTySKtHmM played successfully with the current code. The approved helper returned a signed media URL; its Instagram CDN destination served HTTP 206 video/mp4 for a small range request. The earlier Discord playback error was intermittent; no parser regression or expired URL was established. For Facebook photo 1806517487514738 (set a.638414764325022), the local public request returned HTTP 200 with one accepted image, but the hosting server received HTTP 302 to a Facebook access gate with an empty body and no image metadata. The pilot displayed the bot’s fallback card, not a native image preview. No gate was followed or bypassed.
-
-Custom cards use bold linked titles in regular card text, with a small gap below and a bold display name followed by a plain @handle when supplied. Reddit uses a title alone, then bold r/subreddit and a plain u/username. Handles do not ping Discord users. Missing author data is omitted, not guessed. Native player interiors remain controlled by Discord; a custom title/author companion is added separately. The sender’s exact text and URL remain above the preview; expansion and tracker cleanup select preview URLs without rewriting that source. Unavailable media uses “Media preview unavailable.”; untitled cards use a Platform Post/Reel link.
-
-Facebook policy: single photo/post messages can reuse an image from Discord’s matching native preview, checked for up to six seconds. Missing images and mixed messages keep their original native preview. Reels receive only “Facebook reel preview unavailable. Open the link above to watch.” beneath the exact original message. No direct Facebook metadata request is made; the bot reads Discord message embeds only.
-
-
-Reddit video posts require playable media from the approved helper. A bare v.redd.it URL returned as description is not playable media; when no image/video is supplied but a valid v.redd.it address is available, the card offers “View video on Reddit ↗” instead. Other missing media still shows “Media preview unavailable.” Reddit authors use u/username.
-
-
-Live check, 9 October 2026: the smallest heading style visibly enlarged custom-card titles toward normal message size, and Reddit u/ attribution passed. The dog-video example supplied no playable media via the approved helper. The new Facebook test supplied no native preview during the bounded wait, so its original message stayed untouched; successful Facebook image reuse remains unverified.
-
-
-Reddit website-only posts use a compact card with the clickable destination URL (without an arrow) and no thumbnail gallery.
-
-
-Facebook photo URLs omit the album-context set parameter when reposted, while preserving fbid and message prose. This is an explicit exception to exact source URL preservation. If no native image metadata is available, a cleaned Facebook photo URL uses Discord’s native preview instead of a custom card.
-
-
-All 21 configured platforms use custom cards or custom companion sections. Native-mode sources stay untouched to preserve working players. YouTube and Vimeo use public official oEmbed title/author metadata; Amazon, iFunny, GIPHY and Tenor attempt bounded public page metadata and fall back to a linked card when unavailable. No private content, cookies, access-gate bypasses, paid APIs, or invented author data are used. Facebook retains its specific reel notice and native-image-reuse rules. Custom presentation does not guarantee media availability.
-
-The private MANAGE YOUR POST menu lets anyone with access to the repost channel mark repost media NSFW. Only the original poster sees Delete Post and can delete; deletion is checked again on every action. Reopening directions are included. Discord’s own Dismiss message control can close it.
-
-Public alpha runtime: leave TEST_GUILD_ID and TEST_CHANNEL_IDS empty to operate across installed servers. Effective Discord channel permissions remain required. REPOST_AS_AUTHOR=yes permits eligible reposts only where Manage Messages, Manage Webhooks, Read Message History and preview permissions are granted; otherwise ordinary previews preserve originals. The management command is registered globally for servers. Live verification is performed in the existing test channel, not in unrelated servers.
-
-Custom cards use bold linked titles in regular card text without title arrows, a small gap below the title, and one subtle divider above the footer. Instagram uses #E1306C. Eligible Amazon-only product messages use a custom author-style repost with matching Discord product title/image metadata when available; store names are never guessed. Messages mixed with native-player platforms preserve the source and use companion cards.

@@ -1,6 +1,6 @@
-export const COMMAND = 'Manage my post';
-export const REOPEN = 'To open this menu again, go to the post, open its options, choose **Apps**, choose **Link Embedder** if shown, then **Manage my post**.';
-const deny = 'This repost cannot be managed here. Older reposts without a saved ownership record cannot be managed.';
+export const COMMAND = 'Manage Post';
+export const REOPEN = 'To open this menu again, go to the post, open its options, choose **Apps**, choose **Link Embedder** if shown, then **Manage Post**.';
+const deny = 'This menu works on Link Embedder replacement posts with a saved ownership record. Original messages, separate preview replies, and older unrecorded reposts cannot be managed here.';
 const privateReply = content => ({content,flags:64,allowedMentions:{parse:[]}});
 
 export function spoilerComponents(components) {
@@ -19,9 +19,9 @@ export function spoilerComponents(components) {
   return mediaCount ? result : null;
 }
 export function managementMenu(id, isOwner = true) {
-  return {...privateReply('**MANAGE YOUR POST**\n\nAnyone can mark media NSFW. Only the original poster can delete the repost.\n\n'+REOPEN),components:[{type:1,components:[
+  return {...privateReply('**MANAGE YOUR POST**'),components:[{type:1,components:[
     ...(isOwner ? [{type:2,style:4,label:'Delete Post',custom_id:`manage:delete:${id}`}] : []),
-    {type:2,style:2,label:'Mark NSFW',custom_id:`manage:nsfw:${id}`}
+    {type:2,style:1,label:'Mark NSFW',custom_id:`manage:nsfw:${id}`}
   ]}]};
 }
 export function createManagementHandler(store, config, log = () => {}) {

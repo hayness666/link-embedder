@@ -82,3 +82,25 @@ test('cleaner removes tracking case-insensitively without deleting unrelated fun
     assert.equal(cleanPublicUrl(raw), null);
   }
 });
+
+test('Netflix source cleanup strips tracking but preserves prose and playback position',async()=>{
+ const {cleanNetflixLinks}=await import('../src/urls.js');
+ assert.equal(cleanNetflixLinks('Watch https://www.netflix.com/watch/26797528?trackId=123&tctx=abc&t=42 now'),'Watch https://www.netflix.com/watch/26797528?t=42 now');
+ assert.equal(cleanNetflixLinks('https://www.netflix.com/account?trackId=123'),'https://www.netflix.com/account?trackId=123');
+});
+
+test('Prime Video cleanup removes handoff/tracking and preserves other parameters and prose',async()=>{
+ const {cleanPrimeVideoLinks}=await import('../src/urls.js');
+ const url='https://www.primevideo.com/region/na/storefront/merch/IncludedwithPrime';
+ assert.equal(cleanPrimeVideoLinks('Browse '+url+'?xdsso=1&ref_=atv_auth_red_aft'),'Browse '+url);
+ assert.equal(cleanPrimeVideoLinks('https://www.primevideo.com/detail/B012345678?xdsso=1&language=en_US'),'https://www.primevideo.com/detail/B012345678?language=en_US');
+ assert.equal(cleanPrimeVideoLinks('https://www.primevideo.com/account?xdsso=1'),'https://www.primevideo.com/account?xdsso=1');
+});
+
+test('YouTube visible cleanup removes trackers and preserves playback and untouched text',async()=>{
+ const {cleanYouTubeLinks}=await import('../src/urls.js');
+ assert.equal(cleanYouTubeLinks('  Watch https://youtu.be/aqz-KE-bpKQ?si=abc&t=42#t=50 now'),'  Watch https://youtu.be/aqz-KE-bpKQ?t=42#t=50 now');
+ assert.equal(cleanYouTubeLinks('https://www.youtube.com/watch?v=aqz-KE-bpKQ&utm_source=test&list=PL123&index=2'),'https://www.youtube.com/watch?v=aqz-KE-bpKQ&list=PL123&index=2');
+ assert.equal(cleanYouTubeLinks('https://www.youtube.com/shorts/aqz-KE-bpKQ?si=abc'),'https://www.youtube.com/shorts/aqz-KE-bpKQ');
+ for(const url of ['https://youtube.com.evil.test/watch?v=aqz-KE-bpKQ&si=abc','https://www.youtube.com/account?si=abc','https://youtu.be/aqz-KE-bpKQ?t=42']) assert.equal(cleanYouTubeLinks(url),url);
+});

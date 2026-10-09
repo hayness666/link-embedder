@@ -131,4 +131,16 @@ test('expanded preview lookup keeps exact original message text in custom respon
  assert.equal(sent.components[0].content,original);
 });
 
-test('native companions preserve original player and do not repost or duplicate source',async()=>{let sent;let reposts=0;const content='My exact text https://www.youtube.com/watch?v=aqz-KE-bpKQ';const h=createHandler({...config,repostEnabled:true},{canSend:()=>true,repost:async()=>{reposts++;},makeInstagramPayload:async text=>({flags:32768,components:[{type:10,content:text},{type:17,components:[{type:10,content:'Channel'}]}]})});await h(message({content,embeds:[{url:'https://www.youtube.com/watch?v=aqz-KE-bpKQ'}],channel:{send:async p=>{sent=p;}}}));assert.equal(reposts,0);assert.equal(sent.components.length,1);assert.equal(sent.reply.messageReference,'345678901234567890');assert.equal(sent.content,undefined);});
+test('Clean YouTube is untouched and failed replacement never sends a companion',async()=>{
+ let sends=0,reposts=0;const h=createHandler({...config,repostEnabled:true},{canSend:()=>true,repost:async()=>{reposts++;return false;},makeInstagramPayload:async()=>null});
+ await h(message({content:'https://www.youtube.com/watch?v=aqz-KE-bpKQ',channel:{send:async()=>sends++}}));assert.equal(reposts,0);assert.equal(sends,0);
+ await h(message({channel:{send:async()=>sends++}}));assert.equal(reposts,1);assert.equal(sends,0);
+});
+
+test('tracked YouTube is replaced with plain cleaned text and no custom preview',async()=>{
+ let result;let sends=0;
+ const h=createHandler({...config,repostEnabled:true},{canSend:()=>true,repost:async(m,p,text)=>{result={p,text};},expandLinks:async()=>{throw Error('No helper');}});
+ await h(message({content:'My video https://youtu.be/aqz-KE-bpKQ?si=abc&t=12',channel:{send:async()=>sends++}}));
+ assert.equal(result.text,'My video https://youtu.be/aqz-KE-bpKQ?t=12');
+ assert.equal(result.p.components,undefined);assert.equal(result.p.embeds,undefined);assert.equal(sends,0);
+});

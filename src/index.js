@@ -2,7 +2,7 @@ import { Client, Events, GatewayIntentBits, Options } from 'discord.js';
 import { readConfig } from './config.js';
 import { createHandler } from './handler.js';
 import { canSendPreview } from './permissions.js';
-import { createReposter } from './repost.js';
+import { createReposter, canRepost } from './repost.js';
 import { openOwnershipStore } from './ownership.js';
 import { createManagementHandler, COMMAND } from './manage-post.js';
 
@@ -24,7 +24,7 @@ client.on(Events.InteractionCreate, interaction => { void manage(interaction).ca
 const handle = createHandler(config, {
   log: event => console.warn(event),
   repost: (message, payload, displayContent) => createReposter(client.user, event => console.warn(event), owners)(message, payload, displayContent),
-  canSend: message => canSendPreview(message, client.user)
+  canSend: message => canSendPreview(message, client.user) && (!config.repostEnabled || canRepost(message, client.user))
 });
 client.on(Events.MessageCreate, message => { void handle(message).catch(() => console.warn('message_handler_failed')); });
 client.once(Events.ClientReady, async () => {
@@ -32,6 +32,11 @@ client.once(Events.ClientReady, async () => {
   if (config.repostEnabled) {
     try {
       await client.application.commands.create({name:COMMAND,type:3,integrationTypes:[0],contexts:[0]}, config.testGuildId || undefined);
+      // Retire only this app's obsolete message command, including the original pilot scope.
+      for (const guildId of [...new Set([undefined, config.testGuildId || '781396098416902146'])]) {
+        const commands = await client.application.commands.fetch(guildId ? {guildId} : undefined);
+        for (const command of commands.values()) if (command.type === 3 && command.name === 'Manage my post') await command.delete();
+      }
       console.info('manage_post_command_ready');
     } catch { console.warn('manage_post_command_registration_failed'); }
   }

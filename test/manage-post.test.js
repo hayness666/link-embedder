@@ -36,7 +36,7 @@ test('scope and missing ownership fail closed',async()=>{
  const f=fixture();f.store.get=()=>null;await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.length,1);
 });
 test('private menu labels and reopening directions match the requested flow',()=>{
- const menu=managementMenu(id);assert.equal(menu.flags,64);assert.ok(menu.content.startsWith('**MANAGE YOUR POST**'));assert.doesNotMatch(menu.content,/removes the whole|covers photos|Dismiss/);assert.deepEqual(menu.components[0].components.map(c=>c.label),['Delete Post','Mark NSFW']);assert.match(menu.content,/go to the post, open its options, choose \*\*Apps\*\*, choose \*\*Link Embedder\*\* if shown, then \*\*Manage my post\*\*/);
+ const menu=managementMenu(id);assert.equal(menu.flags,64);assert.ok(menu.content.startsWith('**MANAGE YOUR POST**'));assert.doesNotMatch(menu.content,/removes the whole|covers photos|Dismiss/);assert.deepEqual(menu.components[0].components.map(c=>c.label),['Delete Post','Mark NSFW']);assert.equal(menu.content,'**MANAGE YOUR POST**');assert.equal(menu.components[0].components.find(c=>c.label==='Mark NSFW').style,1);
 });
 test('dismiss keeps ownership and allows reopening',async()=>{const f=fixture('dismiss');await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.store.get(id),row);assert.deepEqual(f.calls[0].components,[]);});
 test('owner deletion removes the record only after confirmed webhook delete',async()=>{const f=fixture('delete');await createManagementHandler(f.store,config)(f.interaction);assert.deepEqual(f.calls.slice(0,3),['fetch','delete','remove']);assert.equal(f.store.get(id),null);});

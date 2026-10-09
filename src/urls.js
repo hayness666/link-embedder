@@ -7,6 +7,7 @@ export const amazonMarkets = new Set([
   'amazon.ae', 'amazon.sa', 'amazon.com.tr', 'amazon.eg', 'amazon.co.za'
 ]);
 const socialHosts = new Set([
+  'netflix.com', 'www.netflix.com', 'primevideo.com', 'www.primevideo.com',
   'instagram.com', 'www.instagram.com', 'tiktok.com', 'www.tiktok.com',
   'facebook.com', 'www.facebook.com', 'm.facebook.com',
   'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be',
@@ -45,4 +46,50 @@ export function parseAmazonProduct(u) {
   const asin = match[1].toUpperCase();
   return { platform: 'amazon', kind: 'product', asin,
     url: `https://${u.hostname}/dp/${asin}` };
+}
+
+// Explicitly authorized source-text cleanup, restricted to supported Netflix routes.
+export function cleanNetflixLinks(content) {
+  return content.replace(/https:\/\/(?:www\.)?netflix\.com\/[^\s<>]+/gi, raw => {
+    const suffix = /[.,!;:)\]}]+$/.exec(raw)?.[0] || '';
+    const value = suffix ? raw.slice(0,-suffix.length) : raw;
+    const u = cleanPublicUrl(value);
+    if (!u || !/^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:watch|title)\/\d{1,12}\/?$/.test(u.pathname)) return raw;
+    for (const key of [...u.searchParams.keys()]) if (/^(trackId|tctx|trkid|trg|jbv)$/i.test(key)) u.searchParams.delete(key);
+    return u.href + suffix;
+  });
+}
+
+export function primeVideoPath(path) {
+  return /^(?:\/region\/[a-z]{2})?\/(?:detail\/(?:[A-Za-z0-9_-]{1,200}\/)?[A-Za-z0-9]{10,30}|storefront\/merch\/[A-Za-z0-9_-]{1,100})\/?$/.test(path);
+}
+export function cleanPrimeVideoLinks(content) {
+  return content.replace(/https:\/\/(?:www\.)?primevideo\.com\/[^\s<>]+/gi, raw => {
+    const suffix = /[.,!;:)\]}]+$/.exec(raw)?.[0] || '';
+    const u = cleanPublicUrl(suffix ? raw.slice(0,-suffix.length) : raw);
+    if (!u || !primeVideoPath(u.pathname)) return raw;
+    for (const key of [...u.searchParams.keys()]) if (/^(xdsso|ref_|ref|tag|linkCode)$/i.test(key)) u.searchParams.delete(key);
+    return u.href + suffix;
+  });
+
+}
+
+export function cleanYouTubeLinks(content) {
+  return content.replace(/https:\/\/(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\/[^\s<>]+/gi, raw => {
+    const suffix = /[.,!;:)\]}]+$/.exec(raw)?.[0] || '';
+    const value = suffix ? raw.slice(0,-suffix.length) : raw;
+    const u = cleanPublicUrl(value);
+    if (!u) return raw;
+    const host = u.hostname.replace(/^(www\.|m\.)/,'');
+    const path = u.pathname.replace(/\/$/,'');
+    const id = host === 'youtu.be' ? path.slice(1) : path === '/watch' ? u.searchParams.get('v') : /^\/(?:shorts)\/([\w-]{11})$/.exec(path)?.[1];
+    if (!/^[\w-]{11}$/.test(id || '')) return raw;
+    // Keep playback fragments and every parameter except the known tracking list.
+    const original = new URL(value);
+    let changed = false;
+    for (const key of [...original.searchParams.keys()]) {
+      if (!u.searchParams.has(key)) { original.searchParams.delete(key); changed = true; }
+    }
+    return changed ? original.href + suffix : raw;
+  });
 }

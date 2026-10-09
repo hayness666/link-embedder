@@ -5,6 +5,8 @@ import { helperModes } from './config.js';
 import { instagramPayload, shortCaption, plain, cardHeading } from './instagram-card.js';
 
 const mediaHosts = {
+  primevideo: ['m.media-amazon.com','images-na.ssl-images-amazon.com'],
+  netflix: [],
   medal: ['medal.tv', 'cdn.medal.tv'],
   streamable: ['api-f.streamable.com','cdn-cf-east.streamable.com','cdn-cf-west.streamable.com','cdn-cf.streamable.com'],
   imgur: ['i.imgur.com'],
@@ -24,7 +26,7 @@ export function validMedia(raw, platform) {
   try {
     const u = new URL(raw);
     return typeof raw === 'string' && raw.length <= 2048 && u.protocol === 'https:' && !u.username && !u.password && !u.port && !u.hash
-      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'facebook' && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
+      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'netflix' && /^occ-[a-z0-9-]+\.[0-9]+\.nflxso\.net$/.test(u.hostname)) || (platform === 'facebook' && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
   } catch { return false; }
 }
 const decode = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
@@ -96,6 +98,15 @@ export function metadataFromHtml(html, platform) {
   if (cardTitle === 'vxReddit') cardTitle = '';
   return { name, username, title:cardTitle, caption, media, videoPage, destinationUrl };
 }
+export function twitterSpaceUrl(value) {
+  try {
+    const u = new URL(value);
+    if (u.protocol !== 'https:' || !['x.com','twitter.com','www.x.com','www.twitter.com'].includes(u.hostname)
+      || u.username || u.password || u.port || !/^\/i\/spaces\/[A-Za-z0-9]{13}\/?$/.test(u.pathname)) return null;
+    return `https://twitter.com${u.pathname.replace(/\/$/,'')}`;
+  } catch { return null; }
+}
+
 export function metadataFromFx(data, platform) {
   const post = data.status || data.tweet;
   if (data.code !== 200 || !post || post.type === 'tombstone' || post.author?.protected) return null;
@@ -104,7 +115,12 @@ export function metadataFromFx(data, platform) {
   const q = post.quote;
   const quotedUrl = typeof q?.url === 'string' ? parseSocialUrl(q.url) : null;
   const quote = platform === 'twitter' && q && !q.author?.protected && quotedUrl?.platform === 'twitter' ? {name:q.author?.name || '',username:q.author?.screen_name || '',text:typeof q.text === 'string' ? q.text : '',url:quotedUrl.url} : null;
-  return { name: post.author?.name || '', username: post.author?.screen_name || '', caption: post.text || '', media, quote };
+  const spaceCandidates = platform === 'twitter' ? [
+    ...(typeof post.text === 'string' ? post.text.match(/https:\/\/[^\s<>]+/g) || [] : []),
+    ...(Array.isArray(post.raw_text?.facets) ? post.raw_text.facets.filter(f=>f.type==='url').map(f=>f.replacement) : [])
+  ] : [];
+  const spaces = [...new Set(spaceCandidates.map(twitterSpaceUrl).filter(Boolean))].slice(0,3);
+  return { name: post.author?.name || '', username: post.author?.screen_name || '', caption: post.text || '', media, quote, spaces };
 }
 async function readBounded(url, fetcher) {
   let response;
@@ -145,10 +161,12 @@ export function simpleCard(link, metadata = null) {
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
     {type:14,divider:false,spacing:1},
     ...(authorLine ? [text(authorLine)] : []),
+    ...(link.platform === 'twitter' && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
-    ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
+    ...(link.platform !== 'twitter' && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
     ...(!media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
+    ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**\nOpen on Twitter to listen if available.`)) : []),
     ...(quoteText ? [text(quoteText)] : []),
     {type:14,divider:true,spacing:1},
     text(footer(link.platform))
@@ -160,6 +178,23 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
   // Keep native messages intact instead of replacing a playable iframe with a still image.
   if (!links.length || links.some(link => link.platform === 'facebook' && link.kind !== 'reel')) return null;
   const components = await Promise.all(links.map(async link => {
+    if (['netflix','primevideo'].includes(link.platform)) {
+      const service = brands[link.platform].name;
+      const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
+      return simpleCard(link,{title:typeof embed?.title === 'string' ? embed.title : (link.kind === 'storefront' ? 'Prime Video Storefront' : `View on ${service}`),caption:typeof embed?.description === 'string' ? embed.description : `Open on ${service} to ${link.kind === 'storefront' ? 'browse' : 'watch'}. Availability depends on your region and account.`,media:[embed?.image?.url || embed?.thumbnail?.url].filter(u=>u && validMedia(u,link.platform))});
+    }
+    if (link.platform === 'twitter' && ['space','list','community'].includes(link.kind)) {
+      // Non-post Twitter resources do not use the approved status endpoint.
+      // Reuse only Discord metadata matched to this exact resource.
+      const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
+      return simpleCard(link, {
+        title: typeof embed?.title === 'string' ? embed.title : '',
+        name: typeof embed?.author?.name === 'string' ? embed.author.name : '',
+        caption: link.kind === 'space'
+          ? 'Open on Twitter to listen if available. Audio playback is not available in this card.'
+          : `Open this ${link.kind} on Twitter to view it. Access may require a login or membership.`
+      });
+    }
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);
       if (payload) return payload.components[0];

@@ -1,8 +1,11 @@
+import { primeVideoPath } from './urls.js';
 // Exact hosts and narrowly scoped public-content route shapes; availability is not inferred.
 export function parseAdditional(u) {
   const host = u.hostname.replace(/^www\./, '');
   const path = u.pathname.replace(/\/$/, '');
   const result = (platform, kind, url = u.href) => ({ platform, kind, url });
+  if (host === 'primevideo.com' && primeVideoPath(path)) return result('primevideo', path.includes('/storefront/') ? 'storefront' : 'title', `https://www.primevideo.com${path}`);
+  if (host === 'netflix.com' && /^\/(?:[a-z]{2}(?:-[A-Z]{2})?\/)?(?:watch|title)\/\d{1,12}$/.test(path)) return result('netflix', 'title', `https://www.netflix.com${path}`);
   if (host === 'medal.tv' && /^\/games\/[A-Za-z0-9_-]{1,100}\/clips\/[A-Za-z0-9_-]{1,100}$/.test(path)) return result('medal', 'clip', `https://medal.tv${path}`);
   if (host === 'streamable.com' && /^\/[a-zA-Z0-9]{6}$/.test(path)) return result('streamable', 'video', `https://streamable.com${path}`);
   if (host === 'imgur.com' && /^(?:\/(?:a|gallery)\/(?:[A-Za-z0-9_-]{1,180}-)?[A-Za-z0-9]{5,10}|\/[A-Za-z0-9]{5,10})$/.test(path)) return result('imgur', 'post', `https://imgur.com${path}`);
@@ -21,6 +24,8 @@ export function parseAdditional(u) {
     }
     return result('youtube', 'video', `https://www.youtube.com/watch?${q}`);
   }
+  if (['twitter.com', 'x.com'].includes(host) && /^\/i\/(?:lists|communities)\/[0-9]{1,30}$/.test(path)) return result('twitter', path.startsWith('/i/lists/') ? 'list' : 'community', `https://twitter.com${path}`);
+  if (['twitter.com', 'x.com'].includes(host) && /^\/i\/spaces\/[A-Za-z0-9]{13}$/.test(path)) return result('twitter', 'space', `https://twitter.com${path}`);
   if (['twitter.com', 'x.com'].includes(host) && /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,30}$/.test(path)) return result('twitter', 'post', `https://twitter.com${path}`);
   if (host === 'bsky.app' && /^\/profile\/[A-Za-z0-9.:-]{1,200}\/post\/[A-Za-z0-9]{1,50}$/.test(path)) return result('bluesky', 'post', `https://bsky.app${path}`);
   if (['reddit.com', 'old.reddit.com'].includes(host) && /^\/r\/[A-Za-z0-9_]{1,30}\/comments\/[A-Za-z0-9]{1,15}(?:\/[A-Za-z0-9_-]{1,250})?$/.test(path)) return result('reddit', 'post', `https://www.reddit.com${path}`);

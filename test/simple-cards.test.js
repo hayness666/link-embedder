@@ -15,8 +15,8 @@ test('OG media prefers one direct video source and rejects foreign hosts',()=>{
  for(const url of ['https://video.twimg.com.evil.test/a.mp4','https://user:password@video.twimg.com/a.mp4','http://video.twimg.com/a.mp4','https://127.0.0.1/a'])assert.equal(validMedia(url,'twitter'),false);
  assert.equal(metadataFromFx({code:200,status:{author:{protected:true}}},'twitter'),null);
 });
-test('custom card keeps name bold, handle plain, caption after media and Twitter text above 250 characters',()=>{
- const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components.filter(c=>c.type!==14)[0].content,'**Person** @\u200btest');assert.equal(card.components.filter(c=>c.type!==14)[1].type,12);assert.equal([...card.components.filter(c=>c.type!==14)[2].content].length,251);assert.match(card.components.filter(c=>c.type!==14).at(-1).content,/via <@1557858203897823304>/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
+test('custom card keeps name bold, handle plain, Twitter caption before media and text above 250 characters',()=>{
+ const card=simpleCard({platform:'twitter'},{name:'Person',username:'test',media:['https://video.twimg.com/a.mp4'],caption:'a'.repeat(251)});assert.equal(card.components.filter(c=>c.type!==14)[0].content,'**Person** @\u200btest');assert.equal(card.components.filter(c=>c.type!==14)[2].type,12);assert.equal([...card.components.filter(c=>c.type!==14)[1].content].length,251);assert.match(card.components.filter(c=>c.type!==14).at(-1).content,/via \[Link Embedder\]\(<https:\/\/discord\.com\/users\/1557858203897823304>\)/);assert.equal(shortCaption('a'.repeat(251)).at(-1),'…');
 });
 test('unapproved helpers are never requested; native players remain intact',async()=>{
  let calls=0;const fetcher=async()=>{calls++;throw Error('offline');};
@@ -107,4 +107,86 @@ test('Amazon reuses matching native product title and image for its custom repos
  const url='https://www.amazon.com/dp/B07812QWNH';
  const p=await simplePayload(url,readConfig({}).modes,[{url,title:'Product name',thumbnail:{url:'https://m.media-amazon.com/images/I/product.jpg'}}],async()=>new Response('',{status:403}));
  const c=p.components[1];assert.match(c.components[0].content,/Product name/);assert.equal(c.components.find(x=>x.type===12).items[0].media.url,'https://m.media-amazon.com/images/I/product.jpg');
+});
+
+test('Twitter uses Post on Twitter and orders main text, media, then quote',()=>{
+ const card=simpleCard({platform:'twitter',url:'https://twitter.com/person/status/123'}, {caption:'Main post',media:['https://video.twimg.com/a.mp4'],quote:{text:'Quoted post body',url:'https://twitter.com/person/status/456'}});
+ assert.match(card.components[0].content,/Post on Twitter/);
+ const main=card.components.findIndex(c=>c.content==='Main post');
+ const media=card.components.findIndex(c=>c.type===12);
+ const quote=card.components.findIndex(c=>c.content?.includes('Quoted post body'));
+ assert.ok(main < media && media < quote);
+});
+
+test('Twitter Space links from public post metadata get a safe linked section',()=>{
+ const data={code:200,status:{text:'Coming up https://x.com/i/spaces/1MnxnMDeQLeJO',media:{}}};
+ const metadata=metadataFromFx(data,'twitter');
+ assert.deepEqual(metadata.spaces,['https://twitter.com/i/spaces/1MnxnMDeQLeJO']);
+ const card=simpleCard({platform:'twitter',url:'https://twitter.com/XSpaces/status/1805728835285270781'},metadata);
+ assert.ok(card.components.some(c=>c.content?.includes('**[Twitter Space](<https://twitter.com/i/spaces/1MnxnMDeQLeJO>)**')));
+ for(const url of ['https://x.com.evil.test/i/spaces/1MnxnMDeQLeJO','https://user@x.com/i/spaces/1MnxnMDeQLeJO','http://x.com/i/spaces/1MnxnMDeQLeJO']) {
+  const bad=metadataFromFx({code:200,status:{text:url}},'twitter'); assert.deepEqual(bad.spaces,[]);
+ }
+});
+
+test('direct Spaces links use a formatted card without calling the post endpoint',async()=>{
+ const url='https://twitter.com/i/spaces/1MnxnMDeQLeJO';
+ assert.equal(parseSocialUrl('https://x.com/i/spaces/1MnxnMDeQLeJO?utm_source=share').url,url);
+ assert.equal(parseSocialUrl(url).kind,'space');
+ for(const bad of ['https://x.com.evil.test/i/spaces/1MnxnMDeQLeJO','https://x.com/i/spaces/short','https://x.com/i/spaces/1MnxnMDeQLeJO/extra']) assert.equal(parseSocialUrl(bad),null);
+ const modes=readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes;
+ const payload=await simplePayload(url,modes,[],async()=>{throw new Error('Must not fetch a Space through the post endpoint');});
+ const card=payload.components[1];
+ assert.match(card.components[0].content,/Twitter Space/);
+ assert.ok(card.components.some(c=>c.content?.includes('Audio playback is not available')));
+ assert.ok(card.components.some(c=>c.type===14&&c.divider));
+ assert.equal(card.components.some(c=>c.type===12),false);
+ const named=await simplePayload(url,modes,[{url,title:'Public discussion',author:{name:'Host'}}]);
+ assert.match(named.components[1].components[0].content,/Public discussion/);
+});
+
+test('Twitter Lists and Communities get safe resource cards without post API requests',async()=>{
+ const modes=readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes;
+ for(const [route,kind,label] of [['lists','list','Twitter List'],['communities','community','Twitter Community']]) {
+  const url=`https://twitter.com/i/${route}/123456789`;
+  assert.deepEqual(parseSocialUrl(`https://x.com/i/${route}/123456789?utm_source=share`),{platform:'twitter',kind,url});
+  for(const bad of [`https://x.com.evil.test/i/${route}/123`,`https://x.com/i/${route}/not-an-id`,`https://x.com/i/${route}/123/members`]) assert.equal(parseSocialUrl(bad),null);
+  let calls=0;
+  const payload=await simplePayload(url,modes,[],async()=>{calls++;throw new Error('No post lookup');});
+  assert.equal(calls,0);
+  const card=payload.components[1];
+  assert.ok(card.components[0].content.includes(label));
+  assert.ok(card.components.some(c=>c.content?.includes('login or membership')));
+  assert.ok(card.components.some(c=>c.type===14&&c.divider));
+  const named=await simplePayload(url,modes,[{url,title:'Real public title'}]);
+  assert.match(named.components[1].components[0].content,/Real public title/);
+  const unrelated=await simplePayload(url,modes,[{url:'https://twitter.com/i/lists/999',title:'Unrelated'}]);
+  assert.ok(!unrelated.components[1].components[0].content.includes('Unrelated'));
+ }
+});
+
+test('Netflix cards reuse matching public metadata without fetching playback',async()=>{
+ const url='https://www.netflix.com/watch/26797528';
+ assert.equal(parseSocialUrl(url+'?trackId=264104230&tctx=tracking').url,url);
+ assert.equal(readConfig({}).modes.netflix,'card');
+ assert.equal(parseSocialUrl('https://www.netflix.com.evil.test/watch/26797528'),null);
+ const image='https://occ-0-116-114.1.nflxso.net/test.jpg';
+ const payload=await simplePayload(url,readConfig({}).modes,[{url,title:'Verified title',description:'Public description',image:{url:image}}],async()=>{throw new Error('No playback fetch');});
+ assert.match(payload.components[1].components[0].content,/Verified title/);
+ assert.equal(payload.components[1].components.find(c=>c.type===12).items[0].media.url,image);
+ assert.equal(validMedia('https://occ-0-116-114.1.nflxso.net.evil.test/test.jpg','netflix'),false);
+});
+
+test('Prime Video storefront and detail cards use matching metadata without playback requests',async()=>{
+ const url='https://www.primevideo.com/region/na/storefront/merch/IncludedwithPrime';
+ assert.equal(parseSocialUrl(url+'?xdsso=1&ref_=atv_auth_red_aft').url,url);
+ assert.equal(parseSocialUrl('https://www.primevideo.com/detail/B012345678').kind,'title');
+ assert.equal(parseSocialUrl('https://www.primevideo.com.evil.test/detail/B012345678'),null);
+ assert.equal(parseSocialUrl('https://www.primevideo.com/account'),null);
+ const payload=await simplePayload(url,readConfig({}).modes,[],async()=>{throw new Error('No playback request');});
+ assert.match(payload.components[1].components[0].content,/Prime Video Storefront/);
+ assert.equal(payload.components[1].accent_color,0x00a8e1);
+ const named=await simplePayload(url,readConfig({}).modes,[{url,title:'Included with Prime',image:{url:'https://m.media-amazon.com/images/test.jpg'}}]);
+ assert.match(named.components[1].components[0].content,/Included with Prime/);
+ assert.equal(named.components[1].components.find(c=>c.type===12).items.length,1);
 });

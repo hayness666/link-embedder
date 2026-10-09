@@ -63,10 +63,10 @@ test('ordinary public links work across channel age labels while inaccessible an
   ];
   for (const [index, channel] of inputs.entries()) {
     await handle({ guildId: 'guild', channelId: `channel${index}`, id: `id${index}`,
-      content: 'https://youtube.com/watch?v=dQw4w9WgXcQ&si=tracking', channel: { ...base, ...channel } });
+      content: 'https://instagram.com/p/test123', channel: { ...base, ...channel } });
   }
   assert.equal(sent.length, 6);
-  assert.equal(sent[0].reply.messageReference,'id0');assert.equal(sent[0].components[0].type,17);assert.equal(sent[0].content,undefined);
+  assert.equal(sent[0].components[0].content,'https://instagram.com/p/test123');assert.equal(sent[0].components[1].type,17);assert.equal(sent[0].content,undefined);
 });
 
 test('public routing accepts multiple guilds and isolates dedupe and server burst limits', async () => {

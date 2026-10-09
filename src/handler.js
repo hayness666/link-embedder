@@ -1,7 +1,8 @@
+import { cleanNetflixLinks, cleanPrimeVideoLinks, cleanYouTubeLinks } from './urls.js';
 import { buildPayload, extractLinks } from './previews.js';
 import {shortLinks,expandShortLinks} from './short-links.js';
 import { waitForFacebookPreview, cleanFacebookPhotoSets } from './facebook-native.js';
-import { simplePayload } from './simple-cards.js';
+import { simplePayload, simpleCard } from './simple-cards.js';
 export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks, nativeFacebook = waitForFacebookPreview } = {}) {
   const guilds = new Map();
   return async function handle(message) {
@@ -12,6 +13,8 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       || message.author?.bot || message.webhookId || message.system || message.flags?.has(4)) return;
     if (!canSend(message)) return;
     const originalLinks = extractLinks(message.content ?? '');
+    const youtube = originalLinks.some(link => link.platform === 'youtube');
+    if (youtube && (config.modes.youtube === 'off' || !config.repostEnabled || !repost || cleanYouTubeLinks(message.content ?? '') === message.content)) return;
     const facebookPost = originalLinks.some(link => link.platform === 'facebook' && link.kind !== 'reel');
     if (facebookPost && (!config.modes.facebook || config.modes.facebook === 'off' || originalLinks.length !== 1 || !config.repostEnabled || !repost)) return;
     const time = now();
@@ -37,11 +40,17 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.recent.push(time);
     state.lastActive = time;
     try {
+      if (youtube) {
+        const display = cleanYouTubeLinks(message.content ?? '');
+        if (config.modes.youtube !== 'off' && config.repostEnabled && repost && display !== message.content)
+          await repost(message, {allowedMentions:{parse:[],repliedUser:false}}, display);
+        return; // Plain webhook text lets Discord provide the native YouTube preview.
+      }
       if (facebookPost) {
         const native = await nativeFacebook(message);
         const display = cleanFacebookPhotoSets(message.content);
         if (native) { native.components[0].content = display; await repost(message, native, display); }
-        else if (display !== message.content) await repost(message, {content:'',allowedMentions:{parse:[],repliedUser:false}}, display);
+        else await repost(message, {flags:32768,components:[{type:10,content:display},simpleCard(originalLinks[0])],allowedMentions:{parse:[],repliedUser:false}}, display);
         return; // On failure preserve the original native preview; never send a duplicate.
       }
       const expanded = await expandLinks(message.content ?? '', config.modes);
@@ -64,6 +73,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
         }
       }
       payload = await makeInstagramPayload(expanded, config.modes, availableEmbeds) || payload;
+      if (keepNative && config.repostEnabled) return;
       if (keepNative) {
         if (payload?.flags === 32768) {
           await message.channel.send({...payload,components:payload.components.slice(1),reply:{messageReference:message.id,failIfNotExists:false}});
@@ -72,8 +82,11 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       }
       if (!payload) return;
       // Expanded URLs select previews; the visible source remains exactly as written.
-      if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = message.content ?? '';
-      if (config.repostEnabled && repost && await repost(message, payload, message.content ?? '')) return;
+      if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? ''));
+      if (config.repostEnabled) {
+        if (repost) await repost(message, payload, cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? '')));
+        return; // Replacement-only mode never falls back to a separate message.
+      }
       await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
   };
