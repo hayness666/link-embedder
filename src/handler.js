@@ -1,4 +1,4 @@
-import { cleanNetflixLinks, cleanPrimeVideoLinks, cleanYouTubeLinks } from './urls.js';
+import { cleanThreadsLinks, cleanNetflixLinks, cleanPrimeVideoLinks, cleanYouTubeLinks } from './urls.js';
 import { buildPayload, extractLinks } from './previews.js';
 import {shortLinks,expandShortLinks} from './short-links.js';
 import { waitForFacebookPreview, cleanFacebookPhotoSets } from './facebook-native.js';
@@ -82,9 +82,9 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
       }
       if (!payload) return;
       // Expanded URLs select previews; the visible source remains exactly as written.
-      if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? ''));
+      if (payload.flags === 32768 && payload.components[0]?.type === 10) payload.components[0].content = cleanThreadsLinks(cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? '')));
       if (config.repostEnabled) {
-        if (repost) await repost(message, payload, cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? '')));
+        if (repost) await repost(message, payload, cleanThreadsLinks(cleanPrimeVideoLinks(cleanNetflixLinks(message.content ?? ''))));
         return; // Replacement-only mode never falls back to a separate message.
       }
       await message.channel.send(payload);

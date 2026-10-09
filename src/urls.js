@@ -94,3 +94,12 @@ export function cleanYouTubeLinks(content) {
     return changed ? original.href + suffix : raw;
   });
 }
+
+export function cleanThreadsLinks(content) {
+  return content.replace(/https:\/\/(?:www\.)?threads\.(?:com|net)\/[^\s<>]+/gi, raw => {
+    const suffix = /[.,!;:)\]}]+$/.exec(raw)?.[0] || '';
+    const u = cleanPublicUrl(suffix ? raw.slice(0,-suffix.length) : raw);
+    if (!u || !/^\/(?:@[A-Za-z0-9_.]{1,30}\/post|t)\/[A-Za-z0-9_-]{1,64}\/?$/.test(u.pathname)) return raw;
+    return u.href + suffix;
+  });
+}

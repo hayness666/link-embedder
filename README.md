@@ -22,7 +22,7 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 
 With `REPOST_AS_AUTHOR=yes`, eligible messages are replaced through an author-style webhook. The replacement must be confirmed before deleting the original. If replacement is unavailable, the bot does not send a separate reply. Network ambiguity is handled conservatively to avoid deleting the only confirmed copy. Discord shows the APP badge. No extra “Reposted by Link Embedder” line is appended.
 
-User prose is preserved. Preview URLs may be canonicalized independently. Explicit visible URL cleanup applies to Facebook photo album context, Netflix, Prime Video and YouTube tracking parameters. Functional IDs, timestamps and access parameters must not be indiscriminately stripped.
+User prose is preserved. Preview URLs may be canonicalized independently. Explicit visible URL cleanup applies to Facebook photo album context, Netflix, Prime Video, Threads and YouTube tracking parameters. Functional IDs, timestamps and access parameters must not be indiscriminately stripped.
 
 | Platform | Default before provider approval | Approved proxy default / limits |
 | --- | --- | --- |

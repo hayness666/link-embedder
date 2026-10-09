@@ -35,3 +35,9 @@ test('Threads public metadata is rendered in the standard custom card', async ()
  assert.ok(JSON.stringify(payload).includes(image));
  assert.ok(JSON.stringify(payload).includes('Threads Post'));
 });
+
+import { cleanThreadsLinks } from '../src/urls.js';
+test('Threads visible cleanup preserves prose and functional parameters', () => {
+ assert.equal(cleanThreadsLinks(`Look (${url}?utm_source=test&foo=keep)!`),`Look (${url}?foo=keep)!`);
+ assert.equal(cleanThreadsLinks('https://threads.com/@meta?utm_source=test'),'https://threads.com/@meta?utm_source=test');
+});
