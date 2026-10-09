@@ -31,7 +31,7 @@ Node.js 24.17+ and npm are required. Run `npm ci --ignore-scripts`, `npm test`, 
 | Snapchat public links | Basic link card | `snapchatez` → snapchatez.com; Spotlight, public shared moments and profile routes only |
 | YouTube videos/Shorts | Native cleaned URL | Preserves video/list/time IDs; skips a matching embed already present |
 | Amazon products | Native canonical /dp/ASIN URL | Keeps marketplace and ASIN; no custom card suppressing native media |
-| Facebook photos / reels | Public photo thumbnail when available; other routes limited | No media helper or video extraction |
+| Facebook photos / reels | Photos/posts keep native previews; reels receive an unavailable notice | No Facebook media metadata fetch |
 | LinkedIn / UpScrolled public posts | Basic link card | No verified inline video; narrow public URL shapes only |
 | RedNote / Xiaohongshu notes | Basic link card | Preserves xsec_token/xsec_source; no verified free URL-proxy route implemented |
 | Medal / Streamable / Imgur | Public metadata card | Direct media when public metadata supplies it; full canonical links only |
