@@ -1,5 +1,4 @@
 import { buildPayload } from './previews.js';
-import { scheduleFallback } from './native-fallback.js';
 export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now } = {}) {
   const guilds = new Map();
   return async function handle(message) {
@@ -32,8 +31,7 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
     state.lastActive = time;
     try {
       if (config.repostEnabled && repost && await repost(message, payload)) return;
-      const sent = await message.channel.send(payload);
-      if (sent?.id) scheduleFallback(payload, () => message.channel.messages.fetch({message: sent.id, force: true, cache: false}), update => sent.edit(update), log);
+      await message.channel.send(payload);
     } catch { log('preview_send_failed'); }
   };
 }
