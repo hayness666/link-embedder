@@ -74,3 +74,10 @@ test('missing permissions avoids webhook access and preserves original', async (
   assert.equal(await createReposter(user)(message, preview), false);
   assert.deepEqual(calls, []);
 });
+
+test('an identical native URL appears only once in the repost', () => {
+  const { message } = fixture();
+  const url = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
+  const payload = buildRepostPayload({ ...message, content: 'Test ' + url }, { content: url, embeds: [] });
+  assert.equal(payload.content.split(url).length - 1, 1);
+});

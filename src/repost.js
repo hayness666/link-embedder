@@ -14,7 +14,9 @@ export function canRepost(message, user) {
 
 export function buildRepostPayload(message, preview) {
   // Preserve every character of the source text; never truncate to make a replacement fit.
-  const content = [message.content, preview.content, '— Reposted by Link Embedder'].filter(Boolean).join('\n\n');
+  const duplicateNative = preview.content && !preview.content.includes('\n')
+    && message.content.split(/\s+/u).includes(preview.content);
+  const content = [message.content, duplicateNative ? null : preview.content, '— Reposted by Link Embedder'].filter(Boolean).join('\n\n');
   if (content.length > 2000) return null;
   const name = message.member?.displayName || message.author?.globalName || message.author?.username || 'Member';
   if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80) return null;
