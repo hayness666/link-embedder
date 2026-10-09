@@ -3,7 +3,7 @@ import { helperUrl } from './adapters.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
-const INSTAGRAM_ICON = '<:OGInstagram:1556597080229810266>';
+const INSTAGRAM_ICON = '<:instagramlogo:1558170063251574895>';
 export function shortCaption(value) {
   const normalized = value.replace(/#[\p{L}\p{N}_]+/gu, tag => {
     const small = 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ';
@@ -44,9 +44,11 @@ export function parseInstagramCard(html, link) {
     });
     const header = children[0]?.type === 9 ? children[0].components?.[0]?.content : children[0]?.content;
     const author = typeof header === 'string' ? plain(header.split('\n\n')[0].replace(/\*\*/g, '').replace(/\n+/g, ' ')).slice(0, 300) : '';
+    const authorParts = author.split(/ (?=@\u200b)/);
+    const authorLine = authorParts.length > 1 ? `**${authorParts[0]}** ${authorParts.slice(1).join(' ')}` : `**${author}**`;
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
     return { type: 17, accent_color: 0xf359a3, components: [
-      ...(author ? [text(`**${author}**`)] : []),
+      ...(author ? [text(authorLine)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
       text(`${INSTAGRAM_ICON} **Instagram**`)
