@@ -63,6 +63,7 @@ export function metadataFromHtml(html, platform) {
   const videos = type === 'video/mp4' ? [...(tags.get('og:video') || []), ...(tags.get('og:video:secure_url') || []), ...(tags.get('twitter:player:stream') || [])] : [];
   const validVideos = videos.filter(url => validMedia(url, platform));
   const media = validVideos.length ? [validVideos[0]] : [...new Set((tags.get('og:image') || []).filter(url => validMedia(url, platform)))].slice(0, 10);
+  let videoPage = '';
   let name = '', username = '', caption = get('og:description') || '';
   let title = get('og:title');
   let cardTitle = ['medal','imgur','streamable','reddit','linkedin'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
@@ -71,7 +72,7 @@ export function metadataFromHtml(html, platform) {
   if (platform === 'reddit') {
     const author = /^u\/([A-Za-z0-9_-]{1,30}) on r\/[A-Za-z0-9_]+(?: |$)/.exec(get('og:site_name'));
     if (author) username = author[1];
-    if (!media.length && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(caption.trim())) caption = '';
+    if (!media.length && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(caption.trim())) { videoPage = caption.trim(); caption = ''; }
   } else if (platform === 'tiktok') {
     const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
     if (author) [, name, username] = author;
@@ -80,7 +81,7 @@ export function metadataFromHtml(html, platform) {
     if (split >= 0) { name = title.slice(0, split); cardTitle = title.slice(split + 3); caption = ''; }
   }
   if (cardTitle === 'vxReddit') cardTitle = '';
-  return { name, username, title:cardTitle, caption, media };
+  return { name, username, title:cardTitle, caption, media, videoPage };
 }
 export function metadataFromFx(data, platform) {
   const post = data.status || data.tweet;
@@ -130,7 +131,7 @@ export function simpleCard(link, metadata = null) {
     ...(authorLine ? [text(authorLine)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
-    ...(!media.length && !caption ? [text('Media preview unavailable.')] : []),
+    ...(!media.length && !caption ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
     ...(quoteText ? [text(quoteText)] : []),
     text(footer(link.platform))
   ] };

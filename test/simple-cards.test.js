@@ -87,3 +87,5 @@ test('Facebook reels show only requested notice and photos stay native',async()=
 });
 
 test('Reddit bare video URL without media is not a caption',()=>{const m=metadataFromHtml('<meta property="og:description" content="https://v.redd.it/78lucvocveo31">','reddit');assert.equal(m.caption,'');assert.deepEqual(m.media,[]);});
+
+test('Reddit unavailable video links to validated video page',()=>{const link={platform:'reddit',url:'https://www.reddit.com/r/aww/comments/d8d6kb/test'};const m=metadataFromHtml('<meta property="og:description" content="https://v.redd.it/78lucvocveo31">','reddit');assert.ok(simpleCard(link,m).components.some(c=>c.content==='[View video on Reddit ↗](<https://v.redd.it/78lucvocveo31>)'));assert.ok(simpleCard(link,{videoPage:'https://evil.test/'}).components.some(c=>c.content==='Media preview unavailable.'));});

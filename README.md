@@ -101,7 +101,7 @@ Custom cards use linked titles using Discord’s smallest heading style and a bo
 Facebook policy: single photo/post messages can reuse an image from Discord’s matching native preview, checked for up to six seconds. Missing images and mixed messages keep their original native preview. Reels receive only “Facebook reel preview unavailable. Open the link above to watch.” beneath the exact original message. No direct Facebook metadata request is made; the bot reads Discord message embeds only.
 
 
-Reddit video posts require playable media from the approved helper. A bare v.redd.it URL returned as description is not playable media; when no image/video is supplied, the card shows “Media preview unavailable.” instead. Reddit authors use u/username.
+Reddit video posts require playable media from the approved helper. A bare v.redd.it URL returned as description is not playable media; when no image/video is supplied but a valid v.redd.it address is available, the card offers “View video on Reddit ↗” instead. Other missing media still shows “Media preview unavailable.” Reddit authors use u/username.
 
 
 Live check, 9 October 2026: the smallest heading style visibly enlarged custom-card titles toward normal message size, and Reddit u/ attribution passed. The dog-video example supplied no playable media via the approved helper. The new Facebook test supplied no native preview during the bounded wait, so its original message stayed untouched; successful Facebook image reuse remains unverified.
