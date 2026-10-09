@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits, Options } from 'discord.js';
 import { readConfig } from './config.js';
 import { createHandler } from './handler.js';
 import { canSendPreview } from './permissions.js';
+import { createReposter } from './repost.js';
 
 let config;
 try { config = readConfig(process.env); } catch (error) { console.error(error.message); process.exit(1); }
@@ -16,6 +17,7 @@ const client = new Client({
 });
 const handle = createHandler(config, {
   log: event => console.warn(event),
+  repost: (message, payload) => createReposter(client.user, event => console.warn(event))(message, payload),
   canSend: message => canSendPreview(message, client.user)
 });
 client.on(Events.MessageCreate, message => { void handle(message).catch(() => console.warn('message_handler_failed')); });

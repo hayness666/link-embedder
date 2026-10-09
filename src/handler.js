@@ -1,5 +1,5 @@
 import { buildPayload } from './previews.js';
-export function createHandler(config, { canSend, log = () => {}, now = Date.now } = {}) {
+export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now } = {}) {
   const guilds = new Map();
   return async function handle(message) {
     // Explicit emergency shutdown only; this is not a content-safety classifier.
@@ -29,6 +29,9 @@ export function createHandler(config, { canSend, log = () => {}, now = Date.now 
     cooldown.set(message.channelId, time + 3000);
     state.recent.push(time);
     state.lastActive = time;
-    try { await message.channel.send(payload); } catch { log('preview_send_failed'); }
+    try {
+      if (config.repostEnabled && repost && await repost(message, payload)) return;
+      await message.channel.send(payload);
+    } catch { log('preview_send_failed'); }
   };
 }

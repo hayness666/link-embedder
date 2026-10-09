@@ -5,6 +5,8 @@ export function readConfig(env) {
   if (testGuildId && !snowflake.test(testGuildId)) throw new Error('Invalid optional test server ID.');
   const channels = (env.TEST_CHANNEL_IDS || env.DISCORD_CHANNEL_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
   if (channels.some(id => !snowflake.test(id)) || (channels.length && !testGuildId)) throw new Error('Test channels require valid IDs and a test server.');
+  const repostEnabled = env.REPOST_AS_AUTHOR === 'yes';
+  if (repostEnabled && (!testGuildId || !channels.length)) throw new Error('Reposting requires an explicit server and channel allowlist.');
   const modes = {};
   for (const platform of ['instagram', 'tiktok', 'facebook', 'amazon', 'youtube', 'twitter', 'bluesky', 'reddit', 'twitch', 'snapchat', 'rednote', 'linkedin', 'upscrolled', 'mastodon']) {
     const defaultMode = ['amazon', 'youtube'].includes(platform) ? 'native'
@@ -15,6 +17,6 @@ export function readConfig(env) {
     if (mode === helperModes[platform] && env.PROVIDER_SHARING_APPROVED !== 'yes') throw new Error('Provider sharing must be approved before selecting proxy modes.');
     modes[platform] = mode;
   }
-  return { testGuildId, channelIds: new Set(channels), modes,
+  return { testGuildId, channelIds: new Set(channels), modes, repostEnabled,
     previewsDisabled: env.PREVIEWS_DISABLED === 'yes' || env.REQUIRE_VERIFIED_SAFE_CONTENT === 'yes' };
 }
