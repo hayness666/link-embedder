@@ -2,7 +2,7 @@ import { brands, footer } from './platform-brands.js';
 import { extractLinks, parseSocialUrl } from './previews.js';
 import { helperUrl } from './adapters.js';
 import { helperModes } from './config.js';
-import { instagramPayload, shortCaption, plain } from './instagram-card.js';
+import { instagramPayload, shortCaption, plain, cardHeading } from './instagram-card.js';
 
 const mediaHosts = {
   medal: ['medal.tv', 'cdn.medal.tv'],
@@ -119,10 +119,10 @@ export function simpleCard(link, metadata = null) {
   const quote = metadata?.quote;
   const quotedUrl = typeof quote?.url === 'string' ? parseSocialUrl(quote.url) : null;
   const quoteText = link.platform === 'twitter' && quotedUrl?.platform === 'twitter'
-    ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : ''; 
+    ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
-    ...(titleLine ? [text(`**${titleLine}**`)] : []),
-    ...(name ? [text(`**${name}**${user ? ` @\u200b${user}` : ''}`)] : titleLine ? [] : [text(`**${brand.name}**`)]),
+    ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
+    ...(name ? [text(`**${name}**${user ? ` @\u200b${user}` : ''}`)] : titleLine || cardHeading(link, title) ? [] : [text(`**${brand.name}**`)]),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(!media.length && !caption ? [text('Media preview unavailable. Open the original link above.')] : []),

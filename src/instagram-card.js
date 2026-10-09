@@ -1,6 +1,6 @@
-import { extractLinks } from './previews.js';
+import { extractLinks, parseSocialUrl } from './previews.js';
 import { helperUrl } from './adapters.js';
-import { footer } from './platform-brands.js';
+import { footer, brands } from './platform-brands.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
@@ -22,6 +22,16 @@ export function plain(value) {
     .replace(/<[^>]*>/g, '').replace(/\\([\\*_~`|\[\]<>:#@.])/g, '$1')
     .replace(/[*_~`|\\]/g, c => '\\' + c)
     .replace(/@/g, '@\u200b').replace(/https?:\/\//g, '$&\u200b');
+}
+
+export function cardHeading(link, title = '') {
+  const canonical = parseSocialUrl(link.url || '');
+  if (!canonical || canonical.platform !== link.platform) return '';
+  const kind = canonical.platform === 'twitter' ? 'Tweet' : canonical.kind === 'reel' ? 'Reel'
+    : canonical.kind === 'clip' ? 'Clip' : canonical.kind === 'video' ? 'Video' : 'Post';
+  const label = title || `${kind} on ${brands[link.platform]?.name || link.platform}`;
+  const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
+  return `**[${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)**`;
 }
 
 export function parseInstagramCard(html, link) {
@@ -48,6 +58,7 @@ export function parseInstagramCard(html, link) {
     const authorLine = authorParts.length > 1 ? `**${authorParts[0]}** ${authorParts.slice(1).join(' ')}` : `**${author}**`;
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
     return { type: 17, accent_color: 0xf359a3, components: [
+      text(cardHeading(link)),
       ...(author ? [text(authorLine)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
