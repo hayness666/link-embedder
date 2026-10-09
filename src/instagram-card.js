@@ -3,7 +3,7 @@ import { helperUrl } from './adapters.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
-const INSTAGRAM_ICON = '<:Instagram:1556597080229810266>';
+const INSTAGRAM_ICON = 'https://cdn.discordapp.com/emojis/1556597080229810266.png';
 export function shortCaption(value) {
   const normalized = value.replace(/#[\p{L}\p{N}_]+/gu, tag => {
     const small = 'ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀꜱᴛᴜᴠᴡxʏᴢ';
@@ -45,10 +45,10 @@ export function parseInstagramCard(html, link) {
     const author = typeof header === 'string' ? plain(header.split('\n\n')[0].replace(/\*\*/g, '').replace(/\n+/g, ' ')).slice(0, 300) : '';
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
     return { type: 17, accent_color: 0xf359a3, components: [
-      ...(author ? [text(`**${author}**`)] : []),
+      { type: 9, components: [text(author ? `**${author}**` : 'Instagram')],
+        accessory: { type: 11, media: { url: INSTAGRAM_ICON }, description: 'Instagram' } },
       { type: 12, items },
-      ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
-      text(`${INSTAGRAM_ICON} **Instagram**`)
+      ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : [])
     ] };
   } catch { return null; }
 }
