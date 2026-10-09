@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseInstagramCard, instagramPayload } from '../src/instagram-card.js';
+import { parseInstagramCard, instagramPayload, shortCaption } from '../src/instagram-card.js';
 import { buildRepostPayload } from '../src/repost.js';
 const link = { url: 'https://www.instagram.com/reel/ABC', platform: 'instagram' };
 const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<script id="discord:component-embed" type="application/json">${JSON.stringify({component:{type:17,components:[
@@ -12,7 +12,8 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
   assert.deepEqual(card.components.map(c=>c.type), [10,12,10,10]);
-  assert.equal(card.components[3].content, '-# Instagram');
+  assert.equal(card.components[3].content, '-# <:Instagram:1556597080229810266> Instagram');
+  assert.equal(card.components[0].content, '**Name @\u200bperson**');
   const json = JSON.stringify(card);
   assert.doesNotMatch(json, /❤️|💬|OGInstagram|accessory|date|https:\/\/www.instagram/);
   assert.match(card.components[2].content, /#hello/);
@@ -53,4 +54,11 @@ test('component repost retains source once, disables mentions and supplies webho
   assert.equal(result.components[0].content,content);
   assert.equal(result.withComponents,true);
   assert.deepEqual(result.allowedMentions,{parse:[],repliedUser:false});
+});
+
+test('caption limit counts visible words and adds ellipsis only beyond twenty', () => {
+  const twenty = Array.from({length:20},(_,i)=>`word${i}`).join(' ');
+  assert.equal(shortCaption(twenty), twenty);
+  assert.equal(shortCaption(twenty+' extra'), twenty+'…');
+  assert.equal(shortCaption('hello [#tag](https://instagram.com/tags/tag/)'), 'hello #tag');
 });

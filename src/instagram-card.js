@@ -3,6 +3,11 @@ import { helperUrl } from './adapters.js';
 
 const LIMIT = 262144;
 const text = content => ({ type: 10, content });
+const INSTAGRAM_ICON = '<:Instagram:1556597080229810266>';
+export function shortCaption(value) {
+  const words = plain(value).trim().split(/\s+/u).filter(Boolean);
+  return words.slice(0, 20).join(' ') + (words.length > 20 ? '…' : '');
+}
 // Helper Markdown is untrusted display data. Keep labels, never provider buttons or links.
 function plain(value) {
   return value.replace(/\[([^\]]*)\]\(https?:\/\/[^\s)]*\)/g, '$1')
@@ -30,13 +35,13 @@ export function parseInstagramCard(html, link) {
       return { media: { url: raw } };
     });
     const header = children[0]?.type === 9 ? children[0].components?.[0]?.content : children[0]?.content;
-    const author = typeof header === 'string' ? plain(header.split('\n\n')[0].replace(/\*\*/g, '')).slice(0, 300) : '';
+    const author = typeof header === 'string' ? plain(header.split('\n\n')[0].replace(/\*\*/g, '').replace(/\n+/g, ' ')).slice(0, 300) : '';
     const caption = children.slice(1, children.indexOf(gallery)).find(c => c.type === 10)?.content;
     return { type: 17, accent_color: 0xf359a3, components: [
-      ...(author ? [text(author)] : []),
+      ...(author ? [text(`**${author}**`)] : []),
       { type: 12, items },
-      ...(typeof caption === 'string' && caption ? [text(plain(caption).slice(0, 3000))] : []),
-      text('-# Instagram')
+      ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
+      text(`-# ${INSTAGRAM_ICON} Instagram`)
     ] };
   } catch { return null; }
 }
