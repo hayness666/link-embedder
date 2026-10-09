@@ -33,7 +33,7 @@ export function cardHeading(link, title = '') {
   const isShort = canonical.platform === 'youtube' && /\/shorts\//.test(link.url);
   const label = title || (canonical.platform === 'twitter' ? 'Tweet on Twitter' : isShort ? 'YouTube Short' : `${brand} ${kind}`);
   const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
-  return `## [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
+  return `### [${safe} ↗](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)`;
 }
 
 export function parseInstagramCard(html, link) {
