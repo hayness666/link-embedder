@@ -13,3 +13,5 @@ The bot creates/reuses its own Link Embedder Reposts webhook in an enabled chann
 Replacement is confirmed before deletion. The source is fetched again to check text, edits and eligibility. On failure, keep the source; remove the replacement only if the source is confirmed to still exist. Ambiguous network results can leave duplicates. Discord does not offer an atomic replace operation, so a final edit race cannot be eliminated. No history backfill; only new messages trigger processing.
 
 Local tests cover send failure, lost delete acknowledgements, concurrent source edits, eligibility, permissions and opt-in scope. Live testing remains required in the approved test channel before widening scope.
+
+For hosting, index.js reads the secret .env first, then optional pilot.env overrides for the five pilot settings only. Keep DISCORD_TOKEN solely in .env. pilot.env is ignored by Git. Unknown pilot keys stop startup with a fixed error.
