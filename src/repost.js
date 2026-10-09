@@ -1,6 +1,7 @@
 import { PermissionFlagsBits as P, ChannelType } from 'discord.js';
 import { extractLinks, parseSocialUrl } from './previews.js';
 import { helperUrl } from './adapters.js';
+import { scheduleFallback } from './native-fallback.js';
 
 // Destructive replacement is deliberately restricted to plain text in opted-in text channels.
 export function canRepost(message, user) {
@@ -64,6 +65,7 @@ export function createReposter(user, log = () => {}) {
       if (!canRepost(fresh, user) || fresh.content !== message.content
         || fresh.editedTimestamp !== message.editedTimestamp) throw new Error('Source changed');
       await fresh.delete();
+      scheduleFallback(payload, () => hook.fetchMessage(replacement.id), update => hook.editMessage(replacement.id, update), log);
       return true;
     } catch {
       log('repost_failed_original_preserved_or_delete_unconfirmed');

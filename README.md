@@ -67,3 +67,7 @@ Follow [SETUP.md](SETUP.md). Application creation, Message Content intent and Ar
 ## Sources
 
 [Discord permissions](https://docs.discord.com/developers/topics/permissions), [Message Content intent](https://docs.discord.com/developers/events/gateway), [June 2026 intent review rules](https://support-dev.discord.com/hc/en-us/articles/40281523410967-Changes-to-Privileged-Intent-Access-for-Discord-Apps), [OGInstagram](https://github.com/seirenkr/OGInstagram), [fxTikTok](https://github.com/okdargy/fxTikTok), [FxEmbed](https://github.com/FxEmbed/FxEmbed), [vxReddit](https://github.com/dylanpdx/vxReddit), [FxTwitch](https://github.com/seriaati/fxtwitch), [FxMastodon](https://github.com/Someguy123/fxmastodon), [Snapchat provider](https://embedez.com/snapchat), [RedNote provider](https://embedez.com/xiaohongshu), [Amazon ASIN](https://sell.amazon.com/blog/what-is-an-asin).
+
+## Helper fallback
+
+After 20 seconds, a helper preview without a matching photo or video is changed in place to its original public URL so Discord can attempt a native preview. Native media is not guaranteed. Moderator-edited or deleted messages are left alone. Pending checks are bounded and cleared on restart; a helper error page containing an image may not be distinguishable from a successful preview.
