@@ -26,7 +26,7 @@ test('unapproved helpers are never requested; native players remain intact',asyn
 test('public Medal and Imgur metadata use the simple layout and original link once',async()=>{
  const url='https://medal.tv/games/roblox/clips/abc';let target;
  const result=await simplePayload(url,readConfig({}).modes,[],async(u,opts)=>{target=u;assert.equal(opts.redirect,'error');return html('<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://medal.tv/api/content/abc/socialVideoUrl"><meta property="og:title" content="Good clip - Clipped Roblox with Medal.tv">');});
- assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components[1].type,12);assert.equal(result.components[1].components[2].content,'Good clip');
+ assert.equal(target,url);assert.equal(result.components[0].content,url);assert.equal(result.components[1].components[1].type,12);assert.equal(result.components[1].components[0].content,'**Good clip**');
  const direct=await simplePayload('https://i.imgur.com/abcdefg.mp4',readConfig({}).modes,[],()=>{throw Error('must not fetch media');});assert.equal(direct.components[1].components[1].items[0].media.url,'https://i.imgur.com/abcdefg.mp4');
 });
 test('provider errors and oversized bodies yield an honest fallback without throwing',async()=>{
@@ -37,4 +37,9 @@ test('provider errors and oversized bodies yield an honest fallback without thro
 test('Medal uses its published direct CDN video instead of its redirect endpoint',()=>{
  const m=metadataFromHtml('<script type="application/ld+json">'+JSON.stringify({'@type':'VideoObject',name:'Clip',author:{name:'Person'},contentUrl:'https://cdn.medal.tv/mediac/abc.mp4?auth=public-signature'})+'</script>','medal');
  assert.equal(m.name,'Person');assert.equal(m.media[0],'https://cdn.medal.tv/mediac/abc.mp4?auth=public-signature');
+});
+
+test('Reddit title includes subreddit above media and does not repeat as caption',()=>{
+ const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
+ assert.equal(card.components[0].content,'**r/cats: A cat**');assert.equal(card.components[1].content,'**Poster**');assert.equal(card.components[2].type,12);assert.equal(card.components.length,4);
 });

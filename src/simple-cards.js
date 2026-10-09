@@ -48,7 +48,7 @@ export function metadataFromHtml(html, platform) {
         const item = JSON.parse(raw);
         if (item['@type'] === 'VideoObject' && item.isFamilyFriendly !== false && validMedia(item.contentUrl, platform)
           && new URL(item.contentUrl).hostname === 'cdn.medal.tv' && new URL(item.contentUrl).pathname.endsWith('.mp4')) {
-          return {name: typeof item.author?.name === 'string' ? item.author.name : '', caption: typeof item.name === 'string' ? item.name : '', media:[item.contentUrl]};
+          return {name: typeof item.author?.name === 'string' ? item.author.name : '', title: typeof item.name === 'string' ? item.name : '', caption:'', media:[item.contentUrl]};
         }
       } catch { /* malformed public metadata is not usable */ }
     }
@@ -59,17 +59,19 @@ export function metadataFromHtml(html, platform) {
   const validVideos = videos.filter(url => validMedia(url, platform));
   const media = validVideos.length ? [validVideos[0]] : [...new Set((tags.get('og:image') || []).filter(url => validMedia(url, platform)))].slice(0, 10);
   let name = '', username = '', caption = get('og:description') || '';
-  const title = get('og:title');
+  let title = get('og:title');
+  let cardTitle = ['medal','imgur','streamable','reddit','linkedin'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
+  if (['medal','imgur','streamable'].includes(platform)) caption = '';
+  if (caption.trim() === cardTitle.trim()) caption = '';
   if (platform === 'tiktok') {
     const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
     if (author) [, name, username] = author;
   } else if (platform === 'twitch') {
     const split = title.indexOf(' - ');
-    if (split >= 0) { name = title.slice(0, split); caption = title.slice(split + 3); }
+    if (split >= 0) { name = title.slice(0, split); cardTitle = title.slice(split + 3); caption = ''; }
   }
-  if (['medal','imgur','streamable'].includes(platform)) caption = title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '');
-  if (!caption && platform === 'reddit' && title !== 'vxReddit') caption = title;
-  return { name, username, caption, media };
+  if (cardTitle === 'vxReddit') cardTitle = '';
+  return { name, username, title:cardTitle, caption, media };
 }
 export function metadataFromFx(data, platform) {
   const post = data.status || data.tweet;
@@ -98,12 +100,19 @@ export function simpleCard(link, metadata = null) {
   const name = typeof metadata?.name === 'string' ? plain(metadata.name).slice(0, 160) : '';
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
   const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
+  let title = typeof metadata?.title === 'string' ? metadata.title.trim() : '';
+  if (title && link.platform === 'reddit') {
+    const community = new URL(link.url).pathname.split('/')[2];
+    if (!title.toLowerCase().startsWith(`r/${community.toLowerCase()}:`)) title = `r/${community}: ${title}`;
+  }
+  const titleLine = title ? plain([...title].slice(0,256).join('')) : '';
   const caption = typeof metadata?.caption === 'string' ? shortCaption(metadata.caption) : '';
   const text = content => ({type: 10, content});
   return { type: 17, accent_color: brand.color, components: [
-    text(name ? `**${name}**${user ? ` @\u200b${user}` : ''}` : `**${brand.name}**`),
+    ...(titleLine ? [text(`**${titleLine}**`)] : []),
+    ...(name ? [text(`**${name}**${user ? ` @\u200b${user}` : ''}`)] : titleLine ? [] : [text(`**${brand.name}**`)]),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
-    ...(caption ? [text(caption)] : []),
+    ...(caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(!media.length && !caption ? [text('Media preview unavailable. Open the original link above.')] : []),
     text(footer(link.platform))
   ] };
@@ -138,7 +147,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     }
     if (!metadata) {
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
-      if (embed) metadata = { name: embed.author?.name || '', caption: embed.description || embed.title || '', media: [] };
+      if (embed) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: [] };
     }
     return simpleCard(link, metadata);
   }));
