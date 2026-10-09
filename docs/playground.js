@@ -6,7 +6,7 @@ let fields = [], imageUrl = null;
 function validUrl(value) { try {const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password;}catch{return false;} }
 function data(){return {...Object.fromEntries(keys.map(k=>[k,$(k).value])),fields:fields.map(f=>({...f}))};}
 function render(){
- const d=data();$('preview-title').textContent=d.title;$('preview-description').textContent=d.description;$('preview-footer').textContent=d.footer;$('embed').style.borderLeftColor=d.color;
+ const d=data();$('preview-title').textContent=d.title;$('preview-description').textContent=d.description;$('preview-footer').textContent=d.footer;const colorValid=/^#[0-9a-f]{6}$/i.test(d.color);$('color').setAttribute('aria-invalid',String(!colorValid));$('color').setCustomValidity(colorValid?'':'Enter a hex color like #5865F2.');$('download').disabled=!colorValid;$('export').disabled=!colorValid;if(colorValid)$('embed').style.borderLeftColor=d.color;
  for(const type of ['image','thumbnail']){const img=$('preview-'+type);img.hidden=!imageUrl||d.placement!==type;if(imageUrl)img.src=imageUrl;else img.removeAttribute('src');}
  $('preview-fields').replaceChildren(...fields.map(f=>{const box=document.createElement('div');box.className='preview-field'+(f.inline?' inline':'');const name=document.createElement('strong');name.textContent=f.name;const value=document.createElement('span');value.textContent=f.value;box.append(name,value);return box;}));
  $('add-field').disabled=fields.length>=25;
