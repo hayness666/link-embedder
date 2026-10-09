@@ -51,7 +51,7 @@ export function parseInstagramCard(html, link) {
       ...(author ? [text(authorLine)] : []),
       { type: 12, items },
       ...(typeof caption === 'string' && caption ? [text(shortCaption(caption).slice(0, 3000))] : []),
-      text(`${INSTAGRAM_ICON} **Instagram**`)
+      text(`${INSTAGRAM_ICON}\u00a0\u00a0**Instagram**`)
     ] };
   } catch { return null; }
 }
