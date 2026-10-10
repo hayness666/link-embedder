@@ -254,8 +254,8 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
           : `${link.kind === 'list' ? 'List' : 'Community'} preview unavailable.`
       });
     }
-    if (link.platform === 'instagram' && ['story','highlight','audio','profile'].includes(link.kind)) {
-      return simpleCard(link,{caption:`${({story:'Story',highlight:'Highlight',audio:'Audio',profile:'Profile'}[link.kind])} preview unavailable.`});
+    if (link.platform === 'instagram' && ['story','highlight','profile'].includes(link.kind)) {
+      return simpleCard(link,{caption:`${({story:'Story',highlight:'Highlight',profile:'Profile'}[link.kind])} preview unavailable.`});
     }
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);

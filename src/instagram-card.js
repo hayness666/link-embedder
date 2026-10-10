@@ -32,7 +32,7 @@ export function cardHeading(link, title = '') {
   const brand = brands[link.platform]?.name || link.platform;
   const isShort = canonical.platform === 'youtube' && /\/shorts\//.test(link.url);
   const facebookKind = canonical.platform === 'facebook' ? ({photo:'Photo',post:'Post',story:'Story',profile:'Profile','profile or page':'Profile or Page',group:'Group',listing:'Marketplace Listing',event:'Event',collection:'Video Collection',album:'Album',link:'Link',video:'Video'}[canonical.kind]) : null;
-  const instagramKind = canonical.platform === 'instagram' ? ({story:'Story',highlight:'Highlight',audio:'Audio',profile:'Profile'}[canonical.kind]) : null;
+  const instagramKind = canonical.platform === 'instagram' ? ({story:'Story',highlight:'Highlight',profile:'Profile'}[canonical.kind]) : null;
   const label = title || (instagramKind ? `Instagram ${instagramKind}` : '') || (facebookKind ? `Facebook ${facebookKind}` : '') || (canonical.platform === 'twitter' ? (({space:'Twitter Space',list:'Twitter List',community:'Twitter Community'}[canonical.kind] || 'Post on Twitter')) : isShort ? 'YouTube Short' : `${brand} ${kind}`);
   const safe = plain([...label].slice(0,256).join('').replace(/\s+/g,' ')).replace(/[\[\]]/g,c=>'\\'+c);
   return `**[${safe}](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)**`;
