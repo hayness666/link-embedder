@@ -220,7 +220,7 @@ export function simpleCard(link, metadata = null) {
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(!textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
-    ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : link.platform === 'facebook' ? `${link.kind === 'photo' ? 'Photo' : 'Story'} preview unavailable.` : 'Media preview unavailable.')] : []),
+    ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : link.platform === 'facebook' ? `${({photo:'Photo',post:'Story',story:'Story',video:'Video',group:'Group',listing:'Listing',event:'Event',album:'Album',profile:'Profile','profile or page':'Profile or page',collection:'Video collection',link:'Link'}[link.kind] || 'Media')} preview unavailable.` : 'Media preview unavailable.')] : []),
     ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**`)) : []),
     ...(quoteText ? [text(quoteText)] : []),
     {type:14,divider:true,spacing:1},

@@ -37,7 +37,7 @@ User prose is preserved. Preview URLs may be canonicalized independently. Explic
 | Snapchat public links | Basic link card | `snapchatez` → snapchatez.com; Spotlight, public shared moments and profile routes only |
 | YouTube videos/Shorts | Tracking cleanup only | Plain-text replacement only when trackers are removed; Discord supplies native previews |
 | Amazon products | Custom product card in replacement mode | Available public/native title, description and image; store only if verified |
-| Facebook photos / reels | Photos/posts can reuse Discord native images; reels receive an unavailable notice | No Facebook media metadata fetch |
+| Facebook content links | Custom cards reuse useful Discord metadata; missing previews receive type-specific notices | No Facebook media metadata fetch |
 | LinkedIn / UpScrolled public posts | Basic link card | No verified inline video; narrow public URL shapes only |
 | RedNote / Xiaohongshu notes | Basic link card | Preserves xsec_token/xsec_source; no verified free URL-proxy route implemented |
 | Medal / Streamable / Imgur | Public metadata card | Direct media when public metadata supplies it; full canonical links only |
@@ -52,7 +52,7 @@ Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the eight documented help
 
 YouTube cleanup preserves video IDs, timestamps, playlists, fragments and other functional parameters. Already-clean links are untouched. YouTube-containing messages use plain text, no custom card or helper request; Discord controls whether its native player appears.
 
-Facebook single photo/post messages reuse matching Discord image metadata when available, otherwise use a custom link card. Photo cleanup removes album `set` while preserving `fbid`. Mixed Facebook post messages remain untouched. Facebook fallbacks say “Photo preview unavailable.” for photos, “Story preview unavailable.” for story/permalink posts, and “Reel preview unavailable.” for reels.
+Single Facebook links use custom cards for photos, reels, posts, profiles/pages, groups, videos/Watch, Marketplace listings, events, albums, stories and known share/short-link routes. Matching Discord metadata supplies useful titles, descriptions and images; generic login previews are discarded. Missing media receives a type-specific unavailable notice. No Facebook login or direct media fetch is used. Photo cleanup removes album `set` while preserving `fbid`. Messages containing Facebook plus another recognized content link remain untouched. Facebook fallbacks say “Photo preview unavailable.” for photos, “Story preview unavailable.” for story/permalink posts, and “Reel preview unavailable.” for reels.
 
 Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. When the helper supplies only a v.redd.it address rather than playable media, a link to the video page is shown. Availability of Reddit video playback is not guaranteed.
 

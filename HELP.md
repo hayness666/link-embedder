@@ -50,7 +50,7 @@ Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the eight documented help
 
 YouTube cleanup preserves video IDs, timestamps, playlists, fragments and other functional parameters. Already-clean links are untouched. YouTube-containing messages use plain text, no custom card or helper request; Discord controls whether its native player appears.
 
-Facebook single photo/post messages reuse matching Discord image metadata when available, otherwise use a custom link card. Photo cleanup removes album `set` while preserving `fbid`. Mixed Facebook post messages remain untouched. Facebook fallbacks say “Photo preview unavailable.” for photos, “Story preview unavailable.” for story/permalink posts, and “Reel preview unavailable.” for reels.
+Single Facebook links use custom cards for photos, reels, posts, profiles/pages, groups, videos/Watch, Marketplace listings, events, albums, stories and known share/short-link routes. Matching Discord metadata supplies useful titles, descriptions and images; generic login previews are discarded. Missing media receives a type-specific unavailable notice. No Facebook login or direct media fetch is used. Photo cleanup removes album `set` while preserving `fbid`. Messages containing Facebook plus another recognized content link remain untouched. Facebook fallbacks say “Photo preview unavailable.” for photos, “Story preview unavailable.” for story/permalink posts, and “Reel preview unavailable.” for reels.
 
 Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. When the helper supplies only a v.redd.it address rather than playable media, a link to the video page is shown. Availability of Reddit video playback is not guaranteed.
 

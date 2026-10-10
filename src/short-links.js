@@ -32,7 +32,7 @@ export async function resolveShortLink(raw,fetcher=fetch) {
    if(![301,302,303,307,308].includes(r.status))return null;
    const location=r.headers.get('location');if(!location)return null;
    const next=new URL(location,current).href;const canonical=parseSocialUrl(next);
-   if(canonical)return canonical.platform===family?canonical.url:null;
+   if(canonical && !shortFamily(next))return canonical.platform===family?canonical.url:null;
    if(shortFamily(next)!==family)return null;
    current=next;
   }catch{return null;}finally{if(r?.body)await r.body.cancel().catch(()=>{});}

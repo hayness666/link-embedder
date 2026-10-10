@@ -49,7 +49,7 @@ test('rejects spoofing, credentials, insecure schemes, ports, unsupported and sh
     'https://instagram.com:444/reel/a', 'https://instagram.com/stories/person/123',
     'https://instagram.com/reel/%2fadmin', 'https://instagram.com/reel/a\\b',
     'https://vm.tiktok.com/abcd', 'https://www.tiktok.com/t/abcd',
-    'https://facebook.com/share/r/abc', 'https://facebook.com/groups/123/posts/456',
+    'https://facebook.com/login', 'https://facebook.com/settings',
     'https://facebook.com/photo.php?fbid=not-an-id', 'https://instagram.com/direct/inbox'
   ]) assert.equal(parseSocialUrl(url), null, url);
 });

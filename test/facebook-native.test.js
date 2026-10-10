@@ -17,3 +17,19 @@ test('native preview waits boundedly and preserves source on edits or no image',
 });
 
 test('Facebook photo cleanup removes album set only',()=>{assert.equal(cleanFacebookPhotoSets('hello https://www.facebook.com/photo?fbid=123&set=a.456&foo=keep'),'hello https://www.facebook.com/photo?fbid=123&foo=keep');assert.equal(cleanFacebookPhotoSets('https://www.youtube.com/watch?v=abc&set=keep'),'https://www.youtube.com/watch?v=abc&set=keep');});
+
+import {parseSocialUrl} from '../src/previews.js';
+import {simpleCard} from '../src/simple-cards.js';
+test('broader Facebook routes retain functional IDs and reject unsafe/system routes',()=>{
+ for(const [path,kind] of [['/NASA','profile or page'],['/groups/AstronomyClubForEveryone','group'],['/groups/123/posts/456','post'],['/NASA/posts/a-caption/123','post'],['/NASA/videos/123','video'],['/watch/?v=123&tracking=remove','video'],['/events/event-name/123','event'],['/marketplace/item/123','listing'],['/share/p/abc','link'],['/profile.php?id=123','profile'],['/media/set/?set=a.123','album'],['/stories/123/456','story']])assert.equal(parseSocialUrl('https://www.facebook.com'+path)?.kind,kind,path);
+ assert.equal(parseSocialUrl('https://www.facebook.com/watch/?v=123&tracking=remove').url,'https://www.facebook.com/watch?v=123');
+ for(const url of ['https://facebook.com/login','https://facebook.com/checkpoint','https://facebook.com/settings','https://facebook.com.evil.test/NASA','https://fb.watch/reel/123','https://facebook.com/watch?v=wrong'])assert.equal(parseSocialUrl(url),null,url);
+ assert.equal(parseSocialUrl('https://fb.watch/abc/').url,'https://fb.watch/abc');
+});
+test('real text-only Facebook event metadata survives, generic login cards do not',()=>{
+ const event='https://www.facebook.com/events/123';
+ const payload=facebookNativePayload(event,[{url:event,title:'Science live',description:'Join the public science event'}]);
+ assert.ok(payload); assert.match(JSON.stringify(payload),/Science live/);assert.ok(!payload.components[1].components.some(c=>c.type===12));
+ assert.equal(facebookNativePayload(event,[{url:event,title:'Log in or sign up to view',description:'See posts, photos and more on Facebook.',thumbnail:embed.thumbnail}]),null);
+ assert.match(JSON.stringify(simpleCard(parseSocialUrl('https://www.facebook.com/NASA/videos/123'))),/Video preview unavailable/);
+});

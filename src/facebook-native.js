@@ -8,17 +8,21 @@ export function facebookNativePayload(content, embeds) {
   const link = links[0];
   const embed = embeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
   if (!embed) return null;
-  const raw = embed.image?.url || embed.thumbnail?.url;
-  try {
+  const title = typeof embed.title === 'string' ? embed.title.trim() : '';
+  const description = typeof embed.description === 'string' ? embed.description.trim() : '';
+  if (/log in|login|sign up|log into|content (?:isn't|is not) available/i.test(title) || /see posts, photos and more on facebook/i.test(description)) return null;
+  let raw = embed.image?.url || embed.thumbnail?.url;
+  if (raw) try {
     const u = new URL(raw);
     if (u.protocol !== 'https:' || u.username || u.password || u.port || raw.length > 4096
       || !(u.hostname.endsWith('.fbcdn.net') || ['media.discordapp.net','images-ext-1.discordapp.net','images-ext-2.discordapp.net'].includes(u.hostname))) return null;
   } catch { return null; }
+  if (!raw && (!title || ['photo','video','story'].includes(link.kind))) return null;
   return { flags: 32768, allowedMentions: {parse: [], repliedUser: false}, components: [
     {type:10,content}, {type:17,accent_color:0x1877f2,components:[
-      {type:10,content:cardHeading(link, embed.title || '')},
+      {type:10,content:cardHeading(link, title)},
       {type:14,divider:false,spacing:1},
-      {type:12,items:[{media:{url:raw}}]},
+      ...(raw ? [{type:12,items:[{media:{url:raw}}]}] : []),
       ...(embed.description ? [{type:10,content:shortCaption(embed.description)}] : []),
       {type:14,divider:true,spacing:1},
       {type:10,content:footer('facebook')}

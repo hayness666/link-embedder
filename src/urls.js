@@ -10,7 +10,7 @@ const socialHosts = new Set([
   'threads.com', 'www.threads.com', 'threads.net', 'www.threads.net',
   'netflix.com', 'www.netflix.com', 'primevideo.com', 'www.primevideo.com',
   'instagram.com', 'www.instagram.com', 'tiktok.com', 'www.tiktok.com',
-  'facebook.com', 'www.facebook.com', 'm.facebook.com',
+  'facebook.com', 'www.facebook.com', 'm.facebook.com', 'fb.watch', 'fb.me',
   'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be',
   'twitter.com', 'www.twitter.com', 'x.com', 'www.x.com', 'bsky.app',
   'reddit.com', 'www.reddit.com', 'old.reddit.com', 'clips.twitch.tv', 'www.twitch.tv', 'twitch.tv',
