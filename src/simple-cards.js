@@ -26,7 +26,7 @@ export function validMedia(raw, platform) {
   try {
     const u = new URL(raw);
     return typeof raw === 'string' && raw.length <= 2048 && u.protocol === 'https:' && !u.username && !u.password && !u.port && !u.hash
-      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'netflix' && /^occ-[a-z0-9-]+\.[0-9]+\.nflxso\.net$/.test(u.hostname)) || (['facebook','threads'].includes(platform) && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
+      && ((mediaHosts[platform] || []).includes(u.hostname) || (platform === 'netflix' && /^occ-[a-z0-9-]+\.[0-9]+\.nflxso\.net$/.test(u.hostname)) || (platform === 'threads' && /^(?:scontent|video)-[a-z0-9-]+\.cdninstagram\.com$/.test(u.hostname)) || (['facebook','threads'].includes(platform) && /^scontent-[a-z0-9-]+\.xx\.fbcdn\.net$/.test(u.hostname)));
   } catch { return false; }
 }
 const decode = value => value.replace(/&(?:amp|quot|apos|lt|gt|#\d+|#x[\da-f]+);/gi, entity => {
@@ -60,6 +60,16 @@ export function metadataFromHtml(html, platform, expectedUrl) {
     }
   }
   const tags = readMeta(html), get = name => tags.get(name)?.[0] || '';
+  if (platform === 'primevideo') {
+    const canonicalTag = html.match(/<link\b[^>]*rel=["']canonical["'][^>]*>/i)?.[0] || '';
+    const canonical = parseSocialUrl(decode(canonicalTag.match(/href=["']([^"']+)["']/i)?.[1] || ''));
+    const expected = parseSocialUrl(expectedUrl || '');
+    if (canonical?.platform !== 'primevideo' || canonical.kind !== 'title' || expected?.kind !== 'title'
+      || new URL(canonical.url).pathname.split('/').pop() !== new URL(expected.url).pathname.split('/').pop()) return null;
+    const title = decode(html.match(/<title>Prime Video:\s*([^<]+)<\/title>/i)?.[1] || '').trim();
+    if (!title || /sign in|login|access denied/i.test(title)) return null;
+    return {title, caption:get('description') || get('og:description'), media:(tags.get('og:image') || []).filter(url=>validMedia(url,platform)).slice(0,1)};
+  }
   if (platform === 'threads') {
     // A profile image and generic shell are not post media. Require matching
     // public post identity and actual post text before accepting OG images.
@@ -113,6 +123,33 @@ export function metadataFromHtml(html, platform, expectedUrl) {
   if (cardTitle === 'vxReddit') cardTitle = '';
   return { name, username, title:cardTitle, caption, media, videoPage, destinationUrl };
 }
+// The approved helper's ActivityPub representation provides post identity and
+// attachment types. Never accept login shells, protected or spoiler-marked posts.
+export function metadataFromThreads(data, expectedUrl) {
+  const expected = parseSocialUrl(expectedUrl || '');
+  const actual = parseSocialUrl(typeof data?.url === 'string' ? data.url : '');
+  if (expected?.platform !== 'threads' || actual?.platform !== 'threads'
+    || new URL(expected.url).pathname.split('/').pop() !== new URL(actual.url).pathname.split('/').pop()
+    || data.visibility !== 'public' || data.sensitive !== false || data.spoiler_text
+    || data.account?.locked !== false || typeof data.content !== 'string') return null;
+  const toText = value => decode(value.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<br\s*\/?>|<\/p>/gi, '\n')
+    .replace(/<[^>]*>/g, '')).replace(/[\u200a]/g, '').trim();
+  // Only strip the helper's final stats block, never ordinary caption numbers.
+  const content = data.content.replace(/(?:<br\s*\/?>|\s|\u200a)*<b>\s*[♥❤]\ufe0f?[\d\s,.KMBkmb💬🔄✈️]*<\/b>\s*$/u, '');
+  const quoteHtml = content.match(/<blockquote>([\s\S]*?)<\/blockquote>/i)?.[1];
+  const quoteMatch = quoteHtml?.match(/^<b>Quote of <a\b[^>]*>@([A-Za-z0-9_.]{1,30})<\/a><\/b>([\s\S]*)$/i);
+  const quote = quoteMatch ? {name:'Quoted post',username:quoteMatch[1],text:toText(quoteMatch[2]),threadsQuote:true} : null;
+  const caption = toText(content.replace(/<blockquote>[\s\S]*?<\/blockquote>/gi, ''));
+  const attachments = Array.isArray(data.media_attachments) ? data.media_attachments : [];
+  const media = attachments.filter(item => ['image','video'].includes(item?.type)
+    && validMedia(item.url, 'threads') && item.url !== data.account?.avatar && item.url !== data.account?.avatar_static
+    && !/\/t\d+\.\d+-19\//.test(new URL(item.url).pathname)).map(item => item.url).slice(0,10);
+  if (!caption && !media.length && !quote) return null;
+  return {name:typeof data.account.display_name === 'string' ? data.account.display_name : '',
+    username:typeof data.account.username === 'string' ? data.account.username : '',caption,media,quote};
+}
+
 export function twitterSpaceUrl(value) {
   try {
     const u = new URL(value);
@@ -141,8 +178,8 @@ async function readBounded(url, fetcher) {
   let response;
   try {
     response = await fetcher(url, { redirect: 'error', signal: AbortSignal.timeout(8000), headers: {
-      'User-Agent': 'Discordbot (Link Embedder public preview)', Accept: 'text/html, application/json' } });
-    if (!response.ok || !/text\/html|application\/json/i.test(response.headers.get('content-type') || '')) return null;
+      'User-Agent': 'Discordbot (Link Embedder public preview)', Accept: 'text/html, application/json, application/activity+json' } });
+    if (!response.ok || !/text\/html|application\/(?:json|activity\+json)/i.test(response.headers.get('content-type') || '')) return null;
     const reader = response.body.getReader(); let size = 0; const chunks = [];
     try {
       while (true) { const {done, value} = await reader.read(); if (done) break;
@@ -172,7 +209,7 @@ export function simpleCard(link, metadata = null) {
   const text = content => ({type: 10, content});
   const quote = metadata?.quote;
   const quotedUrl = typeof quote?.url === 'string' ? parseSocialUrl(quote.url) : null;
-  const quoteText = textFirst && quotedUrl?.platform === link.platform
+  const quoteText = textFirst && (quotedUrl?.platform === link.platform || (link.platform === 'threads' && quote?.threadsQuote === true))
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
@@ -199,6 +236,11 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     if (['netflix','primevideo'].includes(link.platform)) {
       const service = brands[link.platform].name;
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
+      if (link.platform === 'primevideo' && link.kind === 'title' && !embed) {
+        const body = await readBounded(link.url, fetcher);
+        const metadata = body ? metadataFromHtml(body, link.platform, link.url) : null;
+        if (metadata) return simpleCard(link, metadata);
+      }
       return simpleCard(link,{title:typeof embed?.title === 'string' ? embed.title : (link.kind === 'storefront' ? 'Prime Video Storefront' : `View on ${service}`),caption:typeof embed?.description === 'string' ? embed.description : `Open on ${service} to ${link.kind === 'storefront' ? 'browse' : 'watch'}. Availability depends on your region and account.`,media:[embed?.image?.url || embed?.thumbnail?.url].filter(u=>u && validMedia(u,link.platform))});
     }
     if (link.platform === 'twitter' && ['space','list','community'].includes(link.kind)) {
@@ -223,12 +265,13 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
       let url = helperUrl(link, modes[link.platform]);
       if (link.platform === 'twitter') url = `https://api.fxtwitter.com/2/status/${original.pathname.split('/').pop()}`;
       if (link.platform === 'bluesky') { const p = original.pathname.split('/'); url = `https://api.fxbsky.app/2/status/${encodeURIComponent(p[2])}/${p[4]}`; }
+      if (link.platform === 'threads') url = `${url.replace(/\/$/,'')}/activity`;
       const body = await readBounded(url, fetcher);
       if (body) {
-        try { metadata = ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform, link.url); } catch { /* leave original link available */ }
+        try { metadata = link.platform === 'threads' ? metadataFromThreads(JSON.parse(body),link.url) : ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform, link.url); } catch { /* leave original link available */ }
       }
     }
-    if (['threads','medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
+    if ((link.platform === 'threads' && modes.threads !== 'fzthreads') || ['medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
       if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
       else {
         const body = await readBounded(link.url, fetcher);

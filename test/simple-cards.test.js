@@ -214,3 +214,15 @@ test('Threads unavailable card matches Facebook photo fallback structure',()=>{
  assert.deepEqual(threads.components.map(c=>c.type),facebook.components.map(c=>c.type));
  assert.ok(threads.components.some(c=>c.content==='Media preview unavailable.'));
 });
+
+
+test('Prime Video public title metadata requires matching canonical identity',async()=>{
+ const url='https://www.primevideo.com/region/na/detail/0OBDS97ED82GWIQB4ICY88JTFF';
+ const body='<title>Prime Video: Ruby Sparks</title><link rel="canonical" href="https://www.primevideo.com/detail/0OBDS97ED82GWIQB4ICY88JTFF"><meta name="description" content="A public synopsis"><meta property="og:image" content="https://m.media-amazon.com/images/poster.jpg">';
+ const payload=await simplePayload(url,readConfig({}).modes,[],async(request,options)=>{assert.equal(request,url);assert.equal(options.redirect,'error');return html(body);});
+ assert.ok(JSON.stringify(payload).includes('Ruby Sparks'));
+ assert.ok(JSON.stringify(payload).includes('poster.jpg'));
+ assert.equal(metadataFromHtml(body,'primevideo','https://www.primevideo.com/detail/AAAAAAAAAA'),null);
+ const fallback=await simplePayload(url,readConfig({}).modes,[],async()=>{throw Error('unavailable');});
+ assert.ok(JSON.stringify(fallback).includes('View on Prime Video'));
+});

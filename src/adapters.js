@@ -44,7 +44,7 @@ export function parseAdditional(u) {
 
 export function helperUrl(link, mode) {
   const u = new URL(link.url);
-  const hosts = { oginstagram: 'oginstagram.com', fxtiktok: 'tnktok.com', vxreddit: 'vxreddit.com', snapchatez: 'snapchatez.com' };
+  const hosts = { fzthreads: 'fzthreads.com', oginstagram: 'oginstagram.com', fxtiktok: 'tnktok.com', vxreddit: 'vxreddit.com', snapchatez: 'snapchatez.com' };
   if (mode === 'fxembed') u.hostname = link.platform === 'bluesky' ? 'fxbsky.app' : 'fxtwitter.com';
   else if (mode === 'fxtwitch') { u.hostname = 'fxtwitch.seria.moe'; u.pathname = `/clip${u.pathname}`; }
   else if (hosts[mode]) u.hostname = hosts[mode];

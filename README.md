@@ -45,10 +45,10 @@ User prose is preserved. Preview URLs may be canonicalized independently. Explic
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
 | Twitter Spaces / Lists / Communities | Linked resource card | Matching Discord metadata when available; no audio player or private membership access |
-| Threads public posts | Custom card | Public post text and allowlisted photo/MP4 metadata when exposed; otherwise linked unavailable card. No login or third-party helper. |
-| Netflix / Prime Video | Linked title or storefront card | Matching Discord metadata/image when available; no embedded playback |
+| Threads public posts | Custom card | `fzthreads` → fzthreads.com after approval; public text and allowlisted photos/video when supplied. Spoiler/private responses and failures use a linked fallback. |
+| Netflix / Prime Video | Linked title or storefront card | Matching Discord metadata/image when available; Prime Video titles also use public page metadata; no embedded playback |
 
-Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the seven documented helpers after approval of the recipients in [PRIVACY.md](PRIVACY.md). Installers should see the privacy/help disclosure. Platform overrides use `PLATFORM_MODE=card|native|off|<listed helper>`; Mastodon allows card/off only. Native-only modes other than Amazon are left untouched in replacement mode. Legacy reply mode remains available in code but is not the requested replacement-only deployment behavior.
+Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the eight documented helpers after approval of the recipients in [PRIVACY.md](PRIVACY.md). Installers should see the privacy/help disclosure. Platform overrides use `PLATFORM_MODE=card|native|off|<listed helper>`; Mastodon allows card/off only. Native-only modes other than Amazon are left untouched in replacement mode. Legacy reply mode remains available in code but is not the requested replacement-only deployment behavior.
 
 YouTube cleanup preserves video IDs, timestamps, playlists, fragments and other functional parameters. Already-clean links are untouched. YouTube-containing messages use plain text, no custom card or helper request; Discord controls whether its native player appears.
 
@@ -56,7 +56,7 @@ Facebook single photo/post messages reuse matching Discord image metadata when a
 
 Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. When the helper supplies only a v.redd.it address rather than playable media, a link to the video page is shown. Availability of Reddit video playback is not guaranteed.
 
-Netflix and Prime Video cards do not fetch authenticated playback. Storefront links remain storefronts rather than being presented as film titles. Known trackers and handoff parameters such as Netflix `trackId`/`tctx` and Prime Video `xdsso`/`ref_` are removed from visible repost URLs; other parameters are preserved.
+Netflix and Prime Video cards do not fetch authenticated playback. Prime Video title pages can supply a public title, synopsis and poster after matching the canonical title ID. Storefront links remain storefronts rather than being presented as film titles. Known trackers and handoff parameters such as Netflix `trackId`/`tctx` and Prime Video `xdsso`/`ref_` are removed from visible repost URLs; other parameters are preserved.
 
 ## Card presentation
 

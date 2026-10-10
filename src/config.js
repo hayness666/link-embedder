@@ -1,5 +1,5 @@
 const snowflake = /^\d{17,20}$/;
-export const helperModes = { instagram: 'oginstagram', tiktok: 'fxtiktok', twitter: 'fxembed', bluesky: 'fxembed', reddit: 'vxreddit', twitch: 'fxtwitch', snapchat: 'snapchatez' };
+export const helperModes = { threads: 'fzthreads', instagram: 'oginstagram', tiktok: 'fxtiktok', twitter: 'fxembed', bluesky: 'fxembed', reddit: 'vxreddit', twitch: 'fxtwitch', snapchat: 'snapchatez' };
 export function readConfig(env) {
   const testGuildId = (env.TEST_GUILD_ID ?? env.DISCORD_GUILD_ID) || null;
   if (testGuildId && !snowflake.test(testGuildId)) throw new Error('Invalid optional test server ID.');
