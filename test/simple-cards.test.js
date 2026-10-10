@@ -138,7 +138,9 @@ test('direct Spaces links use a formatted card without calling the post endpoint
  const payload=await simplePayload(url,modes,[],async()=>{throw new Error('Must not fetch a Space through the post endpoint');});
  const card=payload.components[1];
  assert.match(card.components[0].content,/Twitter Space/);
- assert.ok(card.components.some(c=>c.content?.includes('Audio playback is not available')));
+ assert.ok(card.components.some(c=>c.content===`[Open Space](<${url}>)`));
+ assert.ok(!JSON.stringify(card).includes('Audio playback is not available'));
+ assert.ok(!JSON.stringify(card).includes('Media preview unavailable')); 
  assert.ok(card.components.some(c=>c.type===14&&c.divider));
  assert.equal(card.components.some(c=>c.type===12),false);
  const named=await simplePayload(url,modes,[{url,title:'Public discussion',author:{name:'Host'}}]);
@@ -189,4 +191,26 @@ test('Prime Video storefront and detail cards use matching metadata without play
  const named=await simplePayload(url,readConfig({}).modes,[{url,title:'Included with Prime',image:{url:'https://m.media-amazon.com/images/test.jpg'}}]);
  assert.match(named.components[1].components[0].content,/Included with Prime/);
  assert.equal(named.components[1].components.find(c=>c.type===12).items.length,1);
+});
+
+
+test('social text cards share Twitter ordering, full main text and capped quotes', () => {
+ for (const [platform,url,media] of [
+  ['threads','https://www.threads.com/@meta/post/ABC','https://scontent-test.xx.fbcdn.net/photo.jpg'],
+  ['bluesky','https://bsky.app/profile/example.com/post/abc','https://cdn.bsky.app/photo.jpg'],
+  ['mastodon','https://mastodon.social/@example/123',null]
+ ]) {
+  const card=simpleCard({platform,url},{name:'Author',username:'author',caption:'m'.repeat(300),media:media?[media]:[],quote:{name:'Quote',text:'q'.repeat(300),url}});
+  const body=card.components.findIndex(c=>c.content==='m'.repeat(300));
+  assert.ok(body>=0);
+  if(media) assert.ok(body<card.components.findIndex(c=>c.type===12));
+  const quote=card.components.findIndex(c=>c.content?.startsWith('> **Quote**'));
+  assert.ok(quote>body);assert.ok(card.components[quote].content.includes('…'));
+ }
+});
+test('Threads unavailable card matches Facebook photo fallback structure',()=>{
+ const threads=simpleCard({platform:'threads',url:'https://www.threads.com/@meta/post/ABC'});
+ const facebook=simpleCard({platform:'facebook',kind:'photo',url:'https://www.facebook.com/photo?fbid=123'});
+ assert.deepEqual(threads.components.map(c=>c.type),facebook.components.map(c=>c.type));
+ assert.ok(threads.components.some(c=>c.content==='Media preview unavailable.'));
 });

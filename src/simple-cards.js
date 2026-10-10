@@ -129,7 +129,7 @@ export function metadataFromFx(data, platform) {
   const media = entries.map(item => item.url).filter(url => validMedia(url, platform)).slice(0, 10);
   const q = post.quote;
   const quotedUrl = typeof q?.url === 'string' ? parseSocialUrl(q.url) : null;
-  const quote = platform === 'twitter' && q && !q.author?.protected && quotedUrl?.platform === 'twitter' ? {name:q.author?.name || '',username:q.author?.screen_name || '',text:typeof q.text === 'string' ? q.text : '',url:quotedUrl.url} : null;
+  const quote = ['twitter','bluesky'].includes(platform) && q && !q.author?.protected && quotedUrl?.platform === platform ? {name:q.author?.name || '',username:q.author?.screen_name || '',text:typeof q.text === 'string' ? q.text : '',url:quotedUrl.url} : null;
   const spaceCandidates = platform === 'twitter' ? [
     ...(typeof post.text === 'string' ? post.text.match(/https:\/\/[^\s<>]+/g) || [] : []),
     ...(Array.isArray(post.raw_text?.facets) ? post.raw_text.facets.filter(f=>f.type==='url').map(f=>f.replacement) : [])
@@ -154,6 +154,8 @@ async function readBounded(url, fetcher) {
 }
 export function simpleCard(link, metadata = null) {
   const brand = brands[link.platform];
+  const spaceUrl = link.platform === 'twitter' && link.kind === 'space' ? twitterSpaceUrl(link.url) : null;
+  const textFirst = ['twitter','threads','bluesky','mastodon'].includes(link.platform);
   if (link.platform === 'facebook' && link.kind === 'reel') return {type:17,accent_color:brand.color,components:[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]};
   const name = typeof metadata?.name === 'string' ? plain(metadata.name).slice(0, 160) : '';
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
@@ -164,24 +166,25 @@ export function simpleCard(link, metadata = null) {
   const authorLine = community ? `**r/${plain(community)}**${user ? ` u/${user}` : ''}`
     : `${name ? `**${name}**` : ''}${user ? `${name ? ' ' : ''}@\u200b${user}` : ''}`;
   const titleLine = title ? plain([...title].slice(0,256).join('')) : '';
-  const caption = typeof metadata?.caption === 'string' ? (link.platform === 'twitter' ? plain(metadata.caption) : shortCaption(metadata.caption)) : '';
+  const caption = typeof metadata?.caption === 'string' ? (textFirst ? plain(metadata.caption) : shortCaption(metadata.caption)) : '';
   let destination = '';
   try { const u = new URL(metadata?.destinationUrl); if (link.platform === 'reddit' && u.protocol === 'https:' && !u.username && !u.password && !u.port && !/[<>\s]/.test(metadata.destinationUrl)) destination = u.href; } catch {}
   const text = content => ({type: 10, content});
   const quote = metadata?.quote;
   const quotedUrl = typeof quote?.url === 'string' ? parseSocialUrl(quote.url) : null;
-  const quoteText = link.platform === 'twitter' && quotedUrl?.platform === 'twitter'
+  const quoteText = textFirst && quotedUrl?.platform === link.platform
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortCaption(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
     {type:14,divider:false,spacing:1},
     ...(authorLine ? [text(authorLine)] : []),
-    ...(link.platform === 'twitter' && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
+    ...(spaceUrl ? [text(`[Open Space](<${spaceUrl}>)`)] : []),
+    ...(textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
-    ...(link.platform !== 'twitter' && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
+    ...(!textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
-    ...(!media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
-    ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**\nOpen on Twitter to listen if available.`)) : []),
+    ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : 'Media preview unavailable.')] : []),
+    ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**`)) : []),
     ...(quoteText ? [text(quoteText)] : []),
     {type:14,divider:true,spacing:1},
     text(footer(link.platform))
@@ -206,7 +209,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         title: typeof embed?.title === 'string' ? embed.title : '',
         name: typeof embed?.author?.name === 'string' ? embed.author.name : '',
         caption: link.kind === 'space'
-          ? 'Open on Twitter to listen if available. Audio playback is not available in this card.'
+          ? ''
           : `Open this ${link.kind} on Twitter to view it. Access may require a login or membership.`
       });
     }
