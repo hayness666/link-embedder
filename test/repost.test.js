@@ -91,12 +91,12 @@ test('multiple native links and canonical aliases are not appended again', () =>
   assert.equal(result.content, original);
 });
 
-test('Instagram helper fallback keeps the exact source text and adds its helper separately', () => {
+test('Instagram helper fallback strips tracking from source and adds its helper separately', () => {
   const { message } = fixture();
   const result = buildRepostPayload({...message, content: 'Look https://www.instagram.com/reel/ABC/?utm_source=share'}, {
     content: 'https://oginstagram.com/reel/ABC\nOriginal: <https://www.instagram.com/reel/ABC>', embeds: []
   });
-  assert.equal(result.content, 'Look https://www.instagram.com/reel/ABC/?utm_source=share\n\nhttps://oginstagram.com/reel/ABC');
+  assert.equal(result.content, 'Look https://www.instagram.com/reel/ABC/\n\nhttps://oginstagram.com/reel/ABC');
 });
 test('Instagram-only approval leaves all other helpers disabled', () => {
   const config = readConfig({INSTAGRAM_SHARING_APPROVED:'yes'});

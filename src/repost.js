@@ -14,6 +14,11 @@ export function canRepost(message, user) {
 }
 
 export function buildRepostPayload(message, preview, displayContent = message.content) {
+  const originalDisplay = displayContent;
+  displayContent = cleanCardLinks(displayContent);
+  if (preview.flags === 32768 && preview.components?.[0]?.type === 10 && preview.components[0].content === originalDisplay) {
+    preview = {...preview,components:[{...preview.components[0],content:displayContent},...preview.components.slice(1)]};
+  }
   if (preview.flags === 32768) {
     const name = message.member?.displayName || message.author?.globalName || message.author?.username || 'Member';
     if (/clyde|discord/i.test(name) || /[\u0000-\u001f]/u.test(name) || name.length > 80 || displayContent.length > 2000) return null;
@@ -74,4 +79,20 @@ export function createReposter(user, log = () => {}, owners = null) {
       return true; // Do not send another copy after an ambiguous network result.
     }
   };
+}
+
+import {shortFamily} from './short-links.js';
+import {stripTrackingParameters,cleanNetflixLinks,cleanPrimeVideoLinks,cleanYouTubeLinks} from './urls.js';
+const tokens=/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|\[[^\]]*\]\([^)]*\)|https:\/\/[^\s<>]+/gi;
+export function cleanCardLinks(content) {
+ return content.replace(tokens,token=>{
+  if(!token.startsWith('https://'))return token;
+  const raw=token.replace(/[.,!?;:)\]}]+$/,'');
+  const link=parseSocialUrl(raw);
+  if(!link&&!shortFamily(raw))return token;
+  const u=stripTrackingParameters(new URL(raw));
+  if(link?.platform==='facebook'&&link.kind==='photo')u.searchParams.delete('set');
+  const cleaned=link?.platform==='amazon'?link.url:cleanYouTubeLinks(cleanPrimeVideoLinks(cleanNetflixLinks(u.href)));
+  return cleaned+token.slice(raw.length);
+ });
 }

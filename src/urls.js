@@ -31,11 +31,7 @@ export function cleanPublicUrl(raw) {
   if (u.protocol !== 'https:' || u.username || u.password || u.port
     || (!socialHosts.has(u.hostname) && !isAmazonHost(u.hostname))) return null;
   u.hash = '';
-  for (const key of [...u.searchParams.keys()]) {
-    if (/^(utm_.+|ref|ref_|referrer|referral|tag|ascsubtag|linkcode|camp|creative|creativeasin|affiliate|affiliate_id|aff_id|fbclid|gclid|dclid|msclkid|igsh|igshid|si|feature|pp|mibextid|__tn__|__cft__.*|_r|_t|is_from_webapp|sender_device|share_app_id|share_link_id|share_item_id|share_iid|share_id|tt_from|tt_medium|tt_content|tt_campaign)$/i.test(key)) {
-      u.searchParams.delete(key);
-    }
-  }
+  stripTrackingParameters(u);
   return u.href.length <= 2048 ? u : null;
 }
 
@@ -102,4 +98,13 @@ export function cleanThreadsLinks(content) {
     if (!u || !/^\/(?:@[A-Za-z0-9_.]{1,30}\/post|t)\/[A-Za-z0-9_-]{1,64}\/?$/.test(u.pathname)) return raw;
     return u.href + suffix;
   });
+}
+
+export function stripTrackingParameters(u) {
+  for (const key of [...u.searchParams.keys()]) {
+    if (/^(utm_.+|ref|ref_|referrer|referral|tag|ascsubtag|linkcode|camp|creative|creativeasin|affiliate|affiliate_id|aff_id|fbclid|gclid|dclid|msclkid|igsh|igshid|si|feature|pp|mibextid|__tn__|__cft__.*|_r|_t|is_from_webapp|sender_device|share_app_id|share_link_id|share_item_id|share_iid|share_id|tt_from|tt_medium|tt_content|tt_campaign)$/i.test(key)) {
+      u.searchParams.delete(key);
+    }
+  }
+  return u;
 }
