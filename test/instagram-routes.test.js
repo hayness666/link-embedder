@@ -9,7 +9,7 @@ test('Instagram username, legacy video and plural reel routes normalize to conte
 test('Instagram resource cards keep links without fetching private or unsupported resources',async()=>{
  for(const [path,kind] of [['/nasa/','profile'],['/stories/nasa/','story'],['/stories/nasa/123','story'],['/stories/highlights/123','highlight'],['/reels/audio/123','audio']]){
  const url='https://www.instagram.com'+path;assert.equal(parseSocialUrl(url).kind,kind);
- const p=await simplePayload(url,{instagram:'oginstagram'},[],async()=>{throw Error('must not fetch');});assert.ok(p);assert.match(JSON.stringify(p),/preview unavailable/);
+ const p=await simplePayload(url,{instagram:'oginstagram'},[],async()=>{throw Error('must not fetch');});assert.ok(p);assert.match(JSON.stringify(p),/preview unavailable/);assert.ok(!JSON.stringify(p).includes('Open the linked title'));
  }
  for(const path of ['/accounts/login','/direct/inbox','/challenge','/stories/nasa/no-id','/reels/audio/no-id'])assert.equal(parseSocialUrl('https://www.instagram.com'+path),null);
 });

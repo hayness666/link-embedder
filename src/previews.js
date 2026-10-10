@@ -91,8 +91,8 @@ export function buildPayload(content, modes, existingEmbeds = []) {
       title: link.platform === 'instagram' ? 'Instagram' : link.platform === 'amazon' ? `Amazon product · ${link.asin}` : `${brands[link.platform]?.name || link.platform} · ${link.kind}`,
       url: link.url,
       description: link.platform === 'amazon'
-        ? `Clean product link: ${link.url}\nProduct details, image, price and availability have not been fetched.`
-        : 'Open the original post. Media preview and public availability have not been verified.',
+        ? 'Product preview unavailable.'
+        : 'Media preview unavailable.',
       color: link.platform === 'instagram' ? 0xf359a3 : 0x5865f2,
       footer: { text: link.platform === 'instagram' ? 'via @Link Embedder' : 'Link Embedder · link card · no media fetched' }
     })),

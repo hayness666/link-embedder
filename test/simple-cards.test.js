@@ -161,7 +161,7 @@ test('Twitter Lists and Communities get safe resource cards without post API req
   assert.equal(calls,0);
   const card=payload.components[1];
   assert.ok(card.components[0].content.includes(label));
-  assert.ok(card.components.some(c=>c.content?.includes('login or membership')));
+  assert.ok(card.components.some(c=>c.content?.includes('preview unavailable.')));
   assert.ok(card.components.some(c=>c.type===14&&c.divider));
   const named=await simplePayload(url,modes,[{url,title:'Real public title'}]);
   assert.match(named.components[1].components[0].content,/Real public title/);

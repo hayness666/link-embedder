@@ -65,7 +65,7 @@ test('extractor ignores opt-outs, spoilers, code, masked links; deduplicates and
 test('default cards disclose limitation and have no manufactured image or video', () => {
   const payload = buildPayload(ig, config.modes);
   assert.equal(payload.embeds.length, 1);
-  assert.match(payload.embeds[0].description, /not been verified/);
+  assert.match(payload.embeds[0].description, /Media preview unavailable\./);
   assert.equal(payload.embeds[0].video, undefined);
   assert.deepEqual(payload.allowedMentions, { parse: [], repliedUser: false });
 });

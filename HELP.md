@@ -58,7 +58,7 @@ Netflix and Prime Video cards do not fetch authenticated playback. Prime Video t
 
 ## Card layout
 
-Custom cards use bold linked titles in regular card text, no decorative title arrows, a small gap below the title and a divider above the footer. Real titles are preferred; untitled content uses labels such as Instagram Reel, Instagram Post and Post on Twitter. Platform colors identify the card; Instagram uses #E1306C. Discord controls final media sizing; there is no supported arbitrary width/height setting.
+Unavailable-preview notices use one short sentence without extra instructions to open the link. Custom cards use bold linked titles in regular card text, no decorative title arrows, a small gap below the title and a divider above the footer. Real titles are preferred; untitled content uses labels such as Instagram Reel, Instagram Post and Post on Twitter. Platform colors identify the card; Instagram uses #E1306C. Discord controls final media sizing; there is no supported arbitrary width/height setting.
 
 Display names are bold and handles are plain, without mentions. Reddit uses a bold r/subreddit beside a plain u/username below the title. Missing author data is omitted. Cards omit engagement counts, dates, author portraits and provider buttons. The platform footer includes a fixed-label Link Embedder profile hyperlink rather than a mention; the visible name does not depend on Discord resolving a user in forwarded messages. Profile navigation still depends on the Discord client.
 

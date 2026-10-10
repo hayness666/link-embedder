@@ -240,7 +240,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         const metadata = body ? metadataFromHtml(body, link.platform, link.url) : null;
         if (metadata) return simpleCard(link, metadata);
       }
-      return simpleCard(link,{title:typeof embed?.title === 'string' ? embed.title : (link.kind === 'storefront' ? 'Prime Video Storefront' : `View on ${service}`),caption:typeof embed?.description === 'string' ? embed.description : `Open on ${service} to ${link.kind === 'storefront' ? 'browse' : 'watch'}. Availability depends on your region and account.`,media:[embed?.image?.url || embed?.thumbnail?.url].filter(u=>u && validMedia(u,link.platform))});
+      return simpleCard(link,{title:typeof embed?.title === 'string' ? embed.title : (link.kind === 'storefront' ? 'Prime Video Storefront' : `View on ${service}`),caption:typeof embed?.description === 'string' ? embed.description : 'Media preview unavailable.',media:[embed?.image?.url || embed?.thumbnail?.url].filter(u=>u && validMedia(u,link.platform))});
     }
     if (link.platform === 'twitter' && ['space','list','community'].includes(link.kind)) {
       // Non-post Twitter resources do not use the approved status endpoint.
@@ -251,11 +251,11 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         name: typeof embed?.author?.name === 'string' ? embed.author.name : '',
         caption: link.kind === 'space'
           ? ''
-          : `Open this ${link.kind} on Twitter to view it. Access may require a login or membership.`
+          : `${link.kind === 'list' ? 'List' : 'Community'} preview unavailable.`
       });
     }
     if (link.platform === 'instagram' && ['story','highlight','audio','profile'].includes(link.kind)) {
-      return simpleCard(link,{caption:`${({story:'Story',highlight:'Highlight',audio:'Audio',profile:'Profile'}[link.kind])} preview unavailable. Open the linked title to view it on Instagram.`});
+      return simpleCard(link,{caption:`${({story:'Story',highlight:'Highlight',audio:'Audio',profile:'Profile'}[link.kind])} preview unavailable.`});
     }
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);
