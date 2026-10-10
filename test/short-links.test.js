@@ -30,3 +30,9 @@ test('TikTok username-free share targets retain the content ID and discard track
  assert.equal(await resolveShortLink('https://www.tiktok.com/t/ZT64MgG6f/',async()=>redir('https://www.tiktok.com/@/photo/7524436543319133495?_r=1&utm_source=share')),'https://www.tiktok.com/@/photo/7524436543319133495');
  assert.equal(await resolveShortLink('https://vm.tiktok.com/ZNdwynYRc/',async()=>redir('https://www.tiktok.com/?_r=1')),null);
 });
+
+test('Reddit compact and modern share routes resolve canonical comments links',async()=>{
+ for(const u of ['https://redd.it/abc123','https://www.reddit.com/r/cats/s/Share123']) {
+  assert.equal(await resolveShortLink(u,async()=>new Response(null,{status:302,headers:{location:'https://www.reddit.com/comments/abc123?utm_source=share'}})),'https://www.reddit.com/comments/abc123');
+ }
+});

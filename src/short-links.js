@@ -43,3 +43,22 @@ export async function expandShortLinks(content,modes,fetcher=fetch){
  const pairs=await Promise.all(links.map(async u=>[u,await resolveShortLink(u,fetcher)]));const map=new Map(pairs.filter(([,v])=>v));
  return content.replace(tokens,token=>{if(!token.startsWith('https://'))return token;const raw=token.replace(/[.,!?;:)\]}]+$/,'');return map.has(raw)?map.get(raw)+token.slice(raw.length):token;});
 }
+
+// Public Reddit video links can identify the original post behind a crosspost.
+export async function resolveRedditVideo(raw,fetcher=fetch) {
+ if (!/^https:\/\/v\.redd\.it\/[a-z0-9]{1,30}\/?$/i.test(raw)) return null;
+ const id=new URL(raw).pathname.replaceAll('/','');let current=raw;
+ const signal=AbortSignal.timeout(6000);
+ for(let hop=0;hop<2;hop++) {
+  let r;try {
+   r=await fetcher(current,{redirect:'manual',signal,headers:{'User-Agent':'LinkEmbedder public link resolver'}});
+   if(![301,302,303,307,308].includes(r.status))return null;
+   const location=r.headers.get('location');if(!location)return null;
+   const next=new URL(location,current);const parsed=parseSocialUrl(next.href);
+   if(parsed?.platform==='reddit')return parsed.url;
+   if(next.href!==`https://www.reddit.com/video/${id}`)return null;
+   current=next.href;
+  }catch{return null;}finally{if(r?.body)await r.body.cancel().catch(()=>{});}
+ }
+ return null;
+}

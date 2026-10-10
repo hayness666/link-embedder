@@ -2,6 +2,7 @@ import { brands, footer } from './platform-brands.js';
 import { extractLinks, parseSocialUrl } from './previews.js';
 import { helperUrl } from './adapters.js';
 import { helperModes } from './config.js';
+import { resolveRedditVideo } from './short-links.js';
 import { instagramPayload, shortCaption, plain, cardHeading } from './instagram-card.js';
 
 const mediaHosts = {
@@ -101,7 +102,7 @@ export function metadataFromHtml(html, platform, expectedUrl) {
   const validVideos = videos.filter(url => validMedia(url, platform));
   let media = validVideos.length ? [validVideos[0]] : [...new Set((tags.get('og:image') || []).filter(url => validMedia(url, platform)))].slice(0, 10);
   let videoPage = '', destinationUrl = '';
-  let name = '', username = '', caption = get('og:description') || '';
+  let name = '', username = '', community = '', caption = get('og:description') || '';
   let title = get('og:title');
   let cardTitle = ['medal','imgur','streamable','reddit','linkedin','amazon','youtube','vimeo','ifunny','giphy','tenor'].includes(platform) ? title.replace(/ - Clipped .* with Medal\.tv$| \| Streamable$/g, '') : '';
   if (['medal','imgur','streamable'].includes(platform)) caption = '';
@@ -109,6 +110,7 @@ export function metadataFromHtml(html, platform, expectedUrl) {
   if (platform === 'reddit') {
     const author = /^u\/([A-Za-z0-9_-]{1,30}) on r\/[A-Za-z0-9_]+(?: |$)/.exec(get('og:site_name'));
     if (author) username = author[1];
+    community = / on r\/([A-Za-z0-9_]{1,30})(?: |$)/.exec(get('og:site_name'))?.[1] || '';
     try {
       const u = new URL(caption.trim());
       if (/^https:\/\/[^\s<>]+$/.test(caption.trim()) && !u.username && !u.password && !u.port
@@ -118,7 +120,7 @@ export function metadataFromHtml(html, platform, expectedUrl) {
       }
     } catch { /* Ordinary prose remains a caption. */ }
 
-    if (!media.length && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(caption.trim())) { videoPage = caption.trim(); caption = ''; }
+    if (!validVideos.length && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(caption.trim())) { videoPage = caption.trim(); caption = ''; media = []; }
   } else if (platform === 'tiktok') {
     const author = /^(.*?)\s*\(@([^)]*)\)$/.exec(title);
     if (author) [, name, username] = author;
@@ -127,7 +129,7 @@ export function metadataFromHtml(html, platform, expectedUrl) {
     if (split >= 0) { name = title.slice(0, split); cardTitle = title.slice(split + 3); caption = ''; }
   }
   if (cardTitle === 'vxReddit') cardTitle = '';
-  return { name, username, title:cardTitle, caption, media, videoPage, destinationUrl };
+  return { name, username, community, title:cardTitle, caption, media, videoPage, destinationUrl };
 }
 // The approved helper's ActivityPub representation provides post identity and
 // attachment types. Never accept login shells, protected or spoiler-marked posts.
@@ -203,7 +205,7 @@ export function simpleCard(link, metadata = null) {
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
   const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
   let title = typeof metadata?.title === 'string' ? metadata.title.trim() : '';
-  const community = link.platform === 'reddit' ? /^\/r\/([A-Za-z0-9_]{1,30})\//.exec(new URL(link.url).pathname)?.[1] : '';
+  const community = link.platform === 'reddit' ? /^\/r\/([A-Za-z0-9_]{1,30})\//.exec(new URL(link.url).pathname)?.[1] || (/^[A-Za-z0-9_]{1,30}$/.test(metadata?.community || '') ? metadata.community : '') : '';
   if (community) title = title.replace(new RegExp(`^r/${community}:\\s*`, 'i'), '');
   const authorLine = community ? `**r/${plain(community)}**${user ? ` u/${user}` : ''}`
     : `${name ? `**${name}**` : ''}${user ? `${name ? ' ' : ''}@\u200b${user}` : ''}`;
@@ -280,6 +282,15 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
       const body = await readBounded(url, fetcher);
       if (body) {
         try { metadata = link.platform === 'threads' ? metadataFromThreads(JSON.parse(body),link.url) : ['twitter','bluesky'].includes(link.platform) ? metadataFromFx(JSON.parse(body), link.platform) : metadataFromHtml(body, link.platform, link.url); } catch { /* leave original link available */ }
+      }
+    }
+    if (link.platform === 'reddit' && metadata?.videoPage && modes.reddit === 'vxreddit') {
+      const source = await resolveRedditVideo(metadata.videoPage, fetcher);
+      if (source) {
+        const body = await readBounded(helperUrl({platform:'reddit',url:source}, 'vxreddit'), fetcher);
+        const parent = body ? metadataFromHtml(body, 'reddit', source) : null;
+        // Preserve the shared crosspost's title and attribution; borrow media only.
+        if (parent?.media?.some(url => new URL(url).pathname.endsWith('.mp4'))) metadata = {...metadata,media:parent.media,videoPage:''};
       }
     }
     if ((link.platform === 'threads' && modes.threads !== 'fzthreads') || ['medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {

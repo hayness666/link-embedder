@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {resolveRedditVideo} from '../src/short-links.js';
+import {shortTitle} from '../src/instagram-card.js';
+import {metadataFromHtml,simpleCard} from '../src/simple-cards.js';
+test('public video resolver rejects offsite and credential redirects',async()=>{
+ for(const location of ['https://evil.test/video/abc','https://user@www.reddit.com/video/abc','http://www.reddit.com/video/abc']) {
+  let n=0;assert.equal(await resolveRedditVideo('https://v.redd.it/abc',async()=>{n++;return new Response(null,{status:302,headers:{location}})}),null);assert.equal(n,1);
+ }
+});
+test('short-route cards recover validated community from helper metadata',()=>{
+ const m=metadataFromHtml('<meta property="og:site_name" content="u/person on r/cats - stats">','reddit');
+ assert.ok(JSON.stringify(simpleCard({platform:'reddit',url:'https://www.reddit.com/comments/abc'},m)).includes('**r/cats** u/person'));
+});
+test('long titles end at word boundary with ellipsis',()=>{
+ const result=shortTitle('word '.repeat(70));assert.ok(result.endsWith('word…'));assert.ok(result.length<=256);assert.equal(shortTitle('Short title'),'Short title');
+});

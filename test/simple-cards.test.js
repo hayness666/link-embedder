@@ -251,3 +251,15 @@ test('public TikTok slideshow images and video metadata remain usable',()=>{
  const payload=await simplePayload(url+'?utm_source=copy',{tiktok:'fxtiktok'},[],async()=>{throw new Error('must not fetch unresolved share');});
  assert.ok(payload);const text=JSON.stringify(payload.components.slice(1));assert.ok(text.includes('Media preview unavailable.'));assert.ok(text.includes('https://www.tiktok.com/t/ZT64MgG6f'));assert.ok(!text.includes('utm_source'));
 });
+
+test('crosspost video borrows parent media but retains crosspost attribution',async()=>{
+ const calls=[];
+ const fetcher=async url=>{calls.push(url);
+  if(url==='https://v.redd.it/abc123')return new Response(null,{status:302,headers:{location:'https://www.reddit.com/video/abc123'}});
+  if(url==='https://www.reddit.com/video/abc123')return new Response(null,{status:301,headers:{location:'https://www.reddit.com/r/aww/comments/parent/cat/'}});
+  if(url.includes('/comments/parent/'))return html('<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://vxreddit.com/redditvideo.mp4?id=abc123"><meta property="og:site_name" content="u/original on r/aww">');
+  return html('<meta property="og:title" content="Crosspost title"><meta property="og:site_name" content="u/sharer on r/cats"><meta property="og:description" content="https://v.redd.it/abc123\n\n"><meta property="og:image" content="https://external-preview.redd.it/still.jpg">');
+ };
+ const p=await simplePayload('https://www.reddit.com/r/cats/comments/cross/title',{reddit:'vxreddit'},[],fetcher);
+ const text=JSON.stringify(p);assert.ok(text.includes('Crosspost title'));assert.ok(text.includes('u/sharer'));assert.ok(text.includes('redditvideo.mp4'));assert.ok(!text.includes('still.jpg'));assert.ok(!text.includes('u/original'));assert.equal(calls.length,4);
+});

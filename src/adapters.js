@@ -29,6 +29,7 @@ export function parseAdditional(u) {
   if (['twitter.com', 'x.com'].includes(host) && /^\/i\/spaces\/[A-Za-z0-9]{13}$/.test(path)) return result('twitter', 'space', `https://twitter.com${path}`);
   if (['twitter.com', 'x.com'].includes(host) && /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,30}$/.test(path)) return result('twitter', 'post', `https://twitter.com${path}`);
   if (host === 'bsky.app' && /^\/profile\/[A-Za-z0-9.:-]{1,200}\/post\/[A-Za-z0-9]{1,50}$/.test(path)) return result('bluesky', 'post', `https://bsky.app${path}`);
+  if (['reddit.com', 'old.reddit.com'].includes(host) && /^\/comments\/[A-Za-z0-9]{1,15}$/.test(path)) return result('reddit', 'post', `https://www.reddit.com${path}`);
   if (['reddit.com', 'old.reddit.com'].includes(host) && /^\/r\/[A-Za-z0-9_]{1,30}\/comments\/[A-Za-z0-9]{1,15}(?:\/[A-Za-z0-9_-]{1,250})?$/.test(path)) return result('reddit', 'post', `https://www.reddit.com${path}`);
   const clip = host === 'clips.twitch.tv' ? /^\/([A-Za-z0-9_-]{1,150})$/.exec(path)?.[1]
     : host === 'twitch.tv' ? /^\/[A-Za-z0-9_]+\/clip\/([A-Za-z0-9_-]{1,150})$/.exec(path)?.[1] : null;
