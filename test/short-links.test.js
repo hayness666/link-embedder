@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {shortFamily,shortLinks,resolveShortLink,expandShortLinks}from '../src/short-links.js';
+import {shortFamily,shortLinks,resolveShortLink,expandShortLinks,expandRedditNativeShares}from '../src/short-links.js';
 import {buildRepostPayload}from '../src/repost.js';
 const redir=url=>new Response(null,{status:302,headers:{location:url}});
 test('recognizes platform-owned share formats and excludes suppressed links',()=>{
@@ -35,4 +35,14 @@ test('Reddit compact and modern share routes resolve canonical comments links',a
  for(const u of ['https://redd.it/abc123','https://www.reddit.com/r/cats/s/Share123']) {
   assert.equal(await resolveShortLink(u,async()=>new Response(null,{status:302,headers:{location:'https://www.reddit.com/comments/abc123?utm_source=share'}})),'https://www.reddit.com/comments/abc123');
  }
+});
+
+test('native Reddit share fallback requires matching source and exact Reddit preview host/path',()=>{
+ const raw='https://www.reddit.com/r/aww/s/Share123?utm_source=share';
+ const image={url:'https://share.redd.it/preview/post/abc123?share=token'};
+ assert.equal(expandRedditNativeShares(raw,[{url:raw,image}]),'https://www.reddit.com/comments/abc123');
+ for(const url of ['https://evil.test/preview/post/abc123','https://share.redd.it.evil.test/preview/post/abc123','http://share.redd.it/preview/post/abc123','https://user@share.redd.it/preview/post/abc123','https://share.redd.it/other/abc123'])
+  assert.equal(expandRedditNativeShares(raw,[{url:raw,image:{url}}]),raw);
+ assert.equal(expandRedditNativeShares(raw,[{url:raw+'x',image}]),raw);
+ assert.equal(expandRedditNativeShares('`'+raw+'`',[{url:raw,image}]),'`'+raw+'`');
 });

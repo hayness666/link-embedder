@@ -1,6 +1,6 @@
 import { cleanThreadsLinks, cleanNetflixLinks, cleanPrimeVideoLinks, cleanYouTubeLinks } from './urls.js';
 import { buildPayload, extractLinks } from './previews.js';
-import {shortLinks,expandShortLinks} from './short-links.js';
+import {shortLinks,shortFamily,expandShortLinks,expandRedditNativeShares} from './short-links.js';
 import { waitForFacebookPreview, cleanFacebookPhotoSets } from './facebook-native.js';
 import { simplePayload, simpleCard } from './simple-cards.js';
 export function createHandler(config, { canSend, repost, log = () => {}, now = Date.now, makeInstagramPayload = simplePayload, expandLinks = expandShortLinks, nativeFacebook = waitForFacebookPreview } = {}) {
@@ -53,7 +53,21 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
         else await repost(message, {flags:32768,components:[{type:10,content:display},simpleCard(originalLinks[0])],allowedMentions:{parse:[],repliedUser:false}}, display);
         return; // On failure preserve the original native preview; never send a duplicate.
       }
-      const expanded = await expandLinks(message.content ?? '', config.modes);
+      let expanded = await expandLinks(message.content ?? '', config.modes);
+      if (config.modes.reddit !== 'off' && shortLinks(expanded).some(u => shortFamily(u) === 'reddit')) {
+        expanded = expandRedditNativeShares(expanded, message.embeds ?? []);
+        if (shortLinks(expanded).some(u => shortFamily(u) === 'reddit') && message.channel.messages?.fetch) {
+          for (const delay of [1000, 2000]) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            try {
+              const fresh = await message.channel.messages.fetch({message:message.id,force:true,cache:false});
+              if (fresh.content !== message.content || fresh.flags?.has(4)) return;
+              const resolved = expandRedditNativeShares(expanded, fresh.embeds ?? []);
+              if (resolved !== expanded) { expanded = resolved; break; }
+            } catch { return; }
+          }
+        }
+      }
       const expandedFacebook = extractLinks(expanded).filter(link => link.platform === 'facebook');
       if (expandedFacebook.length) {
         if (extractLinks(expanded).length !== 1 || !config.modes.facebook || config.modes.facebook === 'off' || !config.repostEnabled || !repost) return;

@@ -62,3 +62,26 @@ export async function resolveRedditVideo(raw,fetcher=fetch) {
  }
  return null;
 }
+
+// Discord may resolve a public share link even when Reddit declines the bot host.
+// Only accept Reddit's own preview URL from an embed matching that exact link.
+export function expandRedditNativeShares(content, embeds = []) {
+ const replacements = new Map();
+ for (const raw of shortLinks(content)) {
+  if (shortFamily(raw) !== 'reddit') continue;
+  for (const embed of embeds) {
+   if (embed.url !== raw) continue;
+   for (const media of [embed.image, embed.thumbnail]) {
+    let u;try { u = new URL(media?.url); } catch { continue; }
+    if (u.protocol !== 'https:' || u.hostname !== 'share.redd.it' || u.username || u.password || u.port) continue;
+    const match = /^\/preview\/post\/([a-z0-9]{1,15})\/?$/i.exec(u.pathname);
+    if (match) replacements.set(raw, `https://www.reddit.com/comments/${match[1]}`);
+   }
+  }
+ }
+ return content.replace(tokens, token => {
+  if (!token.startsWith('https://')) return token;
+  const raw = token.replace(/[.,!?;:)\]}]+$/, '');
+  return replacements.has(raw) ? replacements.get(raw) + token.slice(raw.length) : token;
+ });
+}
