@@ -245,3 +245,9 @@ test('public TikTok slideshow images and video metadata remain usable',()=>{
  const data=metadataFromHtml(post,'tiktok','https://www.tiktok.com/@creator/photo/123');assert.equal(data.media.length,2);assert.equal(data.username,'creator');
  const video=metadataFromHtml(post+'<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://offload.tnktok.com/generate/video/123.mp4">','tiktok');assert.deepEqual(video.media,['https://offload.tnktok.com/generate/video/123.mp4']);
 });
+
+ test('unresolved TikTok share produces safe unavailable card without helper fetch',async()=>{
+ const url='https://www.tiktok.com/t/ZT64MgG6f/';
+ const payload=await simplePayload(url+'?utm_source=copy',{tiktok:'fxtiktok'},[],async()=>{throw new Error('must not fetch unresolved share');});
+ assert.ok(payload);const text=JSON.stringify(payload.components.slice(1));assert.ok(text.includes('Media preview unavailable.'));assert.ok(text.includes('https://www.tiktok.com/t/ZT64MgG6f'));assert.ok(!text.includes('utm_source'));
+});

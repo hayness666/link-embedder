@@ -28,6 +28,8 @@ export function parseSocialUrl(raw) {
     if (/^[1-9]\d{0,2}$/.test(index ?? '')) query = `?img_index=${index}`;
   } else if (platform === 'tiktok' && /^\/@[A-Za-z0-9_.]{0,30}\/(video|photo)\/\d{1,30}$/.test(path)) {
     kind = path.includes('/video/') ? 'video' : 'photo';
+  } else if (platform === 'tiktok' && /^\/t\/[A-Za-z0-9]{1,40}$/.test(path)) {
+    kind = 'share';
   } else if (platform === 'facebook' && /^\/reel\/\d{1,30}$/.test(path)) {
     kind = 'reel';
   } else if (platform === 'facebook' && ['/photo', '/photo.php'].includes(path) && /^\d{1,30}$/.test(u.searchParams.get('fbid') ?? '')) {

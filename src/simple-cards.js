@@ -238,6 +238,9 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
   // Keep native messages intact instead of replacing a playable iframe with a still image.
   if (!links.length || links.some(link => link.platform === 'facebook' && link.kind !== 'reel')) return null;
   const components = await Promise.all(links.map(async link => {
+    // Resolution already ran with bounded, same-platform redirects. Preserve an
+    // unresolved TikTok share as a usable link with an honest fallback card.
+    if (link.platform === 'tiktok' && link.kind === 'share') return simpleCard(link);
     if (['netflix','primevideo'].includes(link.platform)) {
       const service = brands[link.platform].name;
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
