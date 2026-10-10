@@ -15,7 +15,7 @@ export const brands = {
   facebook: { emoji: 'facebook:1558173225760854106', name: 'Facebook', color: 0x0866ff },
   amazon: { emoji: 'amazon:1558173227283644426', name: 'Amazon', color: 0xff9900 },
   youtube: { emoji: 'youtube:1558173228353191976', name: 'YouTube', color: 0xff0000 },
-  twitter: { emoji: 'twitter:1558173229275684885', name: 'Twitter', color: 0x1d9bf0 },
+  twitter: { emoji: 'twitter_bird:1558274395829436428', name: 'Twitter', color: 0x1d9bf0 },
   bluesky: { emoji: 'bluesky:1558173230450344017', name: 'Bluesky', color: 0x0085ff },
   reddit: { emoji: 'reddit:1558173232379727942', name: 'Reddit', color: 0xff4500 },
   twitch: { emoji: 'twitch:1558173234514362368', name: 'Twitch', color: 0x9146ff },
