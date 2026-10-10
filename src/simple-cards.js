@@ -292,6 +292,12 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         // Preserve the shared crosspost's title and attribution; borrow media only.
         if (parent?.media?.some(url => new URL(url).pathname.endsWith('.mp4'))) metadata = {...metadata,media:parent.media,videoPage:''};
       }
+      // The approved helper also supports public Reddit video IDs directly.
+      // Keep its exact endpoint; never accept a user-supplied media host.
+      if (metadata.videoPage) {
+        const id = /^https:\/\/v\.redd\.it\/([a-z0-9]{1,30})\/?$/i.exec(metadata.videoPage)?.[1];
+        if (id) metadata = {...metadata, media:[`https://vxreddit.com/redditvideo.mp4?id=${id}`],videoPage:''};
+      }
     }
     if ((link.platform === 'threads' && modes.threads !== 'fzthreads') || ['medal','streamable','imgur','linkedin','amazon','ifunny','giphy','tenor'].includes(link.platform) || (link.platform === 'facebook' && link.kind === 'photo')) {
       if (link.platform === 'imgur' && new URL(link.url).hostname === 'i.imgur.com') metadata = {media:[link.url]};
