@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSocialUrl } from '../src/previews.js';
+import { parseSocialUrl, buildPayload } from '../src/previews.js';
 import { metadataFromHtml, simplePayload, validMedia } from '../src/simple-cards.js';
 import { readConfig } from '../src/config.js';
 const url = 'https://www.threads.com/@meta/post/DDzbnVKx57R';
@@ -75,4 +75,9 @@ test('Threads full main text remains above media with capped quote below',async(
  const p=await simplePayload(url,{threads:'fzthreads'},[],async()=>new Response(JSON.stringify(data),{headers:{'content-type':'application/activity+json'}}));
  const c=p.components[1].components,main=c.findIndex(c=>c.content==='a'.repeat(300)),media=c.findIndex(c=>c.type===12),quote=c.findIndex(c=>c.content?.startsWith('> '));
  assert.ok(main>=0&&main<media&&media<quote);assert.ok(c[quote].content.includes('b'.repeat(249)+'…'));assert.ok(!JSON.stringify(p).includes('❤️'));
+});
+
+test('Threads approved helper passes the initial message routing gate',()=>{
+ const payload=buildPayload(url,readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes);
+ assert.ok(payload);assert.ok(payload.content.includes('https://fzthreads.com/@meta/post/DDzbnVKx57R'));
 });

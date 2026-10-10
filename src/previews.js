@@ -55,7 +55,7 @@ export function extractLinks(content) {
 }
 
 export function buildPayload(content, modes, existingEmbeds = []) {
-  const proxyModes = ['oginstagram', 'fxtiktok', 'fxembed', 'vxreddit', 'fxtwitch', 'snapchatez'];
+  const proxyModes = ['oginstagram', 'fxtiktok', 'fxembed', 'vxreddit', 'fxtwitch', 'snapchatez', 'fzthreads'];
   const links = extractLinks(content).filter(link => ['card', 'native', ...proxyModes].includes(modes[link.platform]))
     .filter(link => !(modes[link.platform] === 'native' && existingEmbeds.some(embed => parseSocialUrl(embed.url ?? '')?.url === link.url)));
   if (!links.length) return null;
