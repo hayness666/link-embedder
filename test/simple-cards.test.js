@@ -231,3 +231,17 @@ test('Prime Video public title metadata requires matching canonical identity',as
 });
 
 test('Twitter Community links remain untouched',()=>{assert.equal(parseSocialUrl('https://x.com/i/communities/1735069271045357904'),null);});
+
+test('TikTok marketing and private shells never become post metadata',async()=>{
+ const url='https://www.tiktok.com/@/photo/7524436543319133495';
+ for(const [title,description] of [['Visit TikTok to discover videos!','Watch, follow, and discover more trending content.'],['This account is private',''],['❌ Could not find video data','An error occurred']]) {
+  assert.equal(metadataFromHtml(`<meta property="og:title" content="${title}"><meta property="og:description" content="${description}">`,'tiktok',url),null);
+  const payload=await simplePayload(url,readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes,[{url,title,description}],async()=>new Response('unavailable',{status:500}));
+  const text=JSON.stringify(payload); assert.match(text,/Media preview unavailable/);assert.ok(!text.includes(title));
+ }
+});
+test('public TikTok slideshow images and video metadata remain usable',()=>{
+ const post='<meta property="og:title" content="Creator (@creator)"><meta property="og:description" content="A public slideshow"><meta property="og:image" content="https://offload.tnktok.com/generate/image/123?index=0"><meta property="og:image" content="https://offload.tnktok.com/generate/image/123?index=1">';
+ const data=metadataFromHtml(post,'tiktok','https://www.tiktok.com/@creator/photo/123');assert.equal(data.media.length,2);assert.equal(data.username,'creator');
+ const video=metadataFromHtml(post+'<meta property="og:video:type" content="video/mp4"><meta property="og:video" content="https://offload.tnktok.com/generate/video/123.mp4">','tiktok');assert.deepEqual(video.media,['https://offload.tnktok.com/generate/video/123.mp4']);
+});

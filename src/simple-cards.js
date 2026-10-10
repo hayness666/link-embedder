@@ -45,6 +45,11 @@ export function readMeta(html) {
   }
   return tags;
 }
+// TikTok's generic landing/login metadata is not evidence of a public post.
+function tiktokShell(title = '', caption = '') {
+  return /^(?:visit tiktok to discover videos!?|tiktok\s*[-–]\s*make your day|this account is private|video (?:currently )?unavailable|could not find video data|sensitive content)$/i.test(title.trim().replace(/^❌\s*/, ''))
+    || /^(?:watch, follow, and discover more trending content\.?|this account is private|log in to (?:watch|view|continue))/i.test(caption.trim());
+}
 export function metadataFromHtml(html, platform, expectedUrl) {
   // Medal publishes a direct CDN URL in its public VideoObject metadata.
   // Its og:video endpoint is a redirect that Discord galleries may reject.
@@ -90,6 +95,7 @@ export function metadataFromHtml(html, platform, expectedUrl) {
     // Public Open Graph thumbnails only, not private media or playable videos.
     return {media:(tags.get('og:image') || []).filter(url => validMedia(url, platform)).slice(0,1)};
   }
+  if (platform === 'tiktok' && tiktokShell(get('og:title'), get('og:description'))) return null;
   const type = get('og:video:type') || get('twitter:player:stream:content_type');
   const videos = type === 'video/mp4' ? [...(tags.get('og:video') || []), ...(tags.get('og:video:secure_url') || []), ...(tags.get('twitter:player:stream') || [])] : [];
   const validVideos = videos.filter(url => validMedia(url, platform));
@@ -295,7 +301,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
     }
     if (!metadata || (!metadata.title && !metadata.name && !metadata.media?.length && !metadata.caption)) {
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
-      if (embed && link.platform !== 'threads') metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: link.platform === 'amazon' ? [embed.image?.url || embed.thumbnail?.url].filter(u=>u && validMedia(u,'amazon')) : [] };
+      if (embed && link.platform !== 'threads' && !(link.platform === 'tiktok' && tiktokShell(embed.title, embed.description))) metadata = { name: embed.author?.name || '', title: embed.title || '', caption: embed.description || '', media: link.platform === 'amazon' ? [embed.image?.url || embed.thumbnail?.url].filter(u=>u && validMedia(u,'amazon')) : [] };
     }
     // A companion is separate from the untouched source's native player/gallery.
     // Do not add a second thumbnail for sites already showing native media.
