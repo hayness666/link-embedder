@@ -82,7 +82,7 @@ test('Reddit extracts actual helper author and renders plain handle under title'
 test('Facebook reels show only requested notice and photos stay native',async()=>{
  const modes=readConfig({}).modes;let calls=0;const fetcher=async()=>{calls++;throw Error('must not fetch');};
  const p=await simplePayload('https://www.facebook.com/reel/123',modes,[],fetcher);
- assert.deepEqual(p.components[1].components.filter(c=>c.type!==14),[{type:10,content:'Facebook reel preview unavailable. Open the link above to watch.'}]);
+ assert.deepEqual(p.components[1].components.filter(c=>c.type!==14),[{type:10,content:'Reel preview unavailable.'}]);
  assert.equal(await simplePayload('https://www.facebook.com/photo?fbid=123',modes,[],fetcher),null);assert.equal(calls,0);
 });
 
