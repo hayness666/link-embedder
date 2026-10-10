@@ -25,3 +25,8 @@ test('expanded source replaces short link once in native and custom reposts',()=
  assert.equal(buildRepostPayload(message,{content:full},full).content,full);
  const p=buildRepostPayload(message,{flags:32768,components:[{type:10,content:full}]},full);assert.equal(p.components.length,1);assert.equal(message.content,'https://amzn.to/abc');
 });
+
+test('TikTok username-free share targets retain the content ID and discard tracking',async()=>{
+ assert.equal(await resolveShortLink('https://www.tiktok.com/t/ZT64MgG6f/',async()=>redir('https://www.tiktok.com/@/photo/7524436543319133495?_r=1&utm_source=share')),'https://www.tiktok.com/@/photo/7524436543319133495');
+ assert.equal(await resolveShortLink('https://vm.tiktok.com/ZNdwynYRc/',async()=>redir('https://www.tiktok.com/?_r=1')),null);
+});

@@ -26,7 +26,7 @@ export function parseSocialUrl(raw) {
     kind = path.startsWith('/reel/') ? 'reel' : 'photo or post';
     const index = u.searchParams.get('img_index');
     if (/^[1-9]\d{0,2}$/.test(index ?? '')) query = `?img_index=${index}`;
-  } else if (platform === 'tiktok' && /^\/@[A-Za-z0-9_.]{1,30}\/(video|photo)\/\d{1,30}$/.test(path)) {
+  } else if (platform === 'tiktok' && /^\/@[A-Za-z0-9_.]{0,30}\/(video|photo)\/\d{1,30}$/.test(path)) {
     kind = path.includes('/video/') ? 'video' : 'photo';
   } else if (platform === 'facebook' && /^\/reel\/\d{1,30}$/.test(path)) {
     kind = 'reel';

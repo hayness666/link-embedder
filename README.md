@@ -29,7 +29,7 @@ User prose is preserved. Known tracking parameters are removed from visible supp
 | Platform | Default before provider approval | Approved proxy default / limits |
 | --- | --- | --- |
 | Instagram Reels/posts | Basic link card | `oginstagram` → oginstagram.com; preserves carousel selection |
-| TikTok video/photo | Basic link card | `fxtiktok` → tnktok.com; canonical links only |
+| TikTok video/photo | Basic link card | `fxtiktok` → tnktok.com; canonical content links, including username-free share targets; expired links to the homepage stay untouched |
 | Twitter posts | Basic link card | `fxembed` → fxtwitter.com |
 | Bluesky posts | Basic link card | `fxembed` → fxbsky.app |
 | Reddit posts | Basic link card | `vxreddit` → vxreddit.com; upstream can be fragile |
@@ -40,7 +40,7 @@ User prose is preserved. Known tracking parameters are removed from visible supp
 | Facebook content links | Custom cards reuse useful Discord metadata; missing previews receive type-specific notices | No Facebook media metadata fetch |
 | LinkedIn / UpScrolled public posts | Basic link card | No verified inline video; narrow public URL shapes only |
 | RedNote / Xiaohongshu notes | Basic link card | Preserves xsec_token/xsec_source; no verified free URL-proxy route implemented |
-| Medal / Streamable / Imgur | Public metadata card | Direct media when public metadata supplies it; full canonical links only |
+| Medal / Streamable / Imgur | Public metadata card | Direct media when public metadata supplies it; full canonical content links, including username-free share targets; expired links to the homepage stay untouched |
 | iFunny / Vimeo / GIPHY / Tenor | Native cleaned link | Experimental native availability; no private access or extra helper |
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
