@@ -14,6 +14,14 @@ export function parseSocialUrl(raw) {
   const platform = hosts[u.hostname];
   if (!platform) return parseAdditional(u);
   let path = u.pathname.replace(/\/$/, '');
+  if (platform === 'instagram') {
+    path = path.replace(/^\/[A-Za-z0-9_.]{1,30}\/(p|reel|reels|tv)\//, '/$1/').replace(/^\/tv\//, '/p/').replace(/^\/reels\/(?!audio\/)/, '/reel/');
+    const resourceKind = /^\/stories\/highlights\/\d{1,30}$/.test(path) ? 'highlight'
+      : /^\/stories\/[A-Za-z0-9_.]{1,30}(?:\/\d{1,30})?$/.test(path) ? 'story'
+      : /^\/reels\/audio\/\d{1,30}$/.test(path) ? 'audio'
+      : /^\/[A-Za-z0-9_.]{1,30}$/.test(path) && !/^(?:accounts|direct|explore|reels|reel|p|tv|stories|share|about|developer|legal|privacy|challenge|web)$/i.test(path.slice(1)) ? 'profile' : null;
+    if (resourceKind) return {platform,kind:resourceKind,url:`https://www.instagram.com${path}`};
+  }
   let kind;
   let query = '';
   if (platform === 'instagram' && /^\/(reel|p)\/[A-Za-z0-9_-]{1,100}$/.test(path)) {

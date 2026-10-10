@@ -254,6 +254,9 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
           : `Open this ${link.kind} on Twitter to view it. Access may require a login or membership.`
       });
     }
+    if (link.platform === 'instagram' && ['story','highlight','audio','profile'].includes(link.kind)) {
+      return simpleCard(link,{caption:`${({story:'Story',highlight:'Highlight',audio:'Audio',profile:'Profile'}[link.kind])} preview unavailable. Open the linked title to view it on Instagram.`});
+    }
     if (link.platform === 'instagram' && modes.instagram === 'oginstagram') {
       const payload = await instagramPayload(link.url, modes, fetcher);
       if (payload) return payload.components[0];

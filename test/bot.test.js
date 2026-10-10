@@ -46,7 +46,7 @@ test('rejects spoofing, credentials, insecure schemes, ports, unsupported and sh
     'https://instagram.com.evil.test/reel/a', 'https://evilinstagram.com/reel/a',
     'https://instagram.com@evil.test/reel/a', 'https://user:pass@instagram.com/reel/a',
     'http://instagram.com/reel/a', 'javascript:alert(1)', 'https://127.0.0.1/reel/a',
-    'https://instagram.com:444/reel/a', 'https://instagram.com/stories/person/123',
+    'https://instagram.com:444/reel/a', 'https://instagram.com/stories/person/not-an-id',
     'https://instagram.com/reel/%2fadmin', 'https://instagram.com/reel/a\\b',
     'https://vm.tiktok.com/abcd', 'https://www.tiktok.com/t/abcd',
     'https://facebook.com/login', 'https://facebook.com/settings',
