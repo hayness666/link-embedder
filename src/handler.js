@@ -54,7 +54,13 @@ export function createHandler(config, { canSend, repost, log = () => {}, now = D
         return; // On failure preserve the original native preview; never send a duplicate.
       }
       const expanded = await expandLinks(message.content ?? '', config.modes);
-      if (extractLinks(expanded).some(link => link.platform === 'facebook' && link.kind !== 'reel')) return;
+      const expandedFacebook = extractLinks(expanded).filter(link => link.platform === 'facebook');
+      if (expandedFacebook.length) {
+        if (extractLinks(expanded).length !== 1 || !config.modes.facebook || config.modes.facebook === 'off' || !config.repostEnabled || !repost) return;
+        const display = cleanFacebookPhotoSets(message.content);
+        await repost(message, {flags:32768,components:[{type:10,content:display},simpleCard(expandedFacebook[0])],allowedMentions:{parse:[],repliedUser:false}}, display);
+        return;
+      }
       payload = buildPayload(expanded, config.modes, message.embeds ?? []);
       const previewLinks = extractLinks(expanded);
       const keepNative = previewLinks.some(link => link.platform !== 'amazon' && config.modes[link.platform] === 'native');
