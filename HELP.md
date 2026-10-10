@@ -42,7 +42,7 @@ User prose is preserved. Known tracking parameters are removed from visible supp
 | iFunny / Vimeo / GIPHY / Tenor | Native cleaned link | Experimental native availability; no private access or extra helper |
 | Mastodon | Basic link card | mastodon.social/mastodon.online only; no media proxy until warnings can be preserved |
 
-| Twitter Spaces / Lists / Communities | Linked resource card | Matching Discord metadata when available; no audio player or private membership access |
+| Twitter Spaces / Lists | Linked resource card | Matching Discord metadata when available; no audio player or private membership access |
 | Threads public posts | Custom card | `fzthreads` → fzthreads.com after approval; public text and allowlisted photos/video when supplied. Spoiler/private responses and failures use a linked fallback. |
 | Netflix / Prime Video | Linked title or storefront card | Matching Discord metadata/image when available; Prime Video titles also use public page metadata; no embedded playback |
 
@@ -64,7 +64,7 @@ Display names are bold and handles are plain, without mentions. Reddit uses a bo
 
 Instagram accepts canonical and username-prefixed post/reel links, legacy TV links, and carousel slide selection. Instagram profile links are left untouched. Individual Story links and highlights receive linked unavailable cards without helper requests or login access. Instagram audio pages and account Stories pages are ignored.
 
-Media normally appears above the caption. Captions are limited to 250 characters. Twitter, Threads, Bluesky and Mastodon use full main-post text above any available media; supplied quoted text is indented below the media and capped at 250 characters. No separate quote link is added. A linked Space section may appear inside a Twitter post; direct Spaces, Lists and Communities have linked resource cards. Their titles, availability and audio are not invented. Threads without usable metadata uses the same linked unavailable-card layout as Facebook photos. Mastodon remains limited to basic cards until content-warning handling and a media source are verified. The total Discord text budget can still prevent creation of an oversized custom card.
+Media normally appears above the caption. Captions are limited to 250 characters. Twitter, Threads, Bluesky and Mastodon use full main-post text above any available media; supplied quoted text is indented below the media and capped at 250 characters. No separate quote link is added. A linked Space section may appear inside a Twitter post; direct Spaces and Lists have linked resource cards. Twitter Community links are left untouched. Their titles, availability and audio are not invented. Threads without usable metadata uses the same linked unavailable-card layout as Facebook photos. Mastodon remains limited to basic cards until content-warning handling and a media source are verified. The total Discord text budget can still prevent creation of an oversized custom card.
 
 ## Manage a repost
 

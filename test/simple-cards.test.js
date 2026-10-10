@@ -141,7 +141,7 @@ test('direct Spaces links use a formatted card without calling the post endpoint
  const payload=await simplePayload(url,modes,[],async()=>{throw new Error('Must not fetch a Space through the post endpoint');});
  const card=payload.components[1];
  assert.match(card.components[0].content,/Twitter Space/);
- assert.ok(card.components.some(c=>c.content===`[Open Space](<${url}>)`));
+ assert.ok(card.components.some(c=>c.content===`[Open Space ↗](<${url}>)`));
  assert.ok(!JSON.stringify(card).includes('Audio playback is not available'));
  assert.ok(!JSON.stringify(card).includes('Media preview unavailable')); 
  assert.ok(card.components.some(c=>c.type===14&&c.divider));
@@ -150,9 +150,9 @@ test('direct Spaces links use a formatted card without calling the post endpoint
  assert.match(named.components[1].components[0].content,/Public discussion/);
 });
 
-test('Twitter Lists and Communities get safe resource cards without post API requests',async()=>{
+test('Twitter Lists get safe resource cards without post API requests',async()=>{
  const modes=readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes;
- for(const [route,kind,label] of [['lists','list','Twitter List'],['communities','community','Twitter Community']]) {
+ for(const [route,kind,label] of [['lists','list','Twitter List']]) {
   const url=`https://twitter.com/i/${route}/123456789`;
   assert.deepEqual(parseSocialUrl(`https://x.com/i/${route}/123456789?utm_source=share`),{platform:'twitter',kind,url});
   for(const bad of [`https://x.com.evil.test/i/${route}/123`,`https://x.com/i/${route}/not-an-id`,`https://x.com/i/${route}/123/members`]) assert.equal(parseSocialUrl(bad),null);
@@ -229,3 +229,5 @@ test('Prime Video public title metadata requires matching canonical identity',as
  const fallback=await simplePayload(url,readConfig({}).modes,[],async()=>{throw Error('unavailable');});
  assert.ok(JSON.stringify(fallback).includes('View on Prime Video'));
 });
+
+test('Twitter Community links remain untouched',()=>{assert.equal(parseSocialUrl('https://x.com/i/communities/1735069271045357904'),null);});

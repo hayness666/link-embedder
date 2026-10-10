@@ -214,7 +214,7 @@ export function simpleCard(link, metadata = null) {
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
     {type:14,divider:false,spacing:1},
     ...(authorLine ? [text(authorLine)] : []),
-    ...(spaceUrl ? [text(`[Open Space](<${spaceUrl}>)`)] : []),
+    ...(spaceUrl ? [text(`[Open Space ↗](<${spaceUrl}>)`)] : []),
     ...(textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(!textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
@@ -242,7 +242,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
       }
       return simpleCard(link,{title:typeof embed?.title === 'string' ? embed.title : (link.kind === 'storefront' ? 'Prime Video Storefront' : `View on ${service}`),caption:typeof embed?.description === 'string' ? embed.description : 'Media preview unavailable.',media:[embed?.image?.url || embed?.thumbnail?.url].filter(u=>u && validMedia(u,link.platform))});
     }
-    if (link.platform === 'twitter' && ['space','list','community'].includes(link.kind)) {
+    if (link.platform === 'twitter' && ['space','list'].includes(link.kind)) {
       // Non-post Twitter resources do not use the approved status endpoint.
       // Reuse only Discord metadata matched to this exact resource.
       const embed = existingEmbeds.find(e => parseSocialUrl(e.url || '')?.url === link.url);
@@ -251,7 +251,7 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
         name: typeof embed?.author?.name === 'string' ? embed.author.name : '',
         caption: link.kind === 'space'
           ? ''
-          : `${link.kind === 'list' ? 'List' : 'Community'} preview unavailable.`
+          : 'List preview unavailable.'
       });
     }
     if (link.platform === 'instagram' && ['story','highlight'].includes(link.kind)) {

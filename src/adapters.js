@@ -25,7 +25,7 @@ export function parseAdditional(u) {
     }
     return result('youtube', 'video', `https://www.youtube.com/watch?${q}`);
   }
-  if (['twitter.com', 'x.com'].includes(host) && /^\/i\/(?:lists|communities)\/[0-9]{1,30}$/.test(path)) return result('twitter', path.startsWith('/i/lists/') ? 'list' : 'community', `https://twitter.com${path}`);
+  if (['twitter.com', 'x.com'].includes(host) && /^\/i\/lists\/[0-9]{1,30}$/.test(path)) return result('twitter', 'list', `https://twitter.com${path}`);
   if (['twitter.com', 'x.com'].includes(host) && /^\/i\/spaces\/[A-Za-z0-9]{13}$/.test(path)) return result('twitter', 'space', `https://twitter.com${path}`);
   if (['twitter.com', 'x.com'].includes(host) && /^\/[A-Za-z0-9_]{1,15}\/status\/\d{1,30}$/.test(path)) return result('twitter', 'post', `https://twitter.com${path}`);
   if (host === 'bsky.app' && /^\/profile\/[A-Za-z0-9.:-]{1,200}\/post\/[A-Za-z0-9]{1,50}$/.test(path)) return result('bluesky', 'post', `https://bsky.app${path}`);
