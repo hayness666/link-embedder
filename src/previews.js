@@ -17,8 +17,7 @@ export function parseSocialUrl(raw) {
   if (platform === 'instagram') {
     path = path.replace(/^\/[A-Za-z0-9_.]{1,30}\/(p|reel|reels|tv)\//, '/$1/').replace(/^\/tv\//, '/p/').replace(/^\/reels\/(?!audio\/)/, '/reel/');
     const resourceKind = /^\/stories\/highlights\/\d{1,30}$/.test(path) ? 'highlight'
-      : /^\/stories\/[A-Za-z0-9_.]{1,30}\/\d{1,30}$/.test(path) ? 'story'
-      : /^\/[A-Za-z0-9_.]{1,30}$/.test(path) && !/^(?:accounts|direct|explore|reels|reel|p|tv|stories|share|about|developer|legal|privacy|challenge|web)$/i.test(path.slice(1)) ? 'profile' : null;
+      : /^\/stories\/[A-Za-z0-9_.]{1,30}\/\d{1,30}$/.test(path) ? 'story' : null;
     if (resourceKind) return {platform,kind:resourceKind,url:`https://www.instagram.com${path}`};
   }
   let kind;

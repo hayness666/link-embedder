@@ -14,11 +14,9 @@ test('Instagram resource cards keep links without fetching private or unsupporte
  for(const path of ['/stories/nasa/','/reels/audio/123','/accounts/login','/direct/inbox','/challenge','/stories/nasa/no-id','/reels/audio/no-id'])assert.equal(parseSocialUrl('https://www.instagram.com'+path),null);
 });
 
-import {parseInstagramCard} from '../src/instagram-card.js';
-test('public profile media is accepted only for the matching account',()=>{
- const link=parseSocialUrl('https://www.instagram.com/nasa');
- const html=url=>`<script id="discord:component-embed">${JSON.stringify({component:{type:17,components:[{type:9,components:[{type:10,content:'**NASA**\n[@nasa](https://www.instagram.com/nasa/)\n\nFollower counts'}]},{type:12,items:[{media:{url}}]}]}})}</script>`;
- const good=parseInstagramCard(html('https://oginstagram.com/offload/@nasa/1?v=2'),link);
- assert.ok(good);assert.match(JSON.stringify(good),/NASA/);assert.ok(!JSON.stringify(good).includes('Follower counts'));
- for(const u of ['https://oginstagram.com/offload/@other/1','https://evil.test/offload/@nasa/1','https://oginstagram.com/offload/@nasa/1/extra'])assert.equal(parseInstagramCard(html(u),link),null);
+test('Instagram profiles remain untouched without fetching a helper',async()=>{
+ for(const url of ['https://www.instagram.com/nasa/','https://www.instagram.com/nasa/?igsh=example']) {
+  assert.equal(parseSocialUrl(url),null);
+  assert.equal(await simplePayload(url,{instagram:'oginstagram'},[],async()=>{throw Error('must not fetch');}),null);
+ }
 });

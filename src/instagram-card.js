@@ -48,7 +48,7 @@ export function parseInstagramCard(html, link) {
     const gallery = children.find(c => c.type === 12);
     if (!gallery?.items?.length || gallery.items.length > 10) return null;
     const parts = new URL(link.url).pathname.split('/');
-    const code = link.kind === 'profile' ? `@${parts[1]}` : parts[2];
+    const code = parts[2];
     const items = gallery.items.map(item => {
       const raw = item?.media?.url;
       const u = new URL(raw);
@@ -80,7 +80,7 @@ export async function instagramPayload(content, modes, fetcher = fetch) {
   const links = extractLinks(content);
   if (modes.instagram !== 'oginstagram' || links.length !== 1 || links[0].platform !== 'instagram') return null;
   const link = links[0];
-  if (!['reel','photo or post','profile'].includes(link.kind)) return null;
+  if (!['reel','photo or post'].includes(link.kind)) return null;
   const url = new URL(helperUrl(link, 'oginstagram'));
   url.searchParams.set('e', 'c');
   let response;
