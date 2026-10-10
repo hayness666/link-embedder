@@ -47,13 +47,14 @@ export function parseInstagramCard(html, link) {
     const children = root.components;
     const gallery = children.find(c => c.type === 12);
     if (!gallery?.items?.length || gallery.items.length > 10) return null;
-    const code = new URL(link.url).pathname.split('/')[2];
+    const parts = new URL(link.url).pathname.split('/');
+    const code = link.kind === 'profile' ? `@${parts[1]}` : parts[2];
     const items = gallery.items.map(item => {
       const raw = item?.media?.url;
       const u = new URL(raw);
       if (raw.length > 2048 || u.protocol !== 'https:' || u.hostname !== 'oginstagram.com'
         || u.port || u.username || u.password || u.hash
-        || !new RegExp(`^/offload/${code}/[1-9][0-9]*$`).test(u.pathname)) throw new Error('Invalid media');
+        || !(u.pathname.startsWith(`/offload/${code}/`) && /^[1-9][0-9]*$/.test(u.pathname.slice(`/offload/${code}/`.length)))) throw new Error('Invalid media');
       return { media: { url: raw } };
     });
     const header = children[0]?.type === 9 ? children[0].components?.[0]?.content : children[0]?.content;
@@ -79,7 +80,7 @@ export async function instagramPayload(content, modes, fetcher = fetch) {
   const links = extractLinks(content);
   if (modes.instagram !== 'oginstagram' || links.length !== 1 || links[0].platform !== 'instagram') return null;
   const link = links[0];
-  if (!['reel','photo or post'].includes(link.kind)) return null;
+  if (!['reel','photo or post','profile'].includes(link.kind)) return null;
   const url = new URL(helperUrl(link, 'oginstagram'));
   url.searchParams.set('e', 'c');
   let response;
