@@ -193,7 +193,6 @@ export function simpleCard(link, metadata = null) {
   const brand = brands[link.platform];
   const spaceUrl = link.platform === 'twitter' && link.kind === 'space' ? twitterSpaceUrl(link.url) : null;
   const textFirst = ['twitter','threads','bluesky','mastodon'].includes(link.platform);
-  if (link.platform === 'facebook' && link.kind === 'reel') return {type:17,accent_color:brand.color,components:[{type:10,content:'Reel preview unavailable.'}]};
   const name = typeof metadata?.name === 'string' ? plain(metadata.name).slice(0, 160) : '';
   const user = typeof metadata?.username === 'string' ? plain(metadata.username.replace(/^@/, '')).slice(0, 120) : '';
   const media = (metadata?.media || []).filter(url => validMedia(url, link.platform)).slice(0, 10);
@@ -220,7 +219,7 @@ export function simpleCard(link, metadata = null) {
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(!textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
-    ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : link.platform === 'facebook' ? `${({photo:'Photo',post:'Story',story:'Story',video:'Video',group:'Group',listing:'Listing',event:'Event',album:'Album',profile:'Profile','profile or page':'Profile or page',collection:'Video collection',link:'Link'}[link.kind] || 'Media')} preview unavailable.` : 'Media preview unavailable.')] : []),
+    ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable && !['youtube','vimeo'].includes(link.platform) ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : link.platform === 'facebook' ? `${({reel:'Reel',photo:'Photo',post:'Story',story:'Story',video:'Video',group:'Group',listing:'Listing',event:'Event',album:'Album',profile:'Profile','profile or page':'Profile or page',collection:'Video collection',link:'Link'}[link.kind] || 'Media')} preview unavailable.` : 'Media preview unavailable.')] : []),
     ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**`)) : []),
     ...(quoteText ? [text(quoteText)] : []),
     {type:14,divider:true,spacing:1},
