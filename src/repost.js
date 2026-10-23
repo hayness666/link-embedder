@@ -72,7 +72,7 @@ export function createReposter(user, log = () => {}, owners = null) {
       if (isReply) {
         replyContext = await resolveReplyContext(message,owners);
         payload.components.unshift(...replyNoteComponents(replyContext.note));
-        payload.allowedMentions = {parse:[],users:[replyContext.authorId],repliedUser:false};
+        payload.allowedMentions = {parse:[],users:replyContext.authorId?[replyContext.authorId]:[],repliedUser:false};
       }
       route=await refreshWebhookRoute(message.channel,user);
       const hooks = await route.channel.fetchWebhooks();

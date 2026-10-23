@@ -107,12 +107,12 @@ test('thread controls reject wrong owner/context/parent and inaccessible thread'
   await createManagementHandler(f.store,config)(i);assert.equal(f.calls.some(c=>c[0]==='delete'),false);assert.ok(f.row);
  }
 });
-test('thread edits keep excerpt, destination, and no-repeat mention protections',async()=>{
+test('thread edits keep reply link, destination, and no-repeat mention protections',async()=>{
  const f=fixture(16,true);await send(f);const calls=[];let modal;
  const edit=createEditHandler(f.store,config,new Set());const base={guildId,channelId:threadId,channel:f.channel,user:{id:ownerId},client:{user:bot},reply:async p=>calls.push(p),deferReply:async()=>{},editReply:async p=>calls.push(p),showModal:async p=>modal=p};
  await edit({...base,isButton:()=>true,customId:`manage:edit:${replacementId}`});assert.ok(modal);
  await edit({...base,isModalSubmit:()=>true,customId:modal.custom_id,fields:{getTextInputValue:()=> 'edited '+f.source.content}});
- const p=f.calls.find(c=>c[0]==='edit')[2];assert.equal(p.threadId,threadId);assert.deepEqual(p.allowedMentions,{parse:[],repliedUser:false});assert.ok(p.components[0].content.includes('target text'));assert.equal(p.components[1].content,'edited '+f.source.content);
+ const p=f.calls.find(c=>c[0]==='edit')[2];assert.equal(p.threadId,threadId);assert.deepEqual(p.allowedMentions,{parse:[],repliedUser:false});assert.ok(p.components[0].content.includes('Click to see message'));assert.equal(p.components[1].content,'edited '+f.source.content);
 });
 test('permissions command distinguishes thread and parent requirements without access expansion',async()=>{
  const f=fixture(15);const responses=[],member={permissions:{has:()=>true}};f.denied.add(P.SendMessagesInThreads);f.parentDenied.add(P.ManageWebhooks);

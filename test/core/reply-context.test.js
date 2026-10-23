@@ -8,7 +8,7 @@ import {buildEditedPost,editableSource} from '../../src/edit-post.js';
 import {withCardControls} from '../../src/card-controls.js';
 import {spoilerComponents} from '../../src/manage-post.js';
 import {openOwnershipStore} from '../../src/ownership.js';
-import {replyReferenceId,resolveReplyContext,preservedReplyNote,checkReplyBudget,replyNoteComponents,replyExcerpt,USER_TEXT_COMPONENT_ID} from '../../src/reply-context.js';
+import {replyReferenceId,resolveReplyContext,preservedReplyNote,checkReplyBudget,replyNoteComponents,USER_TEXT_COMPONENT_ID} from '../../src/reply-context.js';
 const guildId='111111111111111111',channelId='222222222222222222',messageId='333333333333333333',targetId='444444444444444444',authorId='555555555555555555',ownerId='666666666666666666',hookId='777777777777777777',bot={id:'888888888888888888'};
 const card=()=>({type:17,components:[{type:10,content:'Title'},{type:12,items:[{media:{url:'https://example.org/image.jpg'}}]}]});
 function fixture(){
@@ -24,7 +24,7 @@ test('same-channel reply replaces only after target validation and stores refere
  const f=fixture();await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
  assert.deepEqual(f.events.slice(1),['saved','delete']);const payload=f.events[0];
  assert.equal(payload.components[1].content,f.message.content);
- assert.equal(payload.components[0].content,`-# ↪︎ **<@${authorId}>** *[A short target message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+ assert.equal(payload.components[0].content,`-# ↪︎ **<@${authorId}>** *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
  assert.equal(payload.components[2].components[0].accessory.label,'⋯');assert.deepEqual(payload.allowedMentions,{parse:[],users:[authorId],repliedUser:false});
  assert.equal(f.row.ownerId,ownerId);assert.equal(f.row.replyMessageId,targetId);assert.doesNotMatch(JSON.stringify(payload)+JSON.stringify(f.row),/PRIVATE BODY/);
 });
@@ -192,30 +192,6 @@ test('voice reply failures and exclusions preserve originals',async()=>{
  }
 });
 
-test('reply excerpts cap 100 Unicode code points and collapse whitespace before truncation',()=>{
- assert.equal(replyExcerpt({content:' first\n\tsecond  third '}),'first second third');
- for(const n of [99,100,101])assert.equal(replyExcerpt({content:'😀'.repeat(n)}),'😀'.repeat(Math.min(n,100))+(n>100?'…':''));
- assert.equal(replyExcerpt({content:'x'.repeat(101)}),'x'.repeat(100)+'…');
-});
-test('reply excerpts never reveal spoilers, attachments, or absent content',()=>{
- for(const content of ['',undefined,'  ','secret ||hidden||','unclosed ||secret'])assert.equal(replyExcerpt({content}),'Click to see message');
- assert.equal(replyExcerpt({content:'caption',attachments:new Map([['1',{name:'SPOILER_secret.png'}]])}),'Click to see message');
- assert.equal(replyExcerpt({attachments:new Map([['1',{name:'photo.png'}]]),embeds:[{description:'not extracted'}]}),'Click to see message');
-});
-test('excerpt Markdown, URLs, and mentions remain one escaped link label',async()=>{
- const f=fixture();f.target.content='[click](https://evil.test) **bold** <@123456789012345678> @everyone `code` \\ end';
- const c=await resolveReplyContext(f.message),row={guildId,channelId,replyMessageId:targetId};
- const current={components:[c.note,{type:10,content:'source'},card()]};
- assert.deepEqual(preservedReplyNote(current,row),c.note);assert.ok(c.note.content.includes('\\[click\\]\\(https:\u200b//evil.test\\)'));
- assert.ok(c.note.content.includes('@\u200buser'));assert.ok(c.note.content.includes('@\u200beveryone'));
- assert.equal((c.note.content.match(/<@\d+>/g)||[]).length,1);
- assert.ok(c.note.content.endsWith(`](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`));
- for(const label of ['[nested](https://evil.test)','@everyone','<@123456789012345678>','https://evil.test']){
-  const forged={type:10,content:`-# ↪︎ **<@${authorId}>**: [${label}](https://discord.com/channels/${guildId}/${channelId}/${targetId})`};
-  assert.throws(()=>preservedReplyNote({components:[forged,{type:10,content:'source'}]},row));
- }
-});
-
 test('previous deployed subtext notes survive source and link edits unchanged',async()=>{
  const f=fixture(),row={ownerId,guildId,channelId,webhookId:hookId,replyMessageId:targetId};
  const note={type:10,content:`-# ↪︎ Replying to a [message](https://discord.com/channels/${guildId}/${channelId}/${targetId}) from <@${authorId}>`};
@@ -233,9 +209,9 @@ function trackedFixture(text='Human accompanying text https://example.org/post')
  const row={ownerId,guildId,channelId,webhookId:hookId,sourceComponentId:USER_TEXT_COMPONENT_ID};
  f.store.get=id=>id===targetId?row:null;return {...f,ownership:row};
 }
-test('tracked card replies excerpt only marked human text and notify its owner',async()=>{
+test('tracked card replies use a constant link and notify the verified owner',async()=>{
  const f=trackedFixture();await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
- const p=f.events[0];assert.match(p.components[0].content,/Human accompanying text/);
+ const p=f.events[0];assert.match(p.components[0].content,/Click to see message/);
  assert.doesNotMatch(p.components[0].content,/Generated|Title|example.org/);
  assert.ok(p.components[0].content.includes(`<@${ownerId}>`));assert.ok(p.components[0].content.includes(`/${targetId})`));
  assert.deepEqual(p.allowedMentions.users,[ownerId]);assert.equal(p.components[1].id,USER_TEXT_COMPONENT_ID);assert.ok(f.events.includes('delete'));
@@ -246,7 +222,7 @@ test('URL-only, legacy, hidden, and ambiguous card sources use neutral message',
  }
 });
 test('unknown automated targets never provide generated excerpts or guessed owners',async()=>{
- const f=trackedFixture();const c=await resolveReplyContext(f.message,{get:()=>null});assert.match(c.note.content,/\[Click to see message\]/);assert.ok(c.note.content.includes(`<@${bot.id}>`));
+ const f=trackedFixture();const c=await resolveReplyContext(f.message,{get:()=>null});assert.match(c.note.content,/\[Click to see message\]/);assert.doesNotMatch(c.note.content,/<@/);
 });
 test('mismatched trusted card ownership fails closed',async()=>{
  for(const key of ['webhookId','guildId','channelId','ownerId']){const f=trackedFixture();f.ownership[key]='bad';await assert.rejects(resolveReplyContext(f.message,f.store),/ownership/);}
@@ -264,37 +240,23 @@ test('ownership persists component provenance without source body',async()=>{
 test('replying to a reply-card skips its existing attribution and provider body',async()=>{
  const f=trackedFixture(),prior='123456789012345678';f.ownership.replyMessageId=prior;
  f.target.components.unshift({type:10,content:`-# ↪︎ **<@${authorId}>**: [Prior excerpt](https://discord.com/channels/${guildId}/${channelId}/${prior})`});
- const c=await resolveReplyContext(f.message,f.store);assert.match(c.note.content,/Human accompanying text/);assert.doesNotMatch(c.note.content,/Prior excerpt/);assert.ok(c.note.content.endsWith(`/${targetId})*`));
+ const c=await resolveReplyContext(f.message,f.store);assert.match(c.note.content,/Click to see message/);assert.doesNotMatch(c.note.content,/Prior excerpt/);assert.ok(c.note.content.endsWith(`/${targetId})*`));
 });
-test('marked card excerpts collapse whitespace and escape untrusted source formatting',async()=>{
- const f=trackedFixture('Hello\n**bold** <@123456789012345678> '+ '😀'.repeat(110));const c=await resolveReplyContext(f.message,f.store);
- assert.doesNotMatch(c.note.content,/\n|<@123456789012345678>/);assert.match(c.note.content,/…/);assert.ok(c.note.content.includes('\\*\\*bold\\*\\*'));
-});
-
-test('identifier underscores remain literal without generated backslashes in raw and marked replies',async()=>{
- for(const source of ['REPLY_HUMAN_TEXT_QA',String.raw`REPLY\_HUMAN\_TEXT\_QA`]){
- assert.equal(replyExcerpt({content:source}),'REPLY_HUMAN_TEXT_QA');
- const f=trackedFixture(source+' https://example.org/post');const c=await resolveReplyContext(f.message,f.store);
- assert.ok(c.note.content.includes('[REPLY_HUMAN_TEXT_QA]('));
- assert.deepEqual(preservedReplyNote({components:[c.note,{type:10,content:'source'}]},{guildId,channelId,replyMessageId:targetId}),c.note);
+test('all ordinary and tracked targets use a constant safe linked label',async()=>{
+ for(const text of ['ordinary text','', '||secret||', '[evil](https://evil.test) @everyone', String.raw`a\_b`, '😀'.repeat(200)]){
+  for(const f of [fixture(),trackedFixture(text)]){
+   f.target.content=text;const c=await resolveReplyContext(f.message,f.store);
+   const expectedAuthor=f.target.webhookId?ownerId:authorId;
+   assert.equal(c.note.content,`-# ↪︎ **<@${expectedAuthor}>** *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+   assert.deepEqual(preservedReplyNote({components:[c.note,{type:10,content:'source'}]},{guildId,channelId,replyMessageId:targetId}),c.note);
+  }
  }
 });
-test('excerpt escaping retains literal backslashes and protects formatting and link delimiters',()=>{
- assert.equal(replyExcerpt({content:String.raw`path\file`}),String.raw`path\\file`);
- assert.equal(replyExcerpt({content:String.raw`a\\_b`}),String.raw`a\\\\\_b`);
- for(const source of ['_italic_','__underline__','**bold**','[label](https://evil.example)','`code`','<@123456789012345678>']){
- const label=replyExcerpt({content:source});assert.doesNotMatch(label,/(?<!\\)[\[\]<>*`]/);assert.doesNotMatch(label,/<@/);
- }
- assert.equal(replyExcerpt({content:'||hidden_under_score||'}),'Click to see message');
-});
-
-test('reply links are italic, author remains bold, and colon is absent for excerpts and fallback',async()=>{
- for(const content of ['ordinary typed text','']){
- const f=fixture();f.target.content=content;const c=await resolveReplyContext(f.message);
- assert.equal(c.note.content,`-# ↪︎ **<@${authorId}>** *[${content||'Click to see message'}](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
- const current={components:[c.note,{type:10,content:'source'}]};assert.deepEqual(preservedReplyNote(current,{guildId,channelId,replyMessageId:targetId}),c.note);
- for(const bad of [c.note.content.slice(0,-1),c.note.content+'*',c.note.content.replace('ordinary typed text','[bad](https://evil.example)')]){
-  if(bad!==c.note.content)assert.throws(()=>preservedReplyNote({components:[{...c.note,content:bad},current.components[1]]},{guildId,channelId,replyMessageId:targetId}));
- }
- }
+test('unknown automated author is omitted, never notified, and editable',async()=>{
+ const f=trackedFixture();f.store.get=()=>null;
+ await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
+ const p=f.events[0];assert.deepEqual(p.allowedMentions.users,[]);
+ assert.equal(p.components[0].content,`-# ↪︎ *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+ assert.deepEqual(preservedReplyNote({components:p.components},{guildId,channelId,replyMessageId:targetId}),p.components[0]);
+ assert.ok(f.events.includes('delete'));
 });
