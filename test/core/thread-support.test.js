@@ -93,9 +93,9 @@ test('thread ownership survives restart with parent ID and rejects malformed rou
  }finally{await rm(dir,{recursive:true,force:true});}
 });
 test('thread NSFW and delete controls address the same thread and preserve permissions',async()=>{
- for(const action of ['nsfw','delete']){
-  const f=fixture(15,true);await send(f);const {i,responses}=interaction(f,action);await createManagementHandler(f.store,config)(i);
-  if(action==='nsfw'){const edit=f.calls.find(c=>c[0]==='edit')[2];assert.equal(edit.threadId,threadId);assert.deepEqual(edit.allowedMentions,{parse:[],repliedUser:false});assert.equal(edit.components[0].content,f.current.components[0].content);assert.equal(edit.components.at(-1).components[1].items[0].spoiler,true);}
+ for(const action of ['nsfw','unspoiler','delete']){
+  const f=fixture(15,true);await send(f);if(action==='unspoiler')f.current.components.at(-1).components[1].items[0].spoiler=true;const {i,responses}=interaction(f,action);await createManagementHandler(f.store,config)(i);
+  if(action!=='delete'){const edit=f.calls.find(c=>c[0]==='edit')[2];assert.equal(edit.threadId,threadId);assert.deepEqual(edit.allowedMentions,{parse:[],repliedUser:false});assert.equal(edit.components[0].content,f.current.components[0].content);assert.equal(edit.components.at(-1).components[1].items[0].spoiler,action==='nsfw');}
   else{assert.deepEqual(f.calls.find(c=>c[0]==='delete'),['delete',replacementId,threadId]);assert.equal(f.row,null);}
   assert.ok(responses.length);
  }

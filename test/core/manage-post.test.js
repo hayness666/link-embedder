@@ -24,10 +24,10 @@ function fixture(action='menu') {
  const interaction={isMessageContextMenuCommand:()=>action==='menu',isButton:()=>action!=='menu',commandName:COMMAND,targetId:id,customId:`manage:${action}:${id}`,user:{id:ownerId},guildId,channelId,client:{user:{id:'bot'}},
   channel:{messages:{fetch:async()=>{calls.push('fetch');return {webhookId,components};}},fetchWebhooks:async()=>[hook]},
   reply:async p=>calls.push(p),update:async p=>calls.push(p),deferUpdate:async()=>{},editReply:async p=>calls.push(p)};
- return {calls,store,interaction,hook};
+ return {calls,store,interaction,hook,components};
 }
 test('non-owner can open NSFW-only menu and mark media, but cannot delete',async()=>{
- const menu=fixture();menu.interaction.user.id='other';await createManagementHandler(menu.store,config)(menu.interaction);assert.deepEqual(menu.calls[0].components[0].components.map(c=>c.label),['Mark NSFW']);assert.equal(menu.calls[0].flags,64);
+ const menu=fixture();menu.interaction.user.id='other';await createManagementHandler(menu.store,config)(menu.interaction);assert.deepEqual(menu.calls.at(-1).components[0].components.map(c=>c.label),['Mark NSFW']);assert.equal(menu.calls.at(-1).flags,64);
  const f=fixture('nsfw');f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls[1].components[0].components[1].items[0].spoiler,true);assert.deepEqual(f.store.get(id),row);
  const d=fixture('delete');d.interaction.user.id='other';await createManagementHandler(d.store,config)(d.interaction);assert.equal(d.calls.length,1);assert.match(d.calls[0].content,/Only the original poster can delete/);assert.deepEqual(d.store.get(id),row);
 });
@@ -50,3 +50,16 @@ test('public configuration permits matching saved records across guilds but reje
 });
 
 test('successful NSFW notice retains useful explanation without obsolete Apps directions',async()=>{const f=fixture('nsfw');await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.at(-1).content,'Photos/videos are now covered as spoilers. The caption and link remain visible. This does not age-restrict the post or channel.');assert.deepEqual(f.calls.at(-1).components,[]);});
+
+test('owner sees Remove spoiler from fresh state, while other users can only mark',async()=>{
+ for(const owner of [true,false]){const f=fixture();f.components[0].components[1].items[0].spoiler=true;if(!owner)f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);const buttons=f.calls.at(-1).components[0].components;assert.equal(buttons.at(-1).label,owner?'Remove spoiler':'Mark NSFW');}
+});
+test('owner removal clears mixed gallery spoilers without altering text, links, or controls',async()=>{
+ const f=fixture('unspoiler');const items=f.components[0].components[1].items;items[0].spoiler=true;items.push({media:{url:'https://example.org/photo.jpg'},spoiler:false});
+ await createManagementHandler(f.store,config)(f.interaction);const payload=f.calls[1];assert.ok(payload.components[0].components[1].items.every(i=>i.spoiler===false));assert.equal(payload.components[0].components[0].content,'Caption remains');assert.equal(payload.components[0].components[1].items[0].media.url,items[0].media.url);assert.deepEqual(payload.allowedMentions,{parse:[],repliedUser:false});assert.deepEqual(f.store.get(id),row);assert.match(f.calls.at(-1).content,/removed/);
+});
+test('forged non-owner, stale unmarked action, and changed ownership cannot remove spoilers',async()=>{
+ const f=fixture('unspoiler');f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.length,1);assert.match(f.calls[0].content,/Only the original/);
+ const g=fixture('unspoiler');await createManagementHandler(g.store,config)(g.interaction);assert.equal(g.calls.length,2);assert.match(g.calls.at(-1).content,/No changes/);
+ const h=fixture('unspoiler');h.components[0].components[1].items[0].spoiler=true;let reads=0;h.store.get=()=>++reads===1?row:{...row,ownerId:'other'};await createManagementHandler(h.store,config)(h.interaction);assert.match(h.calls.at(-1).content,/could not confirm/);assert.equal(h.calls.length,2);
+});

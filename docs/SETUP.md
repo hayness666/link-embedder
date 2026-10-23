@@ -22,9 +22,9 @@ Production scope uses empty `TEST_GUILD_ID` and `TEST_CHANNEL_IDS`. Optional tes
 
 ## Persistent author controls
 
-Open a recorded repost’s options, then Apps and the Link Embedder management command. Choose **Manage Post**. The private menu contains only **MANAGE YOUR POST** and its buttons. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice, or DM.
+Open a recorded repost’s options, then Apps and the Link Embedder management command. Choose **Manage Post**. The private menu contains action buttons without a heading. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice, or DM.
 
-Mark NSFW adds spoilers to supported custom-card media, not captions or links, and does not age-restrict the channel. Native previews are not covered by that control. Deleting removes the repost and does not restore the original. Unrecorded originals, old companion replies, and reposts without ownership records cannot be managed through the command.
+Mark NSFW adds spoilers to supported custom-card media, not captions or links, and does not age-restrict the channel. The original poster can use **Remove spoiler** to uncover that media in place; other users cannot remove spoilers. Native previews are not covered by that control. Deleting removes the repost and does not restore the original. Unrecorded originals, old companion replies, and reposts without ownership records cannot be managed through the command.
 
 Ownership is stored in `data/repost-owners.json` as repost, original-author, server, channel, and webhook IDs only. No message text or webhook tokens are stored. Writes are atomic and complete before deleting the original. Keep this directory on persistent host storage and back it up privately; never commit it. Records remain until managed deletion, rollback, or an operator-verified deletion request. A missing record denies management; a corrupt store stops startup. Capacity is 10,000 records; reaching it preserves originals instead of silently evicting owners.
 

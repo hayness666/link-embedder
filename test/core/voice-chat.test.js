@@ -23,6 +23,7 @@ test('voice chat dispatch sends in same channel and creates ordinary ownership/c
  assert.deepEqual(f.events.filter(x=>typeof x==='string'),['hooks','saved','delete']);
  const row=f.records.get(replacement);assert.equal(row.channelId,channelId);assert.equal(row.ownerId,ownerId);assert.equal(row.webhookId,hookId);
  const payload=f.events.find(x=>typeof x==='object');assert.equal(payload.components[1].components[0].accessory.label,'⋯');assert.equal(payload.threadId,undefined);
+ f.channel.messages.fetch=async()=>({id:replacement,webhookId:hookId,components:payload.components});
  let menu;await createManagementHandler(f.store,config)({isButton:()=>true,customId:'manage:open:0',message:{id:replacement,webhookId:hookId},guildId,channelId,user:{id:ownerId},client:{user:bot},channel:f.channel,reply:async p=>{menu=p;}});
  assert.equal(menu.flags,64);assert.equal(menu.components[0].components[0].label,'Edit Post');
 });

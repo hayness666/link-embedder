@@ -46,3 +46,12 @@ test('nonowner open, forged submit, stale content, lost ownership and expired se
  }
  const h=fixture();await h.handler({...h.base,isModalSubmit:()=>true,customId:'manage:save:'+'a'.repeat(32)});assert.equal(h.calls.some(c=>c[0]==='edit'),false);
 });
+
+test('removed gallery spoilers stay removed after text edits and media rebuilds',async()=>{
+ const m=message();m.attachments=new Map();m.components[1].components[0].items[0].spoiler=false;
+ const text=await buildEditedPost(m,'Updated '+url,config);
+ assert.notEqual(text.components[1].components[0].items[0].spoiler,true);
+ const render=async()=>({flags:32768,components:[{type:10,content:'source'},{type:17,components:[{type:12,items:[{media:{url:'https://cdninstagram.com/new.jpg'}}]}]}]});
+ const rebuilt=await buildEditedPost(m,'Updated '+url+'2',config,{expand:async s=>s,render});
+ assert.notEqual(rebuilt.components[1].components[0].items[0].spoiler,true);
+});

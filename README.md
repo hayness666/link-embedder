@@ -54,7 +54,7 @@ npm run check
 
 Configure using [.env.example](.env.example) and [SETUP](docs/SETUP.md). Keep `DISCORD_TOKEN` in approved secret storage, never Git. `npm start` starts the configured bot. Hosting is separate from GitHub Pages.
 
-Use **⋯** beside a new custom card’s title, or **Apps → Manage Post**, to open its private controls. Original posters can edit or delete tracked reposts; anyone with channel access can mark media NSFW. See [editing limits](docs/HELP.md#editing-reposts).
+Use **⋯** beside a new custom card’s title, or **Apps → Manage Post**, to open its private controls. Original posters can edit or delete tracked reposts, and remove gallery spoilers; anyone with channel access can mark media NSFW. See [editing limits](docs/HELP.md#editing-reposts).
 
 ## Customize and get help
 
