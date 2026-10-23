@@ -6,7 +6,7 @@ Automatic previews for supported public links in Discord. **Anyone with permissi
 
 [Add Link Embedder](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=275414871040&integration_type=0) · [Website](https://hayness666.github.io/link-embedder/) · [Setup](docs/SETUP.md)
 
-After adding the bot, run `/permissions` in the channels you want to use. Results are private to the authorized administrator running the command; channel overrides may need adjustment.
+After adding the bot, run `/permissions scope:server` for a private server summary, or `/permissions` for one channel. Results are private to the authorized administrator running the command; channel overrides may need adjustment.
 
 Replacement needs View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally need Send Messages in Threads. **Administrator is not required.** The install link requests these permissions; existing installations and channel overrides may need administrator updates. See [replacement setup](docs/REPOST.md).
 
@@ -70,4 +70,4 @@ Code and documentation: [MIT License](LICENSE). Third-party content retains its 
 
 Threads representative text, single-image, gallery, video, self-quote, different-author quote, long-reply, short-route, and tracking-cleanup examples passed live QA. This does not establish every mobile app sharing format or distinct plain-repost support. The separate global clickable-source-link update passed live QA.
 
-Server administrators can use `/permissions` to check the bot’s effective permissions in the current channel or choose another channel they can manage. Results are private; the command never changes roles or channel permissions.
+Server administrators can use `/permissions` to check the bot’s effective permissions in the current channel or choose another channel they can manage. Use `/permissions scope:server` for a grouped report and `page:2` for the next page. The report covers channels you can view and manage, including accessible active public threads; unavailable and unsupported areas are identified. Results are private; the command never changes roles or channel permissions.

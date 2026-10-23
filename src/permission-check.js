@@ -1,6 +1,7 @@
+import {serverPermissionReport} from './permission-report.js';
 import {isThreadChannel,threadShape} from './thread-routing.js';
 import {PermissionFlagsBits as P,ChannelType} from 'discord.js';
-export const PERMISSION_COMMAND={name:'permissions',description:'Check the bot’s effective permissions in a channel',type:1,defaultMemberPermissions:P.ManageChannels,integrationTypes:[0],contexts:[0],options:[{name:'channel',description:'Channel to check (defaults to this channel)',type:7,required:false}]};
+export const PERMISSION_COMMAND={name:'permissions',description:'Check the bot’s effective permissions in a channel',type:1,defaultMemberPermissions:P.ManageChannels,integrationTypes:[0],contexts:[0],options:[{name:'channel',description:'Channel to check (defaults to this channel)',type:7,required:false},{name:'scope',description:'Check one channel or the server',type:3,required:false,choices:[{name:'Channel',value:'channel'},{name:'Server',value:'server'}]},{name:'page',description:'Server report page',type:4,required:false,minValue:1}]};
 export const REQUIRED_PERMISSIONS=[['View Channel',P.ViewChannel],['Send Messages',P.SendMessages],['Embed Links',P.EmbedLinks],['Read Message History',P.ReadMessageHistory],['Manage Messages',P.ManageMessages],['Manage Webhooks',P.ManageWebhooks]];
 const mentions={parse:[],repliedUser:false};
 export function createPermissionCheck(config){
@@ -11,6 +12,10 @@ export function createPermissionCheck(config){
   await interaction.deferReply({flags:64});
   const finish=content=>interaction.editReply({content,allowedMentions:mentions});
   try{
+   if(interaction.options.getString?.('scope')==='server'){
+    if(interaction.options.getChannel('channel'))return finish('Choose either a channel or scope:server, not both.');
+    return finish(await serverPermissionReport(interaction,config,REQUIRED_PERMISSIONS));
+   }
    const selected=interaction.options.getChannel('channel')??interaction.channel;
    if(!selected?.id||selected.guildId!==interaction.guildId)return finish('That channel is unavailable for this check.');
    const [channel,member,bot]=await Promise.all([interaction.guild.channels.fetch(selected.id,{force:true}),interaction.guild.members.fetch({user:interaction.user.id,force:true}),interaction.guild.members.fetchMe({force:true})]);
