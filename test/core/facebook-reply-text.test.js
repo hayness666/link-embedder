@@ -17,5 +17,5 @@ for(const reply of [false,true])for(const prefix of ['', 'this is a test reply w
  await createHandler(config,{canSend:m=>canRepost(m,bot),repost:createReposter(bot,()=>{},store),facebookPublicFetcher:fetcher,facebookPublicKinds:['video']})(message);
  assert.deepEqual(events.slice(1),['saved','delete']);const payload=events[0];assert.equal(payload.components[reply?1:0].content,content);assert.equal(payload.content,undefined);assert.equal(payload.embeds,undefined);assert.equal(payload.flags,32768);
  assert.deepEqual(payload.allowedMentions,reply?{parse:[],users:[authorId],repliedUser:false}:{parse:[],repliedUser:false});assert.equal(payload.files.length,1);assert.equal(requests.length,2);
- if(reply)assert.match(payload.components[0].content,/^-# ↪︎ \*\*<@/);
+ if(reply)assert.match(payload.components[0].content,/^-# ↪︎ Replying to \*\*<@/);
 });

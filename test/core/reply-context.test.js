@@ -24,7 +24,7 @@ test('same-channel reply replaces only after target validation and stores refere
  const f=fixture();await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
  assert.deepEqual(f.events.slice(1),['saved','delete']);const payload=f.events[0];
  assert.equal(payload.components[1].content,f.message.content);
- assert.equal(payload.components[0].content,`-# ↪︎ **<@${authorId}>** *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+ assert.equal(payload.components[0].content,`-# ↪︎ Replying to **<@${authorId}>** · *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
  assert.equal(payload.components[2].components[0].accessory.label,'⋯');assert.deepEqual(payload.allowedMentions,{parse:[],users:[authorId],repliedUser:false});
  assert.equal(f.row.ownerId,ownerId);assert.equal(f.row.replyMessageId,targetId);assert.doesNotMatch(JSON.stringify(payload)+JSON.stringify(f.row),/PRIVATE BODY/);
 });
@@ -60,7 +60,7 @@ test('reply note survives text and link edits, spoilers, and controls without en
  assert.throws(()=>preservedReplyNote({...current,components:[current.components[0],{type:14,divider:true,spacing:1}]},row));
 });
 test('attribution uses validated user ID instead of source formatting, budgets include note, IDs persist without names or bodies',async()=>{
- const f=fixture();f.target.author.username='a[evil](url)';const context=await resolveReplyContext(f.message);assert.ok(context.note.content.startsWith(`-# ↪︎ **<@${authorId}>** *[`));assert.doesNotMatch(context.note.content,/evil/);
+ const f=fixture();f.target.author.username='a[evil](url)';const context=await resolveReplyContext(f.message);assert.ok(context.note.content.startsWith(`-# ↪︎ Replying to **<@${authorId}>** · *[`));assert.doesNotMatch(context.note.content,/evil/);
  assert.throws(()=>checkReplyBudget([{type:10,content:'x'.repeat(4000)},context.note]),/budget/);
  const dir=await mkdtemp(join(tmpdir(),'reply-owner-'));try{const path=join(dir,'owners.json'),store=await openOwnershipStore(path);await store.put(messageId,{ownerId,guildId,channelId,webhookId:hookId,replyMessageId:targetId,username:'private',body:'private'});assert.equal((await openOwnershipStore(path)).get(messageId).replyMessageId,targetId);assert.doesNotMatch(await readFile(path,'utf8'),/private|username|body/);}finally{await rm(dir,{recursive:true,force:true});}
 });
@@ -155,7 +155,7 @@ test('missing or invalid reply context cannot emit an orphan divider or empty sp
 test('subtext uses a text-presentation arrow, bold author, and no trailing colon or divider',async()=>{
  const f=fixture();await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
  const nodes=f.events[0].components;assert.deepEqual(nodes.map(c=>c.type),[10,10,17]);
- assert.ok(nodes[0].content.startsWith('-# \u21aa\ufe0e **<@'));assert.doesNotMatch(nodes[0].content,/:$/);
+ assert.ok(nodes[0].content.startsWith('-# \u21aa\ufe0e Replying to **<@'));assert.doesNotMatch(nodes[0].content,/:$/);
  assert.equal(nodes[1].content,f.message.content);
  const row={guildId,channelId,replyMessageId:targetId};
  for(const tail of ['<@bad>','<@&555555555555555555>','<@555555555555555555> @everyone']){
@@ -247,7 +247,7 @@ test('all ordinary and tracked targets use a constant safe linked label',async()
   for(const f of [fixture(),trackedFixture(text)]){
    f.target.content=text;const c=await resolveReplyContext(f.message,f.store);
    const expectedAuthor=f.target.webhookId?ownerId:authorId;
-   assert.equal(c.note.content,`-# ↪︎ **<@${expectedAuthor}>** *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+   assert.equal(c.note.content,`-# ↪︎ Replying to **<@${expectedAuthor}>** · *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
    assert.deepEqual(preservedReplyNote({components:[c.note,{type:10,content:'source'}]},{guildId,channelId,replyMessageId:targetId}),c.note);
   }
  }
@@ -256,7 +256,19 @@ test('unknown automated author is omitted, never notified, and editable',async()
  const f=trackedFixture();f.store.get=()=>null;
  await createReposter(bot,()=>{},f.store)(f.message,{flags:32768,components:[card()]});
  const p=f.events[0];assert.deepEqual(p.allowedMentions.users,[]);
- assert.equal(p.components[0].content,`-# ↪︎ *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
+ assert.equal(p.components[0].content,`-# ↪︎ Replying to a message · *[Click to see message](https://discord.com/channels/${guildId}/${channelId}/${targetId})*`);
  assert.deepEqual(preservedReplyNote({components:p.components},{guildId,channelId,replyMessageId:targetId}),p.components[0]);
  assert.ok(f.events.includes('delete'));
+});
+
+test('explicit reply labels reject changed destinations and injected authors while retaining old headers',()=>{
+ const url=`https://discord.com/channels/${guildId}/${channelId}/${targetId}`, row={guildId,channelId,replyMessageId:targetId};
+ const wrap=content=>({components:[{type:10,content},{type:10,content:'source'}]});
+ for(const prefix of [`**<@${authorId}>**`,'a message']){
+ const valid=`-# ↪︎ Replying to ${prefix} · *[Click to see message](${url})*`;
+ assert.equal(preservedReplyNote(wrap(valid),row).content,valid);
+ for(const bad of [valid.replace(url,'https://evil.example'),valid.replace(prefix,'@everyone'),valid+'extra'])assert.throws(()=>preservedReplyNote(wrap(bad),row));
+ }
+ const old=`-# ↪︎ **<@${authorId}>** *[Click to see message](${url})*`;
+ assert.equal(preservedReplyNote(wrap(old),row).content,old);
 });

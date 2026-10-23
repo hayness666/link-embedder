@@ -33,7 +33,7 @@ export async function resolveReplyContext(message, owners) {
       // Unknown bot/webhook authors have no verified human owner.
       authorId=null;
     }
-    return {messageId:id,authorId,note:{type:10,content:`-# ↪︎ ${authorId ? `**<@${authorId}>** ` : ''}*[Click to see message](https://discord.com/channels/${message.guildId}/${message.channelId}/${id})*`}};
+    return {messageId:id,authorId,note:{type:10,content:`-# ↪︎ Replying to ${authorId ? `**<@${authorId}>**` : 'a message'} · *[Click to see message](https://discord.com/channels/${message.guildId}/${message.channelId}/${id})*`}};
   } finally { clearTimeout(timer); }
 }
 export function replyNoteComponents(note) { return [note]; }
@@ -41,7 +41,7 @@ export function preservedReplyNote(current, row) {
   if (!row?.replyMessageId) return null;
   if (![row.guildId,row.channelId,row.replyMessageId].every(snowflake)) throw Error('Invalid stored reply');
   const head=current.components?.[0]?.toJSON?.() ?? current.components?.[0];
-  const contextFirst=head?.type===10 && (head.content?.startsWith('-# ↪︎ Replying to a [message](') || head.content?.startsWith('-# ↪︎ **<@') || head.content?.startsWith('-# ↪︎ *[Click to see message]('));
+  const contextFirst=head?.type===10 && (head.content?.startsWith('-# ↪︎ Replying to ') || head.content?.startsWith('-# ↪︎ **<@') || head.content?.startsWith('-# ↪︎ *[Click to see message]('));
   const note=current.components?.[contextFirst?0:1]?.toJSON?.() ?? current.components?.[contextFirst?0:1];
   const url=`https://discord.com/channels/${row.guildId}/${row.channelId}/${row.replyMessageId}`;
   const prefix=`Replying to a [message](${url}) from `;
@@ -50,6 +50,8 @@ export function preservedReplyNote(current, row) {
   const styledPrefix='-# ↪︎ '+prefix;
   const styled=contextFirst && note.content.startsWith(styledPrefix)
     && /^<@\d{17,20}>$/.test(note.content.slice(styledPrefix.length));
+  const explicitPrefix=/^-# ↪︎ Replying to (?:\*\*<@\d{17,20}>\*\*|a message) · /.exec(note?.content || '');
+  const explicit=contextFirst && explicitPrefix && note.content===`${explicitPrefix[0]}*[Click to see message](${url})*`;
   const anonymous=contextFirst && note?.content===`-# ↪︎ *[Click to see message](${url})*`;
   const excerptHeader=/^-# ↪︎ \*\*<@\d{17,20}>\*\*(?:: \[| (\*)\[)/.exec(note?.content || '');
   const suffix=`](${url})${excerptHeader?.[1] ? "*" : ""}`;
@@ -60,7 +62,7 @@ export function preservedReplyNote(current, row) {
   // Retain edit compatibility for cards created before the mention-based note.
   const legacy=typeof note?.content==='string' && note.content.startsWith('Replying to @')
     && note.content.endsWith(` · [View message](${url})`);
-  if (note?.type!==10 || (!anonymous&&!excerpt&&!styled&&!modern&&!legacy) || note.content.length>600 || /[\r\n]/.test(note.content)) throw Error('Reply attribution missing');
+  if (note?.type!==10 || (!explicit&&!anonymous&&!excerpt&&!styled&&!modern&&!legacy) || note.content.length>600 || /[\r\n]/.test(note.content)) throw Error('Reply attribution missing');
   if(contextFirst && current.components?.[1]?.type!==10 && current.components?.[1]?.toJSON?.().type!==10)throw Error('Reply source missing');
   return structuredClone(note);
 }
