@@ -11,7 +11,7 @@ test('source list and heading markers remain literal punctuation with line break
 test('Threads text preserves a hyphen signature without changing generated author and quote structure',()=>{
  const card=simpleCard({platform:'threads',url:'https://www.threads.com/@nasa/post/DePd-h_lD3p'},{name:'NASA',username:'nasa',caption:'Main text\n\n- Jacob R., Science Lead',quote:{name:'Author',username:'author',text:'- literal quote',threadsQuote:true}});
  assert.ok(card.components.some(c=>c.content==='Main text\n\n\\- Jacob R., Science Lead'));
- assert.ok(card.components.some(c=>c.content==='**NASA** @\u200bnasa'));
+ assert.ok(card.components.some(c=>c.content?.split('\n')[1]==='**NASA** @\u200bnasa'));
  assert.ok(card.components.some(c=>c.content==='> **Author** @\u200bauthor\n> \\- literal quote'));
  assert.ok(card.components[0].content.startsWith('**[Threads Post]('));
 });

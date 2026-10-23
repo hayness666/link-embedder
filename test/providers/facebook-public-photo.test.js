@@ -7,7 +7,7 @@ const res=s=>new Response(s+'</head>',{headers:{'content-type':'text/html'}});
 test('observed canonical photo route supplies image, real author, and decoded caption',async()=>{
  const calls=[];const p=await publicFacebookPhoto(url,async(u,o)=>{calls.push(u);assert.equal(o.redirect,'error');return res(u===url?first:u===canonical?second:author);});
  assert.deepEqual(calls,[url,canonical,'https://www.facebook.com/thisisaclue/']);const c=p.components[1].components;
- assert.ok(c.some(x=>x.content==='**This is a Clue** @\u200bthisisaclue'));assert.ok(c.some(x=>x.content==='🌱Write down your team’s answer'));assert.ok(c.find(x=>x.type===12).items[0].media.url.endsWith('signature=preserve'));
+ assert.ok(c.some(x=>x.content?.split('\n')[1]==='**This is a Clue** @\u200bthisisaclue'));assert.ok(c.some(x=>x.content==='🌱Write down your team’s answer'));assert.ok(c.find(x=>x.type===12).items[0].media.url.endsWith('signature=preserve'));
 });
 test('public photo rejects wrong identities, unrelated images, and inaccessible content',async()=>{
  for(const bad of [first.replace('1806517487514738','123'),first.replace('www.facebook.com','evil.test')])assert.equal(await publicFacebookPhoto(url,async()=>res(bad)),null);

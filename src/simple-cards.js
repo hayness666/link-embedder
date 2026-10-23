@@ -7,7 +7,7 @@ import { helperUrl } from './adapters.js';
 import { helperModes } from './config.js';
 import { resolveRedditVideo } from './short-links.js';
 import { instagramPayload } from './providers/instagram.js';
-import { shortCaption, shortQuote, sourceText, plain, cardHeading, cardSeparator } from './card-format.js';
+import { shortCaption, shortQuote, sourceText, plain, cardHeading, cardSeparator, cardHeaderComponents } from './card-format.js';
 
 const mediaHosts = {
   pinterest: ['i.pinimg.com'],
@@ -278,8 +278,7 @@ export function simpleCard(link, metadata = null) {
   const quoteText = textFirst && (quotedUrl?.platform === link.platform || (link.platform === 'threads' && quote?.threadsQuote === true))
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortQuote(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
-    ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
-    ...(authorLine ? [text(authorLine)] : [cardSeparator()]),
+    ...cardHeaderComponents(cardHeading(link,title)||(titleLine?`**${titleLine}**`:''),authorLine),
     ...(spaceUrl ? [text(`[Open Space ↗](<${spaceUrl}>)`)] : []),
     ...(textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),

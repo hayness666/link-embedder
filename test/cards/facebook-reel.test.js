@@ -17,7 +17,7 @@ test('Facebed Reel uses source author and shared video layout with bounded MP4 a
   assert.ok(calls.some(([u])=>u===video));assert.ok(calls.every(([,o])=>o.redirect==='error'&&o.signal));
   assert.equal(result.files[0].contentType,'video/mp4');assert.deepEqual(result.files[0].attachment,mp4);
   const card=result.components[1],texts=card.components.filter(c=>c.type===10).map(c=>c.content);
-  assert.ok(texts.includes('**Sullivan Twins**'));assert.ok(!texts.join('').includes('pi.kt'));
+  assert.ok(texts.some(t=>t.split('\n')[1]==='**Sullivan Twins**'));assert.ok(!texts.join('').includes('pi.kt'));
   assert.ok(texts.includes('🌟'.repeat(300)+'…'));assert.equal(card.components.find(c=>c.type===12).items[0].media.url,'attachment://facebook-reel-0.mp4');
   assert.deepEqual(card.components.filter(c=>c.type===14).map(c=>[c.spacing,c.divider]),[[1,true]]);
   assert.deepEqual(result.allowedMentions.parse,[]);

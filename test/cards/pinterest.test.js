@@ -16,7 +16,7 @@ test('Pinterest exact native metadata produces shared large-image card and clean
  const payload=await simplePayload(content,{pinterest:'card'},[{url,title:'Blue art',author:{name:'Etsy'},description:'Caption',image:{url:image}}],async()=>new Response('',{status:401}));
  const card=payload.components[1];assert.equal(card.accent_color,0xe60023);
  assert.equal(card.components.find(c=>c.type===12).items[0].media.url,image);
- assert.ok(card.components.some(c=>c.content==='**Etsy**'));
+ assert.ok(card.components.some(c=>c.content?.split('\n')[1]==='**Etsy**'));
  assert.ok(card.components.at(-1).content.includes('**Pinterest** via'));
  const repost=buildRepostPayload({content,author:{username:'Person'}},payload);
  assert.equal(repost.components[0].content,'My words '+url);
@@ -38,7 +38,7 @@ test('Pinterest waits past unrelated and title-only embeds for matching thumbnai
  assert.equal(fetches,2);
  assert.equal(result.components[0].content,'Keep my words '+url);
  const card=result.components[1];assert.equal(card.components.find(c=>c.type===12).items[0].media.url,image);
- assert.ok(card.components.some(c=>c.content==='**Etsy**'));
+ assert.ok(card.components.some(c=>c.content?.split('\n')[1]==='**Etsy**'));
  assert.ok(card.components.some(c=>c.content==='A blue picture'));
  assert.ok(card.components[0].content.includes('[Blue art]'));
 });

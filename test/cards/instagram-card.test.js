@@ -12,13 +12,13 @@ const document = (media = 'https://oginstagram.com/offload/ABC/1?v=2') => `<scri
 ]}})}</script>`;
 test('custom Instagram card puts plain caption after media and removes provider decoration', () => {
   const card = parseInstagramCard(document(), link);
-  assert.deepEqual(card.components.filter(c=>c.type!==14).map(c=>c.type), [10,10,12,10,10]);
-  assert.equal(card.components.filter(c=>c.type!==14)[4].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram** via [Link Embedder](<https://discord.com/users/1557858203897823304>)');
-  assert.equal(card.components.filter(c=>c.type!==14)[1].content, '**Name** @\u200bperson');
+  assert.deepEqual(card.components.filter(c=>c.type!==14).map(c=>c.type), [10,12,10,10]);
+  assert.equal(card.components.filter(c=>c.type!==14)[3].content, '<:instagramlogo:1558170063251574895>\u00a0\u00a0**Instagram** via [Link Embedder](<https://discord.com/users/1557858203897823304>)');
+  assert.equal(card.components.filter(c=>c.type!==14)[0].content.split('\n')[1], '**Name** @\u200bperson');
   const json = JSON.stringify(card);
   assert.doesNotMatch(json, /❤️|💬|date/);
-  assert.match(card.components.filter(c=>c.type!==14)[3].content, /#hello/);
-  assert.doesNotMatch(card.components.filter(c=>c.type!==14)[3].content, /@everyone/);
+  assert.match(card.components.filter(c=>c.type!==14)[2].content, /#hello/);
+  assert.doesNotMatch(card.components.filter(c=>c.type!==14)[2].content, /@everyone/);
 });
 test('rejects media outside same-post HTTPS helper offload URLs', () => {
   for (const url of ['http://oginstagram.com/offload/ABC/1', 'https://evil.test/a',

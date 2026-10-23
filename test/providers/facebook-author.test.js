@@ -11,8 +11,8 @@ test('observed photo canonical and independently bound profile recover real name
  assert.deepEqual(calls,[url,'https://www.facebook.com/thisisaclue/']);
  const m={content:url,embeds:[{url,title:'This is a Clue - 🌱 🌳 🌿 🍃',description:'Write down your team’s answer',image:{url:'https://scontent-test.xx.fbcdn.net/photo.jpg'}}]};
  const p=await waitForFacebookPreview(m,async()=>{},async u=>response(u===url?photo:profile));
- assert.equal(p.components[1].components[1].content,'**This is a Clue** @\u200bthisisaclue');
- assert.equal(p.components[1].components[3].content,'Write down your team’s answer');
+ assert.equal(p.components[1].components[0].content.split('\n')[1],'**This is a Clue** @\u200bthisisaclue');
+ assert.equal(p.components[1].components[2].content,'Write down your team’s answer');
 });
 test('author lookup rejects mismatched identities, hosts, shells, redirects, and excessive HTML',async()=>{
  for(const bad of [photo.replace('1806517487514738','123'),photo.replace('www.facebook.com','evil.test'),'x'.repeat(524289),'<title>This is a Clue</title>']){
@@ -36,5 +36,5 @@ test('native canonical owner/photo URL matches the requested fbid, not unrelated
  assert.equal(facebookNativePayload(url,[{...embed,url:canonical.replace('1806517487514738','123')}]),null);
  assert.equal(facebookNativePayload(url,[{...embed,url:canonical.replace('www.facebook.com','evil.test')}]),null);
  const p=await waitForFacebookPreview({content:url,embeds:[embed]},async()=>{},async u=>response(u===url?photo:profile));
- assert.ok(p.components[1].components.some(c=>c.content==='**This is a Clue** @\u200bthisisaclue'));
+ assert.ok(p.components[1].components.some(c=>c.content?.split('\n')[1]==='**This is a Clue** @\u200bthisisaclue'));
 });

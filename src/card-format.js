@@ -98,11 +98,17 @@ export function cardSeparator(divider = false) {
   return {type: 14, divider, spacing: 1};
 }
 
+// One TextDisplay keeps title and author on consecutive lines inside the control Section.
+export function cardHeaderComponents(heading, author = '') {
+ const content=[heading,author].filter(Boolean).join('\n');
+ return [...(content?[{type:10,content}]:[]),...(!author?[cardSeparator()]:[])];
+}
+
 // Callers validate media and supply escaped author/heading text.
 export function imageCardComponents({heading,author='',items,caption='',captionBeforeMedia=false,footer}) {
  const text=content=>({type:10,content});
  const captionParts=typeof caption==='string'&&caption?[text(shortCaption(caption).slice(0,3000))]:[];
- return [text(heading),...(author?[text(author)]:[cardSeparator()]),
+ return [...cardHeaderComponents(heading,author),
   ...(captionBeforeMedia?captionParts:[]),
   ...(items.length?[{type:12,items}]:[]),
   ...(!captionBeforeMedia?captionParts:[]),

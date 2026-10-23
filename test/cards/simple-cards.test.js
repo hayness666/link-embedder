@@ -27,7 +27,7 @@ test('provider errors and oversized bodies yield an honest fallback without thro
 
 test('Reddit author line includes subreddit below title and does not repeat as caption',()=>{
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/cats/comments/abc/a_cat'},{title:'A cat',name:'Poster',caption:'A cat',media:['https://i.redd.it/cat.jpg']});
- assert.equal(card.components.filter(c=>c.type!==14)[0].content,'**[A cat](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components.filter(c=>c.type!==14)[1].content,'**r/cats**');assert.equal(card.components.filter(c=>c.type!==14)[2].type,12);assert.equal(card.components.filter(c=>c.type!==14).length,4);
+ assert.equal(card.components.filter(c=>c.type!==14)[0].content.split('\n')[0],'**[A cat](<https://www.reddit.com/r/cats/comments/abc/a_cat>)**');assert.equal(card.components.filter(c=>c.type!==14)[0].content.split('\n')[1],'**r/cats**');assert.equal(card.components.filter(c=>c.type!==14)[1].type,12);assert.equal(card.components.filter(c=>c.type!==14).length,3);
 });
 
 test('Facebook photo metadata preserves identity and uses only validated thumbnails',async()=>{
@@ -61,7 +61,7 @@ test('quoted Twitter text allows 300 characters before an ellipsis while main te
 test('Reddit extracts actual helper author and renders plain handle under title',()=>{
  const m=metadataFromHtml('<meta property="og:title" content="Flock down!"><meta property="og:site_name" content="u/whiplashsaxifrage on r/GoldenCO - stats">','reddit');
  const card=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/GoldenCO/comments/1wzioal/flock_down'},m);
- assert.equal(card.components.filter(c=>c.type!==14)[1].content,'**r/GoldenCO** u/whiplashsaxifrage');
+ assert.equal(card.components.filter(c=>c.type!==14)[0].content.split('\n')[1],'**r/GoldenCO** u/whiplashsaxifrage');
  assert.ok(card.components.filter(c=>c.type!==14)[0].content.startsWith('**[Flock down!]'));
 });
 
@@ -84,8 +84,8 @@ test('Reddit website-only posts omit thumbnail and offer destination link',()=>{
 test('all native families receive a custom card without inventing media',async()=>{for(const url of ['https://www.amazon.com/dp/B07812QWNH',]){const p=await simplePayload(url,readConfig({}).modes,[],async()=>new Response('',{status:403}));assert.equal(p.flags,32768,url);assert.ok(p.components[1].components.filter(c=>c.type!==14).some(c=>c.content?.startsWith('**[')),url);assert.ok(!p.components[1].components.filter(c=>c.type!==14).some(c=>c.type===12),url);}});
 test('custom layout has a bold linked title without arrows, title spacing and one footer divider',()=>{
  const c=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/test/comments/abc/post'},{title:'Real title',caption:'Caption'});
- assert.equal(c.components[0].content,'**[Real title](<https://www.reddit.com/r/test/comments/abc/post>)**');
- assert.deepEqual(c.components[1],{type:10,content:'**r/test**'});
+ assert.equal(c.components[0].content.split('\n')[0],'**[Real title](<https://www.reddit.com/r/test/comments/abc/post>)**');
+ assert.equal(c.components[0].content.split('\n')[1],'**r/test**');
  assert.deepEqual(c.components.at(-2),{type:14,divider:true,spacing:1});
  assert.equal(c.components.filter(x=>x.type===14&&x.divider).length,1);
 });

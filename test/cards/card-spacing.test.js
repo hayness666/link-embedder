@@ -19,10 +19,10 @@ function check(card, hasAuthor = false) {
  assert.deepEqual(parts.filter(c=>c.type===14),[
   ...(!hasAuthor?[{type:14,divider:false,spacing:1}]:[]), {type:14,divider:true,spacing:1}
  ]);
- assert.equal(parts[1].type,hasAuthor?10:14);
+ if(hasAuthor)assert.ok(parts[0].content.includes('\n'));else assert.equal(parts[1].type,14);
  assert.deepEqual(parts.at(-2),{type:14,divider:true,spacing:1});
  assert.match(parts.at(-1).content,/Link Embedder/);
- for(const [i,c] of parts.entries()) if(c.type===12) assert.ok(i>1 && i<parts.length-2);
+ for(const [i,c] of parts.entries()) if(c.type===12) assert.ok(i>(hasAuthor?0:1) && i<parts.length-2);
 }
 test('shared cards group title and author without a spacer and preserve fallback and footer spacing',()=>{
  for(const platform of Object.keys(brands)) {
