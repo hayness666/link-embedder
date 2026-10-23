@@ -1,0 +1,46 @@
+name: Deploy website
+on:
+  push:
+    branches: [main]
+    paths: ["src/website/**", ".github/workflows/pages.yml", "package.json", "package-lock.json"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --test test/website/navigation.test.js
+      - run: npm run lint:css
+      - run: npm run format:check
+      - uses: actions/configure-pages@v5
+      - name: Assemble website with stable playground URLs
+        run: |
+          mkdir -p _site
+          cp -R src/website/. _site/
+          cp src/website/pages/*.html _site/
+          cp src/website/pages/playground/playground.* _site/
+          cp src/website/pages/contact/* _site/
+          cp src/website/styles.css _site/style.css
+          rm _site/styles.css
+          cp src/website/assets/* _site/
+          rm -r _site/pages _site/assets
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

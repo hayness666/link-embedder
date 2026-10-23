@@ -1,0 +1,8 @@
+{
+  "allowedKinds": [
+    "photo",
+    "video",
+    "post"
+  ],
+  "allowedSources": []
+}

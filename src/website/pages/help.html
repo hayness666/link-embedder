@@ -1,0 +1,40 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="description" content="Clean links. Better Discord previews."><title>Help · Link Embedder</title><link rel="icon" href="icon.png"><link rel="stylesheet" href="style.css?v=site-2"><meta property="og:type" content="website">
+<meta property="og:site_name" content="Link Embedder">
+<meta property="og:title" content="Help · Link Embedder">
+<meta property="og:description" content="Clean links. Better Discord previews.">
+<meta property="og:url" content="https://hayness666.github.io/link-embedder/help.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Help · Link Embedder">
+<meta name="twitter:description" content="Clean links. Better Discord previews.">
+<meta property="og:image" content="https://hayness666.github.io/link-embedder/social-banner-v1.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1881">
+<meta property="og:image:height" content="836">
+<meta property="og:image:alt" content="Link Embedder banner with the purple and cyan link-and-video logo and floating video cards.">
+<meta name="twitter:image" content="https://hayness666.github.io/link-embedder/social-banner-v1.png">
+<meta name="twitter:image:alt" content="Link Embedder banner with the purple and cyan link-and-video logo and floating video cards.">
+<link rel="stylesheet" href="navigation.css?v=nav-3"><script src="navigation.js?v=nav-3" defer></script></head><body><header class="site-header"><a class="brand" href="index.html"><img src="icon.png" alt="">Link Embedder</a><button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="main-navigation" hidden><span aria-hidden="true">☰</span></button><nav id="main-navigation" aria-label="Main navigation"><a href="index.html">Overview</a><a href="help.html" aria-current="page">Help</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav></header><main>
+<h1>Help</h1>
+<p class="lead">Add Link Embedder to your server, share a public link, and manage your reposts from Discord.</p>
+<h2>Install and set up</h2>
+<p>Use the <a href="index.html">Add to Discord</a> button on the homepage. You need permission to install apps in your server.</p>
+<p>In each channel where you want previews, allow View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads also require Send Messages in Threads, with View Channel and Manage Webhooks on the parent channel. Administrator is not required.</p>
+<p>Use <code>/permissions</code> to privately check the bot’s permissions in the current channel or another channel you can manage. It reports missing permissions without changing roles or channel settings.</p>
+<h2>Share a link</h2>
+<p>Post a supported public HTTPS link in a text channel, voice-channel text chat, or active public thread under a text, forum, or media channel. Your surrounding text stays with the card, and unnecessary tracking parameters are removed while required content details are preserved.</p>
+<p>Same-channel and same-thread replies show a small reply-context line above your text: a bold author mention followed by a clickable excerpt of up to 100 Unicode characters, plus an ellipsis when needed. The excerpt links to the exact reply target; spoiler text and empty messages use a neutral “message” link. The author mention opens their profile and permits a notification on initial posting. Edits and NSFW updates do not notify them again. Inaccessible references stay untouched. This is linked context, not a native Discord reply.</p>
+<p>Wrap a link in angle brackets, spoiler markup, or code to suppress its preview. Attachments, polls, pinned messages, thread starters, DMs, and existing messages are not replaced. Private, archived, locked, and announcement threads are excluded.</p>
+<h2>Manage your repost</h2>
+<p>Use <strong>⋯</strong> beside a new card’s title, or <strong>Apps → Manage Post</strong>, to open private controls. Original authors can edit or delete tracked reposts, and anyone with channel access can mark media NSFW. Older, untracked posts need a moderator.</p>
+<h2>Supported sites and sources</h2>
+<p>Public metadata is used unless a helper is listed. Available formats and media depend on the source. See the <a href="privacy.html#preview-services">Privacy Policy</a> for third-party sharing details.</p>
+<table><thead><tr><th>Site</th><th>Preview approach</th></tr></thead><tbody><tr><td>Amazon</td><td>Public metadata</td></tr><tr><td>Bluesky</td><td><a href="https://github.com/FxEmbed/FxEmbed">fxbsky.app</a></td></tr><tr><td>Facebook</td><td><a href="https://github.com/facebed/facebed">facebed.com</a> and public metadata</td></tr><tr><td>Instagram</td><td><a href="https://github.com/seirenkr/OGInstagram">oginstagram.com</a></td></tr><tr><td>Pinterest</td><td>Public metadata</td></tr><tr><td>Reddit</td><td><a href="https://github.com/dylanpdx/vxReddit">vxreddit.com</a></td></tr><tr><td>Snapchat</td><td>Public metadata</td></tr><tr><td> Threads</td><td><a href="https://github.com/AvianJay/fzthreads">fzthreads.com</a></td></tr><tr><td>TikTok</td><td><a href="https://github.com/okdargy/fxTikTok">tnktok.com</a></td></tr><tr><td>Twitter</td><td><a href="https://github.com/FxEmbed/FxEmbed">fxtwitter.com</a></td></tr><tr><td> UpScrolled</td><td>Public metadata</td></tr></tbody></table>
+<h2>If a preview is missing</h2>
+<ul>
+<li>Check the bot’s channel permissions and whether the link is public.</li>
+<li>Allow a few seconds for the source to respond. Private, expired, or unavailable media cannot always be previewed.</li>
+<li>Check that the message is new and has no attachments. Replies require an accessible reference in the same channel or supported thread. Thread starters and inaccessible, private, archived, locked, or announcement threads are left alone.</li>
+<li>If the problem continues, <a href="contact.html">contact us</a> with the public link and a description of what happened. Do not send passwords, tokens, or private links.</li>
+</ul>
+<p>For supported URL formats, detailed limits, and operator setup, read the <a href="https://github.com/hayness666/link-embedder/blob/main/docs/HELP.md">detailed guide</a> and <a href="https://github.com/hayness666/link-embedder/blob/main/docs/SETUP.md">setup documentation</a>.</p>
+<p>Try the <a href="playground.html">playground</a> to explore a card mockup.</p></main><footer>Link Embedder is an independent project maintained by hayness666. Not affiliated with Discord or the linked platforms.<br>© 2026 hayness666. Project code and documentation are available under the MIT License.</footer></body></html>

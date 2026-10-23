@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHandler} from '../../src/handler.js';
+import {canRepost,createReposter} from '../../src/repost.js';
+const url='https://www.facebook.com/nasaearth/videos/over-the-past-three-years-the-largest-lake-in-the-middle-east-lake-urmia-transfo/851551656699438';
+const guildId='111111111111111111',channelId='222222222222222222',targetId='333333333333333333',authorId='444444444444444444',bot={id:'555555555555555555'};
+const media='https://video.fhan5-2.fna.fbcdn.net/o1/v/t2/sample.mp4';
+for(const reply of [false,true])for(const prefix of ['', 'this is a test reply woohoo\n', '**my words** - literal\n<@666666666666666666> @everyone <@&777777777777777777>\n'])test(`Facebook complete handler preserves ${reply?'reply':'ordinary'} source ${prefix?'with text':'URL only'} and restricts mentions`,async()=>{
+ const content=prefix+url,events=[],requests=[];
+ const message={id:'888888888888888888',guildId,channelId,type:reply?19:0,deletable:true,content,author:{id:'999999999999999999',username:'Sender'},delete:async()=>events.push('delete'),...(reply?{reference:{type:0,guildId,channelId,messageId:targetId}}:{})};
+ const target={id:targetId,guildId,channelId,author:{id:authorId,username:'Target'}};
+ const hook={id:'123456789012345678',owner:bot,applicationId:bot.id,name:'Link Embedder Reposts',token:'test',send:async p=>{events.push(p);return{id:'234567890123456789'};},deleteMessage:async()=>events.push('rollback')};
+ message.channel={type:0,permissionsFor:()=>({has:()=>true}),fetchWebhooks:async()=>[hook],messages:{fetch:async({message:id})=>id===targetId?target:message}};
+ const store={put:async()=>events.push('saved'),remove:async()=>events.push('removed')};
+ const fetcher=async input=>{requests.push(input);if(input===media)return new Response(Buffer.from([0,0,0,12,102,116,121,112,0,0,0,0]),{headers:{'content-type':'video/mp4'}});assert.equal(input,url.replace('www.facebook.com','www.facebed.com'));return new Response(`<meta property="og:url" content="${url}"><meta property="og:title" content="NASA Earth"><meta property="og:description" content="Caption"><meta property="og:video:type" content="video/mp4"><meta property="og:video" content="${media}">`,{headers:{'content-type':'text/html'}});};
+ const config={channelIds:new Set(),modes:{facebook:'facebed'},repostEnabled:true};
+ await createHandler(config,{canSend:m=>canRepost(m,bot),repost:createReposter(bot,()=>{},store),facebookPublicFetcher:fetcher,facebookPublicKinds:['video']})(message);
+ assert.deepEqual(events.slice(1),['saved','delete']);const payload=events[0];assert.equal(payload.components[reply?1:0].content,content);assert.equal(payload.content,undefined);assert.equal(payload.embeds,undefined);assert.equal(payload.flags,32768);
+ assert.deepEqual(payload.allowedMentions,reply?{parse:[],users:[authorId],repliedUser:false}:{parse:[],repliedUser:false});assert.equal(payload.files.length,1);assert.equal(requests.length,2);
+ if(reply)assert.match(payload.components[0].content,/^-# ↪︎ \*\*<@/);
+});
