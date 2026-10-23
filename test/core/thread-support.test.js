@@ -32,7 +32,7 @@ async function send(f){return createReposter(bot,()=>{},f.store)(f.source,card()
 function interaction(f,action='menu'){
  const responses=[];
  const i={guildId,channelId:threadId,channel:f.channel,user:{id:ownerId},client:{user:bot},isButton:()=>true,customId:action==='menu'?'manage:open:0':`manage:${action}:${replacementId}`,message:f.current,
- reply:async p=>responses.push(p),deferUpdate:async()=>{},editReply:async p=>responses.push(p),update:async p=>responses.push(p)};
+ deferReply:async p=>responses.push(p),reply:async p=>responses.push(p),deferUpdate:async()=>{},editReply:async p=>responses.push(p),update:async p=>responses.push(p)};
  return {i,responses};
 }
 test('public text/forum/media threads route ordinary and native replies through parent webhook',async()=>{
@@ -123,8 +123,8 @@ test('permissions command distinguishes thread and parent requirements without a
 
 test('thread menu validates application ownership and saved parent route',async()=>{
  const f=fixture();await send(f);const {i,responses}=interaction(f);await createManagementHandler(f.store,config)(i);
- assert.equal(responses[0].flags,64);assert.deepEqual(responses[0].components[0].components.map(c=>c.label),['Edit Post','Delete Post','Mark NSFW']);
- const g=fixture();await send(g);g.hook.channelId=targetId;const bad=interaction(g);await createManagementHandler(g.store,config)(bad.i);assert.equal(bad.responses[0].components,undefined);
+ assert.equal(responses[0].flags,64);assert.deepEqual(responses.at(-1).components[0].components.map(c=>c.label),['Edit Post','Delete Post','Mark NSFW']);
+ const g=fixture();await send(g);g.hook.channelId=targetId;const bad=interaction(g);await createManagementHandler(g.store,config)(bad.i);assert.equal(bad.responses.at(-1).components,undefined);
 });
 test('thread target disappearance, source mutation, and ambiguous deletion retain at least one copy',async()=>{
  for(const kind of ['target-missing','source-attachment','ambiguous-delete']){

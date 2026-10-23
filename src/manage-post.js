@@ -52,6 +52,8 @@ export function createManagementHandler(store, config, log = () => {}) {
     }
     if (action === 'dismiss') { await interaction.update({content:'Menu dismissed. '+REOPEN,components:[]}); return; }
     if (action === 'menu') {
+      await interaction.deferReply({flags:64});
+      const finish=payload=>{const {flags,...body}=payload;return interaction.editReply(body);};
       if(openCard){
         try {
           if(interaction.message.webhookId!==row.webhookId)throw Error('Webhook mismatch');
@@ -60,15 +62,15 @@ export function createManagementHandler(store, config, log = () => {}) {
           const hook=hooks.find(h=>h.id===row.webhookId&&h.owner?.id===interaction.client.user.id&&h.applicationId===interaction.client.user.id);
           if(!hook)throw Error('Application mismatch');verifyThreadHook(hook,route);
           const fresh=store.get(id);if(!fresh||fresh.ownerId!==row.ownerId||fresh.webhookId!==row.webhookId||fresh.guildId!==row.guildId||fresh.channelId!==row.channelId||fresh.webhookChannelId!==row.webhookChannelId)throw Error('Ownership changed');
-        }catch{await interaction.reply(privateReply(deny));return;}
+        }catch{await finish(privateReply(deny));return;}
       }
       try{
         const current=await interaction.channel.messages.fetch({message:id,force:true,cache:false});
         if(current.webhookId!==row.webhookId)throw Error('Webhook mismatch');
         const fresh=store.get(id);
         if(!fresh||fresh.ownerId!==row.ownerId||fresh.webhookId!==row.webhookId||fresh.channelId!==row.channelId||fresh.guildId!==row.guildId)throw Error('Ownership changed');
-        await interaction.reply(managementMenu(id,isOwner,hasSpoilerMedia(current.components||[])));
-      }catch{await interaction.reply(privateReply(deny));}
+        await finish(managementMenu(id,isOwner,hasSpoilerMedia(current.components||[])));
+      }catch{await finish(privateReply(deny));}
       return;
     }
     if (busy.has(id)) { await interaction.reply(privateReply('An action on this post is already in progress.')); return; }

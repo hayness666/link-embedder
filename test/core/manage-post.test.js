@@ -23,11 +23,11 @@ function fixture(action='menu') {
  const hook={id:webhookId,owner:{id:'bot'},token:'test',deleteMessage:async()=>calls.push('delete'),editMessage:async(_,payload)=>calls.push(payload)};
  const interaction={isMessageContextMenuCommand:()=>action==='menu',isButton:()=>action!=='menu',commandName:COMMAND,targetId:id,customId:`manage:${action}:${id}`,user:{id:ownerId},guildId,channelId,client:{user:{id:'bot'}},
   channel:{messages:{fetch:async()=>{calls.push('fetch');return {webhookId,components};}},fetchWebhooks:async()=>[hook]},
-  reply:async p=>calls.push(p),update:async p=>calls.push(p),deferUpdate:async()=>{},editReply:async p=>calls.push(p)};
+  deferReply:async p=>calls.push(p),reply:async p=>calls.push(p),update:async p=>calls.push(p),deferUpdate:async()=>{},editReply:async p=>calls.push(p)};
  return {calls,store,interaction,hook,components};
 }
 test('non-owner can open NSFW-only menu and mark media, but cannot delete',async()=>{
- const menu=fixture();menu.interaction.user.id='other';await createManagementHandler(menu.store,config)(menu.interaction);assert.deepEqual(menu.calls.at(-1).components[0].components.map(c=>c.label),['Mark NSFW']);assert.equal(menu.calls.at(-1).flags,64);
+ const menu=fixture();menu.interaction.user.id='other';await createManagementHandler(menu.store,config)(menu.interaction);assert.deepEqual(menu.calls.at(-1).components[0].components.map(c=>c.label),['Mark NSFW']);assert.equal(menu.calls[0].flags,64);
  const f=fixture('nsfw');f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls[1].components[0].components[1].items[0].spoiler,true);assert.deepEqual(f.store.get(id),row);
  const d=fixture('delete');d.interaction.user.id='other';await createManagementHandler(d.store,config)(d.interaction);assert.equal(d.calls.length,1);assert.match(d.calls[0].content,/Only the original poster can delete/);assert.deepEqual(d.store.get(id),row);
 });
@@ -62,4 +62,24 @@ test('forged non-owner, stale unmarked action, and changed ownership cannot remo
  const f=fixture('unspoiler');f.interaction.user.id='other';await createManagementHandler(f.store,config)(f.interaction);assert.equal(f.calls.length,1);assert.match(f.calls[0].content,/Only the original/);
  const g=fixture('unspoiler');await createManagementHandler(g.store,config)(g.interaction);assert.equal(g.calls.length,2);assert.match(g.calls.at(-1).content,/No changes/);
  const h=fixture('unspoiler');h.components[0].components[1].items[0].spoiler=true;let reads=0;h.store.get=()=>++reads===1?row:{...row,ownerId:'other'};await createManagementHandler(h.store,config)(h.interaction);assert.match(h.calls.at(-1).content,/could not confirm/);assert.equal(h.calls.length,2);
+});
+
+test('menu defers privately before delayed fetch and completes with editReply',async()=>{
+ for(const viaButton of [false,true]){
+  const f=fixture();let release;const blocked=new Promise(resolve=>{release=resolve;});let ack=false;
+  f.interaction.deferReply=async p=>{assert.equal(p.flags,64);ack=true;};
+  f.interaction.reply=async()=>assert.fail('must use deferred response');
+  f.interaction.channel.messages.fetch=async()=>{assert.equal(ack,true);await blocked;return {webhookId,components:f.components};};
+  if(viaButton){f.interaction.isMessageContextMenuCommand=()=>false;f.interaction.isButton=()=>true;f.interaction.customId='manage:open:0';f.interaction.message={id,webhookId};f.hook.applicationId='bot';f.interaction.channel.fetchWebhooks=async()=>{assert.equal(ack,true);await blocked;return [f.hook];};}
+  const pending=createManagementHandler(f.store,config)(f.interaction);await new Promise(resolve=>setImmediate(resolve));assert.equal(ack,true);assert.equal(f.calls.length,0);release();await pending;
+  assert.equal(f.calls.at(-1).flags,undefined);assert.equal(f.calls.at(-1).components[0].components[0].label,'Edit Post');
+ }
+});
+test('post-defer lookup and webhook failures edit the private response without exposing controls',async()=>{
+ for(const fail of ['message','webhook']){
+  const f=fixture();let ack=false;f.interaction.deferReply=async()=>{ack=true;};f.interaction.reply=async()=>assert.fail('cannot reply twice');
+  if(fail==='message')f.interaction.channel.messages.fetch=async()=>{assert.ok(ack);throw Error('secret');};
+  else{f.interaction.isMessageContextMenuCommand=()=>false;f.interaction.isButton=()=>true;f.interaction.customId='manage:open:0';f.interaction.message={id,webhookId};f.interaction.channel.fetchWebhooks=async()=>{assert.ok(ack);throw Error('secret');};}
+  await createManagementHandler(f.store,config)(f.interaction);assert.match(f.calls.at(-1).content,/cannot be managed/);assert.equal(f.calls.at(-1).components,undefined);assert.doesNotMatch(JSON.stringify(f.calls),/secret/);
+ }
 });
