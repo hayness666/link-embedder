@@ -8,7 +8,7 @@ Automatic previews for supported public links in Discord. **Anyone with permissi
 
 Replacement needs View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally need Send Messages in Threads. **Administrator is not required.** The install link requests these permissions; existing installations and channel overrides may need administrator updates. See [replacement setup](docs/REPOST.md).
 
-Cards work in text channels, voice-channel text chats, and active public threads under text, forum, and media channels. Eligible same-channel and same-thread replies show a bold author mention and a short excerpt linked to the original message. Replies to tracked cards use their marked accompanying text and original author; cards without verified text use a “Click to see message” link. Attachments and thread starters stay untouched. Private, archived, locked, and announcement threads are excluded.
+Cards work in text channels, voice-channel text chats, and active public threads under text, forum, and media channels. Eligible same-channel and same-thread replies show a bold author mention and an italic short excerpt linked to the original message. Replies to tracked cards use their marked accompanying text and original author; cards without verified text use a “Click to see message” link. Attachments and thread starters stay untouched. Private, archived, locked, and announcement threads are excluded.
 
 The bot confirms a replacement before deleting the original. It preserves surrounding text and removes known link trackers. Discord marks webhook reposts with APP. Unsupported links remain untouched. [Full behavior and limitations](docs/HELP.md).
 

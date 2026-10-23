@@ -68,7 +68,7 @@ export async function resolveReplyContext(message, owners) {
       // Unknown bot/webhook content has no trusted human text or owner provenance.
       excerptTarget={content:''};
     }
-    return {messageId:id,authorId,note:{type:10,content:`-# ↪︎ **<@${authorId}>**: [${replyExcerpt(excerptTarget)}](https://discord.com/channels/${message.guildId}/${message.channelId}/${id})`}};
+    return {messageId:id,authorId,note:{type:10,content:`-# ↪︎ **<@${authorId}>** *[${replyExcerpt(excerptTarget)}](https://discord.com/channels/${message.guildId}/${message.channelId}/${id})*`}};
   } finally { clearTimeout(timer); }
 }
 export function replyNoteComponents(note) { return [note]; }
@@ -85,8 +85,8 @@ export function preservedReplyNote(current, row) {
   const styledPrefix='-# ↪︎ '+prefix;
   const styled=contextFirst && note.content.startsWith(styledPrefix)
     && /^<@\d{17,20}>$/.test(note.content.slice(styledPrefix.length));
-  const excerptHeader=/^-# ↪︎ \*\*<@\d{17,20}>\*\*: \[/.exec(note?.content || '');
-  const suffix=`](${url})`;
+  const excerptHeader=/^-# ↪︎ \*\*<@\d{17,20}>\*\*(?:: \[| (\*)\[)/.exec(note?.content || '');
+  const suffix=`](${url})${excerptHeader?.[1] ? "*" : ""}`;
   const label=excerptHeader && note.content.endsWith(suffix)?note.content.slice(excerptHeader[0].length,-suffix.length):'';
   const checkedLabel=label.replace(/([\p{L}\p{N}])_(?=[\p{L}\p{N}])/gu,'$1x');
   const excerpt=contextFirst && Boolean(label) && /^(?:\\[\\*_~`|\[\]()<>]|[^\\*_~`|\[\]()<>\r\n])+$/u.test(checkedLabel)
