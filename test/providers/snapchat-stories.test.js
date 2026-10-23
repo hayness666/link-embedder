@@ -17,7 +17,7 @@ test('saved Story uploads first ten in one card with count and full-Story link',
  const p=await simplePayload(url,{snapchat:'card'},[],async u=>u===url?new Response(html(props()),{headers:{'content-type':'text/html'}}):new Response(mp4,{headers:{'content-type':'video/mp4'}}));
  assert.equal(p.files.length,10);assert.equal(p.components.length,2);
  const card=p.components.find(c=>c.type===17);
- assert.deepEqual(card.components[1],{type:14,divider:false,spacing:1});
+ assert.deepEqual(card.components[1],{type:10,content:'**Cubs** @\u200bcubs'});
  assert.deepEqual(card.components.at(-2),{type:14,divider:true,spacing:1});
  assert.ok(card.components.findIndex(c=>c.type===12)<card.components.length-2);
  assert.match(card.components.at(-3).content,/Showing 10 of 19/);

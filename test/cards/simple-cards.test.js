@@ -85,7 +85,7 @@ test('all native families receive a custom card without inventing media',async()
 test('custom layout has a bold linked title without arrows, title spacing and one footer divider',()=>{
  const c=simpleCard({platform:'reddit',url:'https://www.reddit.com/r/test/comments/abc/post'},{title:'Real title',caption:'Caption'});
  assert.equal(c.components[0].content,'**[Real title](<https://www.reddit.com/r/test/comments/abc/post>)**');
- assert.deepEqual(c.components[1],{type:14,divider:false,spacing:1});
+ assert.deepEqual(c.components[1],{type:10,content:'**r/test**'});
  assert.deepEqual(c.components.at(-2),{type:14,divider:true,spacing:1});
  assert.equal(c.components.filter(x=>x.type===14&&x.divider).length,1);
 });

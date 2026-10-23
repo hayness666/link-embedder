@@ -93,7 +93,7 @@ export function cardHeading(link, title = '') {
 }
 
 
-// Shared small title spacing and footer rule for every card family.
+// Shared small spacing and footer rule for every card family.
 export function cardSeparator(divider = false) {
   return {type: 14, divider, spacing: 1};
 }
@@ -102,7 +102,7 @@ export function cardSeparator(divider = false) {
 export function imageCardComponents({heading,author='',items,caption='',captionBeforeMedia=false,footer}) {
  const text=content=>({type:10,content});
  const captionParts=typeof caption==='string'&&caption?[text(shortCaption(caption).slice(0,3000))]:[];
- return [text(heading),cardSeparator(),...(author?[text(author)]:[]),
+ return [text(heading),...(author?[text(author)]:[cardSeparator()]),
   ...(captionBeforeMedia?captionParts:[]),
   ...(items.length?[{type:12,items}]:[]),
   ...(!captionBeforeMedia?captionParts:[]),

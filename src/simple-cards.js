@@ -279,8 +279,7 @@ export function simpleCard(link, metadata = null) {
     ? `> **${plain(quote.name || 'Quoted post')}**${quote.username ? ` @\u200b${plain(quote.username.replace(/^@/,''))}` : ''}\n> ${shortQuote(quote.text || '').replace(/\n/g,'\n> ')}` : '';
   return { type: 17, accent_color: brand.color, components: [
     ...(cardHeading(link, title) ? [text(cardHeading(link, title))] : titleLine ? [text(`**${titleLine}**`)] : []),
-    cardSeparator(),
-    ...(authorLine ? [text(authorLine)] : []),
+    ...(authorLine ? [text(authorLine)] : [cardSeparator()]),
     ...(spaceUrl ? [text(`[Open Space ↗](<${spaceUrl}>)`)] : []),
     ...(textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),

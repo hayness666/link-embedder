@@ -34,7 +34,7 @@ test('full custom card uses Twitter-style full text, both author names, icon, an
  const payload=await simplePayload(url,{upscrolled:'card'},[],async()=>response(p));
  const card=payload.components.find(c=>c.type===17);const text=card.components.map(c=>c.content||'').join('\n');
  assert.ok(text.includes('**Mel** @\u200bMelTheVCL'));assert.ok(text.includes('Long text '.repeat(40)));assert.ok(text.includes('\\- attribution'));assert.ok(text.includes('1558173239589478440'));
- assert.deepEqual(card.components.filter(c=>c.type===14).map(c=>[c.divider,c.spacing]),[[false,1],[true,1]]);
+ assert.deepEqual(card.components.filter(c=>c.type===14).map(c=>[c.divider,c.spacing]),[[true,1]]);
 });
 
 test('UpScrolled video cards omit the extra CTA while retaining their linked heading and poster',async()=>{
