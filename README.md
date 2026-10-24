@@ -42,23 +42,12 @@ See [HELP](docs/HELP.md) for supported routes and private-content limits.
 
 Optional helpers require operator approval through `PROVIDER_SHARING_APPROVED=yes`. Recipients, per-platform modes, and data handling are documented in [Privacy](src/website/pages/privacy.html) and [HELP](docs/HELP.md). No private-content or login-gate bypass is used. Message bodies and tokens are not logged; author-control IDs persist privately.
 
-## Run locally
-
-Requires Node.js 24.17+ and npm:
-
-```sh
-npm ci --ignore-scripts
-npm test
-npm run check
-```
-
-Configure using [.env.example](.env.example) and [SETUP](docs/SETUP.md). Keep `DISCORD_TOKEN` in approved secret storage, never Git. `npm start` starts the configured bot. Hosting is separate from GitHub Pages.
+## Manage your posts
 
 Use **⋯** beside a new custom card’s title, or **Apps → Manage Post**, to open its private controls. Original posters can edit or delete tracked reposts, and remove gallery spoilers; anyone with channel access can mark media NSFW. See [editing limits](docs/HELP.md#editing-reposts).
 
-## Customize and get help
+## Get help
 
-The [playground](https://hayness666.github.io/link-embedder/playground.html) is a mockup; exporting a draft does not update the bot. Production card code is in `src/simple-cards.js`, `src/providers/instagram.js`, and `src/card-format.js`; branding is in `src/platform-brands.js`.
 
 [Help and detailed technical reference](docs/HELP.md) · [Terms](src/website/pages/terms.html) · [Privacy](src/website/pages/privacy.html) · [Contact](src/website/pages/contact/contact.html)
 

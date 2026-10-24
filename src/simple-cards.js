@@ -1,3 +1,4 @@
+import {displayUrl} from './url-display.js';
 import { facebookReelVideo, facebookReelAttachment, facebookReelAuthor } from './providers/facebook.js';
 import {fetchUpscrolled,upscrolledImage} from './providers/upscrolled.js';
 import { snapchatAttachment, savedStoryMetadata, publicStorySnapMetadata, savedStoryUrl, publicStorySnapUrl } from './providers/snapchat.js';
@@ -283,7 +284,7 @@ export function simpleCard(link, metadata = null) {
     ...(textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
     ...(media.length ? [{type:12,items:media.map(url => ({media:{url}}))}] : []),
     ...(!textFirst && caption && caption !== shortCaption(metadata?.title || '') ? [text(caption)] : []),
-    ...(destination ? [text(`<${destination.replace(/[()]/g,c=>c==='('?'%28':'%29')}>`)] : []),
+    ...(destination ? [text(displayUrl(destination.replace(/[()]/g,c=>c==='('?'%28':'%29')))] : []),
     ...(!spaceUrl && !media.length && !caption && !destination && !metadata?.nativeAvailable ? [text(link.platform === 'reddit' && /^https:\/\/v\.redd\.it\/[a-z0-9]+\/?$/i.test(metadata?.videoPage || '') ? `[View video on Reddit ↗](<${metadata.videoPage}>)` : link.platform === 'facebook' ? `${({reel:'Reel',photo:'Photo',post:'Story',story:'Story',video:'Video',group:'Group',listing:'Listing',event:'Event',album:'Album',profile:'Profile','profile or page':'Profile or page',collection:'Video collection',link:'Link'}[link.kind] || 'Media')} preview unavailable.` : 'Media preview unavailable.')] : []),
     ...(link.platform === 'twitter' ? [...new Set((metadata?.spaces || []).map(twitterSpaceUrl).filter(Boolean))].slice(0,3).map(url=>text(`**[Twitter Space](<${url}>)**`)) : []),
     ...(quoteText ? [text(quoteText)] : []),
@@ -470,6 +471,6 @@ export async function simplePayload(content, modes, existingEmbeds = [], fetcher
   const all = [{type:10,content:content.slice(0,2000)},...components];
   const textSize = nodes => nodes.reduce((n,c)=>n+(c.type===10 ? c.content.length : 0)+(c.components ? textSize(c.components):0),0);
   // Never silently truncate long Twitter text; preserve the original/helper route instead.
-  if (textSize(all)>4000) return null;
+  if (textSize(all)>4000) throw Error('Card text budget');
   return { flags:32768, components:all, ...(files.length ? {files} : {}), allowedMentions:{parse:[],repliedUser:false} };
 }

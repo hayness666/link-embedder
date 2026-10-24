@@ -44,8 +44,8 @@ test('Twitter retains full text and places a quote in an indented block',()=>{
  const m=metadataFromFx({code:200,tweet:{text:'a'.repeat(1500),author:{name:'Person'},quote:{text:'Quoted text',url:'https://twitter.com/person/status/456',author:{name:'Quoted author',screen_name:'person'}}}},'twitter');
  const card=simpleCard({platform:'twitter'},m);assert.ok(card.components.filter(c=>c.type!==14).some(c=>c.content==='a'.repeat(1500)));assert.ok(card.components.filter(c=>c.type!==14).some(c=>c.content?.includes('> Quoted text')&&!c.content.includes('https://twitter.com/person/status/456')));
 });
-test('oversized Twitter cards preserve the original/helper route instead of truncating',async()=>{
- const p=await simplePayload('https://twitter.com/test/status/123',readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes,[],async()=>new Response(JSON.stringify({code:200,tweet:{text:'a'.repeat(6000),author:{name:'Person'}}}),{headers:{'Content-Type':'application/json'}}));assert.equal(p,null);
+test('oversized Twitter cards reject instead of truncating or falling back',async()=>{
+ await assert.rejects(simplePayload('https://twitter.com/test/status/123',readConfig({PROVIDER_SHARING_APPROVED:'yes'}).modes,[],async()=>new Response(JSON.stringify({code:200,tweet:{text:'a'.repeat(6000),author:{name:'Person'}}}),{headers:{'Content-Type':'application/json'}})),/Card text budget/);
 });
 
 test('quoted Twitter text allows 300 characters before an ellipsis while main text stays full',()=>{
@@ -96,9 +96,9 @@ test('Amazon reuses matching native product title and image for its custom repos
  const c=p.components[1];assert.match(c.components[0].content,/Product name/);assert.equal(c.components.find(x=>x.type===12).items[0].media.url,'https://m.media-amazon.com/images/I/product.jpg');
 });
 
-test('Twitter uses Post on Twitter and orders main text, media, then quote',()=>{
+test('Twitter uses Twitter Post and orders main text, media, then quote',()=>{
  const card=simpleCard({platform:'twitter',url:'https://twitter.com/person/status/123'}, {caption:'Main post',media:['https://video.twimg.com/a.mp4'],quote:{text:'Quoted post body',url:'https://twitter.com/person/status/456'}});
- assert.match(card.components[0].content,/Post on Twitter/);
+ assert.match(card.components[0].content,/Twitter Post/);
  const main=card.components.findIndex(c=>c.content==='Main post');
  const media=card.components.findIndex(c=>c.type===12);
  const quote=card.components.findIndex(c=>c.content?.includes('Quoted post body'));

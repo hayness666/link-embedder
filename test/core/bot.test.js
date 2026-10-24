@@ -59,7 +59,7 @@ test('extractor ignores opt-outs, spoilers, code, masked links; deduplicates and
     assert.deepEqual(extractLinks(content), [], content);
   }
   assert.equal(extractLinks(`(${ig}), ${ig}?utm_source=test`).length, 1);
-  assert.equal(extractLinks([1, 2, 3, 4].map(n => `https://instagram.com/p/a${n}`).join(' ')).length, 3);
+  assert.equal(extractLinks([1, 2, 3, 4, 5, 6].map(n => `https://instagram.com/p/a${n}`).join(' ')).length, 5);
 });
 
 test('default cards disclose limitation and have no manufactured image or video', () => {

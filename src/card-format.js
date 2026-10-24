@@ -1,3 +1,4 @@
+import {displayUrl} from './url-display.js';
 import { parseSocialUrl } from './previews.js';
 import { brands } from './platform-brands.js';
 
@@ -52,7 +53,7 @@ export function sourceText(value, limit = Infinity) {
       }
       destination = destination.replace(/[()<>]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
     } catch { destination = null; }
-    result += destination ? `<${destination}>` : escape(raw);
+    result += destination ? displayUrl(destination) : escape(raw);
     end = stop;
   }
   return result + escape(visible.slice(end)) + (clipped ? '…' : '');
@@ -81,13 +82,13 @@ export function shortTitle(value) {
 export function cardHeading(link, title = '') {
   const canonical = parseSocialUrl(link.url || '');
   if (!canonical || canonical.platform !== link.platform) return '';
-  const kind = canonical.platform === 'pinterest' ? 'Pin' : canonical.platform === 'amazon' ? 'Product' : canonical.platform === 'twitter' ? 'Tweet' : canonical.kind === 'reel' ? 'Reel'
+  const kind = canonical.platform === 'pinterest' ? 'Pin' : canonical.platform === 'amazon' ? 'Product' : canonical.kind === 'reel' ? 'Reel'
     : canonical.kind === 'clip' ? 'Clip' : canonical.kind === 'video' ? 'Video' : 'Post';
   const brand = brands[link.platform]?.name || link.platform;
   const facebookKind = canonical.platform === 'facebook' ? ({photo:'Photo',post:'Post',story:'Story',profile:'Profile','profile or page':'Profile or Page',group:'Group',listing:'Marketplace Listing',event:'Event',collection:'Video Collection',album:'Album',link:'Link',video:'Video'}[canonical.kind]) : null;
   const instagramKind = canonical.platform === 'instagram' ? ({story:'Story',highlight:'Highlight',profile:'Profile'}[canonical.kind]) : null;
   const snapchatLabel = canonical.platform === 'snapchat' ? (canonical.kind === 'spotlight' ? 'Snapchat Spotlight' : 'Snapchat Story') : '';
-  const label = title || snapchatLabel || (instagramKind ? `Instagram ${instagramKind}` : '') || (facebookKind ? `Facebook ${facebookKind}` : '') || (canonical.platform === 'twitter' ? (({space:'Twitter Space',list:'Twitter List',community:'Twitter Community'}[canonical.kind] || 'Post on Twitter')) : canonical.platform === 'bluesky' ? 'Post on Bluesky' : `${brand} ${kind}`);
+  const label = title || snapchatLabel || (instagramKind ? `Instagram ${instagramKind}` : '') || (facebookKind ? `Facebook ${facebookKind}` : '') || (canonical.platform === 'twitter' ? (({space:'Twitter Space',list:'Twitter List',community:'Twitter Community'}[canonical.kind] || 'Twitter Post')) : canonical.platform === 'bluesky' ? 'Bluesky Post' : `${brand} ${kind}`);
   const safe = plain(shortTitle(label)).replace(/[\[\]]/g,c=>'\\'+c);
   return `**[${safe}](<${canonical.url.replace(/[()]/g,c=>encodeURIComponent(c).replace('(', '%28').replace(')', '%29'))}>)**`;
 }

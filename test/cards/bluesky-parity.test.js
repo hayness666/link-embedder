@@ -13,7 +13,7 @@ test('Bluesky shares Twitter text, author, quote, gallery and divider layout',()
   const cards=['twitter','bluesky'].map(platform=>simpleCard({platform,url:platform==='twitter'?twitter:blue},metadata(platform,Array.from({length:size},(_,i)=>`https://${platform==='twitter'?'pbs.twimg.com':'cdn.bsky.app'}/image${i}.jpg`))));
   const [a,b]=cards.map(c=>c.components);
   assert.deepEqual(a.map(c=>c.type),b.map(c=>c.type));
-  assert.match(a[0].content,/Post on Twitter/);assert.match(b[0].content,/Post on Bluesky/);
+  assert.match(a[0].content,/Twitter Post/);assert.match(b[0].content,/Bluesky Post/);
   assert.deepEqual(a.slice(1,-1).map(c=>c.type===12?{type:12,count:c.items.length}:c),b.slice(1,-1).map(c=>c.type===12?{type:12,count:c.items.length}:c));
   assert.equal(b.filter(c=>c.type===12).length,size?1:0); // No quoted media gallery.
   assert.equal(b.find(c=>c.content?.startsWith('Main text')).content.replace(/\u200b/g,''),metadata('bluesky').caption.replace('https://example.com','<https://example.com/>'));
@@ -38,6 +38,6 @@ test('Bluesky and Twitter reject protected/tombstone posts and oversized cards e
  for(const platform of ['twitter','bluesky']) {
   assert.equal(metadataFromFx({code:200,status:{author:{protected:true}}},platform),null);
   assert.equal(metadataFromFx({code:200,status:{type:'tombstone'}},platform),null);
-  const payload=await simplePayload(platform==='twitter'?twitter:blue,{[platform]:'fxembed'},[],async()=>new Response(JSON.stringify({code:200,status:{text:'x'.repeat(6000)}}),{headers:{'Content-Type':'application/json'}}));assert.equal(payload,null);
+  await assert.rejects(simplePayload(platform==='twitter'?twitter:blue,{[platform]:'fxembed'},[],async()=>new Response(JSON.stringify({code:200,status:{text:'x'.repeat(6000)}}),{headers:{'Content-Type':'application/json'}})),/Card text budget/);
  }
 });

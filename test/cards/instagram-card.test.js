@@ -70,7 +70,7 @@ test('normalizes stylized hashtag characters', () => {
 test('headings use trusted original URLs and distinguish reels from posts',()=>{
  assert.equal(cardHeading({platform:'instagram',url:'https://www.instagram.com/reel/ABC'}),'**[Instagram Reel](<https://www.instagram.com/reel/ABC>)**');
  assert.match(cardHeading({platform:'instagram',url:'https://www.instagram.com/p/ABC'}),/Instagram Post/);
- assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/Post on Twitter/);
+ assert.match(cardHeading({platform:'twitter',url:'https://twitter.com/test/status/123'}),/Twitter Post/);
  assert.equal(cardHeading({platform:'twitter',url:'https://evil.test/'}),'');
  assert.ok(!cardHeading({platform:'threads',url:'https://www.threads.com/@example/post/abc123'},'[bad](https://evil.test)').includes('https://evil.test'));
 });

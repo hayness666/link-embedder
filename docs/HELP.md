@@ -10,6 +10,8 @@ Post a supported public HTTPS link in a text channel, voice-channel text chat, o
 
 If the bot cannot safely replace a message, it leaves the original without sending a separate preview. Attachments, polls, pinned messages, thread starters, and other ineligible message types are left alone. Private, archived, locked, and announcement threads are excluded. Same-channel and same-thread replies show a small reply-context line above your text: an italic “Click to see message” link to the exact reply target, with a bold author mention when the human author is verified. Reply context never copies the target’s text. The author mention opens their profile and permits a notification on initial posting. Edits and NSFW updates do not notify them again. This is a linked reference, not a native Discord reply; the link stops working if its target is later deleted. Existing posts are not updated or backfilled.
 
+Each message can show up to five supported-link previews, subject to Discord’s text and component limits. Additional links remain in your message without extra cards. If the replacement cannot safely fit, the original stays intact. Facebook photos, non-Reel videos, and posts require a single distinct supported link; combining one with another supported link leaves the original untouched. Facebook Reels do not have this single-link restriction.
+
 ## Channel permissions
 
 Replacement requires View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally require Send Messages in Threads, with View Channel and Manage Webhooks on their parent channel. The installation link requests these seven permissions. Existing installations and channel overrides may need administrator updates. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
@@ -84,11 +86,6 @@ Ownership records contain IDs, not message bodies or tokens. Old unrecorded repo
 
 
 Pinterest uses the shared large-image card, red accent, linked pin title, and standard attribution/footer. Only pinterest.com/pin/numeric-ID URLs are supported. Public HTML requests retain the eight-second/512 KiB bounds and reject redirects; matching Discord previews can supply allowed i.pinimg.com images. Private or unavailable pins show a fallback. Pin.it, boards, profiles, and video playback are not supported. Local implementation is awaiting live verification.
-
-
-## Design your previews — detailed reference
-
-Open the [visual playground](https://hayness666.github.io/link-embedder/playground.html) to edit a basic card, add/remove/reorder fields, try a local image, and export a draft or Discord embed JSON. It is a mockup, not a live Discord connection. Exports do not change the bot. Custom media layouts live in `src/simple-cards.js` and `src/providers/instagram.js and src/card-format.js`; brand colors/logos are in `src/platform-brands.js`. `src/previews.js` handles native/mixed fallbacks. The playground exports legacy embed drafts, not Components V2 production cards.
 
 
 ## Behavior and providers — detailed reference

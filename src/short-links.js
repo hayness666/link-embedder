@@ -16,7 +16,7 @@ const tokens=/```[\s\S]*?(?:```|$)|`[^`]*(?:`|$)|\|\|[\s\S]*?(?:\|\||$)|<[^>]*>|
 export function shortLinks(content) {
  const found=new Set();
  for(const [token]of content.slice(0,10000).matchAll(tokens)){
-  const raw=token.replace(/[.,!?;:)\]}]+$/,'');if(token.startsWith('https://')&&shortFamily(raw))found.add(raw);if(found.size===3)break;
+  const raw=token.replace(/[.,!?;:)\]}]+$/,'');if(token.startsWith('https://')&&shortFamily(raw))found.add(raw);if(found.size===5)break;
  }return [...found];
 }
 export async function resolveShortLink(raw,fetcher=fetch) {

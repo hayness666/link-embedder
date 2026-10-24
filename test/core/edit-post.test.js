@@ -24,10 +24,10 @@ test('changed URL rebuild preserves spoilers; unavailable and incompatible rebui
  await assert.rejects(buildEditedPost(message(),'new '+url+'2',config,{expand:async s=>s,render:async()=>{throw Error('Offline');}}));
  await assert.rejects(buildEditedPost(message(),'https://www.threads.com/@example/post/ABC',config,{expand:async s=>s,render:async()=>null}));
 });
-function fixture(){
+function fixture(dependencies={}){
  let current=message(),record={...row};const calls=[];const store={get:()=>record};
  const hook={id:'hook',owner:{id:'bot'},token:'fixture',editMessage:async(id,p)=>calls.push(['edit',p])};
- const handler=createEditHandler(store,config,new Set());
+ const handler=createEditHandler(store,config,new Set(),()=>{},dependencies);
  const base={user:{id:'owner'},guildId:'guild',channelId:'channel',client:{user:{id:'bot'}},channel:{messages:{fetch:async()=>current},fetchWebhooks:async()=>[hook]},reply:async p=>calls.push(['reply',p]),deferReply:async()=>{},editReply:async p=>calls.push(['reply',p]),showModal:async p=>calls.push(['modal',p])};
  const open=patch=>handler({...base,isButton:()=>true,customId:'manage:edit:'+id,...patch});
  const save=patch=>handler({...base,isModalSubmit:()=>true,customId:calls.find(c=>c[0]==='modal')[1].custom_id,fields:{getTextInputValue:()=> 'Updated '+url},...patch});
@@ -54,4 +54,18 @@ test('removed gallery spoilers stay removed after text edits and media rebuilds'
  const render=async()=>({flags:32768,components:[{type:10,content:'source'},{type:17,components:[{type:12,items:[{media:{url:'https://cdninstagram.com/new.jpg'}}]}]}]});
  const rebuilt=await buildEditedPost(m,'Updated '+url+'2',config,{expand:async s=>s,render});
  assert.notEqual(rebuilt.components[1].components[0].items[0].spoiler,true);
+});
+
+const missingLinkNotice='Keep at least one supported link in your post to save this edit.';
+test('missing or unsupported edit links get precise pre-mutation feedback',async()=>{
+ for(const text of ['Only my words','https://example.org/unsupported','   ']){
+  const f=fixture({expand:async s=>s,render:()=>assert.fail('No provider request')});await f.open();await f.save({fields:{getTextInputValue:()=>text}});
+  assert.equal(f.calls.some(c=>c[0]==='edit'),false);assert.equal(f.calls.at(-1)[1].content,missingLinkNotice);assert.deepEqual(f.calls.at(-1)[1].allowedMentions.parse,[]);
+ }
+});
+test('retained supported links save, while provider and uncertain mutation failures remain generic',async()=>{
+ const ok=fixture();await ok.open();await ok.save();assert.equal(ok.calls.at(-1)[1].content,'Your repost was updated.');
+ const failure=fixture({expand:async s=>s,render:async()=>{throw Error('MissingSupportedLinkError');}});await failure.open();await failure.save({fields:{getTextInputValue:()=>url+'2'}});
+ assert.equal(failure.calls.some(c=>c[0]==='edit'),false);assert.match(failure.calls.at(-1)[1].content,/I could not confirm the edit/);assert.notEqual(failure.calls.at(-1)[1].content,missingLinkNotice);
+ const uncertain=fixture();await uncertain.open();const hooks=await uncertain.base.channel.fetchWebhooks();hooks[0].editMessage=async()=>{throw Error('Transport failure');};await uncertain.save();assert.match(uncertain.calls.at(-1)[1].content,/I could not confirm the edit/);
 });

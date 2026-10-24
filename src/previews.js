@@ -64,7 +64,7 @@ export function extractLinks(content) {
   for (const match of visible.matchAll(/https:\/\/[^\s<>]+/gi)) {
     const link = parseSocialUrl(match[0].replace(/[.,!?;:)\]}]+$/, ''));
     if (link) links.set(link.url, link);
-    if (links.size === 3) break;
+    if (links.size === 5) break;
   }
   return [...links.values()];
 }

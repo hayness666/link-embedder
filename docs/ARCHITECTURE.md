@@ -2,13 +2,12 @@
 
 Bot modules live directly in `src/`. `simple-cards.js` shares layout and metadata handling across most supported sites. Instagram has specialized fetching and card handling in `providers/instagram.js`; `providers/facebook.js` handles its distinct native-preview path. Shared text/title formatting lives in `card-format.js`. Adapters, URL recognition, branding, and tracking cleanup are shared modules. Dedicated files reflect special behavior, not a requirement for one file per site.
 
-`src/website/` contains static HTML, CSS, browser JavaScript, and images. Its JavaScript powers interactive features such as the playground and contact form; static policy pages do not need separate scripts.
+`src/website/` contains static HTML, CSS, browser JavaScript, and images. Its JavaScript powers interactive features such as the contact form; static policy pages do not need separate scripts.
 
 Written guides live in `docs/`. The root `index.js` and package scripts retain the existing bot startup paths. Website publication does not deploy or restart the bot.
 
-The playground’s HTML, CSS, and JavaScript live together in `src/website/pages/playground/`. The Pages workflow copies them to the published site root to preserve existing URLs and sibling asset links.
 
-Shared website styles live in `src/website/styles.css`; playground-specific styles stay beside its HTML and JavaScript. The build retains the existing public `style.css` URL.
+Shared website styles live in `src/website/styles.css`. The build retains the existing public `style.css` URL.
 
 Tests are grouped under `test/cards/`, `test/providers/`, and `test/core/`; `npm test` discovers all groups.
 

@@ -1,3 +1,4 @@
+import {displaySourceUrls,restoreSourceUrls} from './url-display.js';
 import {refreshWebhookRoute,verifyThreadHook,threadOptions} from './thread-routing.js';
 import {preservedReplyNote,checkReplyBudget,replyNoteComponents,USER_TEXT_COMPONENT_ID} from './reply-context.js';
 import {withCardControls} from './card-controls.js';
@@ -9,13 +10,14 @@ import {simplePayload} from './simple-cards.js';
 import {expandShortLinks} from './short-links.js';
 import {cleanCardLinks} from './repost.js';
 const mentions={parse:[],repliedUser:false};
+class MissingSupportedLinkError extends Error {}
 const jsonComponents=m=>(m.components || []).map(c=>c.toJSON?.() ?? c);
 export function editFingerprint(m) {
  return createHash('sha256').update(JSON.stringify([m.content || '',jsonComponents(m),m.editedTimestamp || null,[...(m.attachments?.values?.() || [])].map(a=>[a.id,a.name,a.description])])).digest('hex');
 }
 export function editableSource(m,row) {
  if (m.flags?.has?.(32768) || jsonComponents(m).some(c=>c.type===17)) {
-  const nodes=jsonComponents(m),note=preservedReplyNote(m,row);const first=nodes[note&&nodes[0]?.content===note.content?1:0];if(first?.type!==10)throw Error('Unsupported source');return {text:first.content,suffix:''};
+  const nodes=jsonComponents(m),note=preservedReplyNote(m,row);const first=nodes[note&&nodes[0]?.content===note.content?1:0];if(first?.type!==10)throw Error('Unsupported source');return {text:row?.sourceComponentId===USER_TEXT_COMPONENT_ID?restoreSourceUrls(first.content):first.content,suffix:''};
  }
  const content=m.content || '';const split=content.lastIndexOf('\n\n');
  if(split>=0){
@@ -35,20 +37,22 @@ function writableComponents(nodes,spoiler=false) {
 }
 const urls=text=>JSON.stringify(text.match(/https?:\/\/[^\s<>]+/gi)||[]);
 export async function buildEditedPost(current,text,config,dependencies={}) {
- if(typeof text!=='string'||!text.trim()||text.length>2000)throw Error('Invalid text');
+ if(typeof text!=='string'||text.length>2000)throw Error('Invalid text');
+ if(!text.trim())throw new MissingSupportedLinkError();
  const source=editableSource(current,dependencies.ownershipRow),components=jsonComponents(current),v2=components.some(c=>c.type===17)||current.flags?.has?.(32768);
  const attachments=[...(current.attachments?.values?.() || [])].map(a=>({id:a.id,filename:a.name,...(a.description?{description:a.description}:{})}));
  const replyNote=preservedReplyNote(current,dependencies.ownershipRow);
- const controlled=nodes=>{const result=withCardControls(nodes);if(replyNote)checkReplyBudget(result);return result;};
+ const controlled=nodes=>{const result=withCardControls(nodes);checkReplyBudget(result);return result;};
  const sourceIndex=replyNote&&components[0]?.content===replyNote.content?1:0;
- const clean=cleanCardLinks(text);
+ const clean=v2?displaySourceUrls(cleanCardLinks(text)):cleanCardLinks(text);
  if(clean.length+source.suffix.length>2000)throw Error('Too long');
  if(urls(source.text)===urls(text))return v2
   ? {components:controlled(writableComponents(components).map((c,i)=>i===sourceIndex?{...c,content:clean}:c)),withComponents:true,attachments,allowedMentions:mentions}
   : {content:clean+source.suffix,attachments,allowedMentions:mentions};
  const expanded=await (dependencies.expand || expandShortLinks)(text,config.modes);
  const links=extractLinks(expanded);
- if(!links.length || links.some(l=>!config.modes[l.platform]||['off','native'].includes(config.modes[l.platform])))throw Error('Unsupported replacement link');
+ if(!links.length)throw new MissingSupportedLinkError();
+ if(links.some(l=>!config.modes[l.platform]||['off','native'].includes(config.modes[l.platform])))throw Error('Unsupported replacement link');
  const payload=await (dependencies.render || simplePayload)(expanded,config.modes,[]) || buildPayload(expanded,config.modes);
  if(!payload)throw Error('Preview unavailable');
  // A Components V2 message cannot be downgraded to a native helper preview.
@@ -101,7 +105,7 @@ export function createEditHandler(store,config,busy,log=()=>{},dependencies={}) 
     await hook.editMessage(id,{...payload,...threadOptions(route)});
     await interaction.editReply({content:'Your repost was updated.',allowedMentions:mentions});
    }
-  }catch{log('edit_post_failed');const content='I could not confirm the edit. The post may have changed, the preview may be unavailable, or this edit format may not be supported. Check the post and reopen Manage Post.';try{if(deferred)await interaction.editReply({content,allowedMentions:mentions});else await reply(content);}catch{}}
+  }catch(error){log('edit_post_failed');const content=error instanceof MissingSupportedLinkError?'Keep at least one supported link in your post to save this edit.':'I could not confirm the edit. The post may have changed, the preview may be unavailable, or this edit format may not be supported. Check the post and reopen Manage Post.';try{if(deferred)await interaction.editReply({content,allowedMentions:mentions});else await reply(content);}catch{}}
   finally{busy.delete(id);}return true;
  };
 }

@@ -1,3 +1,4 @@
+import {displaySourceUrls} from './url-display.js';
 import {isThreadChannel,threadShape,threadPermissions,refreshWebhookRoute,verifyThreadHook,threadOptions} from './thread-routing.js';
 import {replyReferenceId,resolveReplyContext,checkReplyBudget,replyNoteComponents,USER_TEXT_COMPONENT_ID} from './reply-context.js';
 import {withCardControls} from './card-controls.js';
@@ -22,6 +23,7 @@ export function canRepost(message, user) {
 export function buildRepostPayload(message, preview, displayContent = message.content) {
   const originalDisplay = displayContent;
   displayContent = cleanCardLinks(displayContent);
+  if(preview.flags===32768)displayContent=displaySourceUrls(displayContent);
   if (preview.flags === 32768 && preview.components?.[0]?.type === 10 && preview.components[0].content === originalDisplay) {
     preview = {...preview,components:[{...preview.components[0],content:displayContent},...preview.components.slice(1)]};
   }
@@ -74,14 +76,16 @@ export function createReposter(user, log = () => {}, owners = null) {
         payload.components.unshift(...replyNoteComponents(replyContext.note));
         payload.allowedMentions = {parse:[],users:replyContext.authorId?[replyContext.authorId]:[],repliedUser:false};
       }
+      if(payload.flags===32768){
+        if(owners)payload.components=withCardControls(payload.components);
+        checkReplyBudget(payload.components);
+      }
       route=await refreshWebhookRoute(message.channel,user);
       const hooks = await route.channel.fetchWebhooks();
       hook = hooks.find(h => h.owner?.id === user.id && h.name === 'Link Embedder Reposts' && h.token && (!route.threadId||h.channelId===route.channel.id));
       hook ??= await route.channel.createWebhook({ name: 'Link Embedder Reposts', reason: 'Owner-approved link repost channel' });
       if (payload.flags === 32768 && owners) {
         if (hook.applicationId !== user.id) throw Error('Application webhook required');
-        payload.components = withCardControls(payload.components);
-        if (isReply) checkReplyBudget(payload.components);
       }
       verifyThreadHook(hook,route);
       if(route.threadId){
