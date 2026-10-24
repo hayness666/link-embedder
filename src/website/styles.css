@@ -216,3 +216,8 @@ button:focus-visible {
 .button:hover {
   background: #49338f;
 }
+
+/* Keep directly linked sections clear of the viewport edge. */
+[id] {
+  scroll-margin-top: 20px;
+}
