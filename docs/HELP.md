@@ -1,6 +1,14 @@
 # Link Embedder help
 
-Anyone with permission to install apps can add Link Embedder to a server. Give it the required permissions in every channel where you want it to work. The bot replaces eligible new messages. Installing it does not override channel permissions.
+Anyone with permission to install apps can add Link Embedder to a server. The bot replaces eligible new messages.
+
+Choose [Easy install or Limited-permissions install](../README.md#install). Easy install requests Administrator and grants full server permissions, bypassing channel permission restrictions. Limited-permissions install requests only the permissions the bot needs. Preview availability still depends on the source platform.
+
+The following step applies to Limited-permissions install.
+
+## Private channel? One extra setup step.
+
+The limited-permissions install link requests the permissions Link Embedder needs. Channel settings can still block them. For private channels, open the channel or category’s Permissions, select Link Embedder, and allow View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. For threads, also allow Send Messages in Threads. Save, then run /permissions in the channel to check.
 
 ## Sharing links
 
@@ -12,7 +20,7 @@ Each message can show up to five supported-link previews, subject to Discord’s
 
 ## Channel permissions
 
-Replacement requires View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally require Send Messages in Threads, with View Channel and Manage Webhooks on their parent channel. The installation link requests these seven permissions. Existing installations and channel overrides may need administrator updates. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
+Replacement requires the permissions listed in the setup step above. Threads also need View Channel and Manage Webhooks on their parent channel. Existing installations and channel overrides may need administrator updates. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
 
 Production scope uses empty `TEST_GUILD_ID` and `TEST_CHANNEL_IDS`. Optional test scope and legacy test aliases remain supported. Replacement accepts eligible messages in text channels, voice-channel text chats, and active public threads under text, forum, and media channels. Same-channel and same-thread replies show an italic “Click to see message” link to the original message, with a bold author mention when the human author is verified; inaccessible or cross-channel references are left untouched. Attachments, polls, pinned messages, messages that start threads or contain reactions/components, and unsupported channel types are left alone. DMs, bots, webhooks, system messages, and suppressed previews are ignored. Age-restricted channel labels do not classify media or guarantee safe previews. A user’s message can reopen an unlocked archived thread; the bot then checks its current active state. It does not explicitly join, unlock, or unarchive threads.
 

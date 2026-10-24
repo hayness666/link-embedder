@@ -1,12 +1,12 @@
 # Server setup
 
-Add Link Embedder using the [installation link in the README](../README.md#install). You need permission to install apps in the server.
+Add Link Embedder using the [install options in the README](../README.md#install). You need permission to install apps in the server.
 
 Run `/permissions scope:server` for a private summary of channels you can view and manage, or `/permissions` for a specific channel. The command reports missing permissions without changing roles or channel settings. Existing installations and channel overrides may need administrator adjustments.
 
 ## Runtime behavior
 
-Replacement requires View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally require Send Messages in Threads, with View Channel and Manage Webhooks on their parent channel. The installation link requests these seven permissions. Existing installations and channel overrides may need administrator updates. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
+Replacement requires View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally require Send Messages in Threads, with View Channel and Manage Webhooks on their parent channel. The limited-permissions install requests these seven permissions. Easy install instead requests Administrator and grants full server permissions, bypassing channel permission restrictions. Existing installations and channel overrides may need administrator updates. Administrator is not required. Permissions are checked for every event; the bot never escalates them itself.
 
 Replacement accepts eligible messages in text channels, voice-channel text chats, and active public threads under text, forum, and media channels. Same-channel and same-thread replies show an italic “Click to see message” link to the original message, with a bold author mention when the human author is verified; inaccessible or cross-channel references are left untouched. Attachments, polls, pinned messages, messages that start threads or contain reactions/components, and unsupported channel types are left alone. DMs, bots, webhooks, system messages, and suppressed previews are ignored. Age-restricted channel labels do not classify media or guarantee safe previews. A user’s message can reopen an unlocked archived thread; the bot then checks its current active state. It does not explicitly join, unlock, or unarchive threads.
 

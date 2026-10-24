@@ -4,11 +4,15 @@ Automatic previews for supported public links in Discord. **Anyone with permissi
 
 ## Install
 
-[Add Link Embedder](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=275414871040&integration_type=0) · [Website](https://hayness666.github.io/link-embedder/) · [Setup](docs/SETUP.md)
+[Easy install](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=8&integration_type=0) **Grants full server permissions.** Requests Administrator and bypasses channel permission restrictions.
+
+[Limited-permissions install](https://discord.com/oauth2/authorize?client_id=1557858203897823304&scope=bot&permissions=275414871040&integration_type=0) requests only the permissions the bot needs. Private or restricted channels may need extra setup.
+
+[Website](https://hayness666.github.io/link-embedder/) · [Setup](docs/SETUP.md)
 
 After adding the bot, run `/permissions scope:server` for a private server summary, or `/permissions` for one channel. Results are private to the authorized administrator running the command; channel overrides may need adjustment.
 
-Replacement needs View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally need Send Messages in Threads. **Administrator is not required.** The install link requests these permissions; existing installations and channel overrides may need administrator updates. See [replacement setup](docs/REPOST.md).
+Replacement needs View Channel, Send Messages, Embed Links, Read Message History, Manage Messages, and Manage Webhooks. Threads additionally need Send Messages in Threads. **Administrator is not required.** The limited-permissions install link requests these permissions. Existing installations and channel overrides may need administrator updates. See [replacement setup](docs/REPOST.md).
 
 Cards work in text channels, voice-channel text chats, and active public threads under text, forum, and media channels. Eligible same-channel and same-thread replies show an italic “Click to see message” link to the original message, with a bold author mention when the human author is verified. Attachments and thread starters stay untouched. Private, archived, locked, and announcement threads are excluded.
 

@@ -19,7 +19,11 @@
 <p class="eyebrow">LINK EMBEDDER FOR DISCORD</p>
 <h1>Clean links.<br>Better previews.</h1>
 <p class="lead">Share supported public links as Discord cards with text and media. Known tracking parameters are removed.</p>
-<div class="hero-actions"><a class="button" id="add-to-discord" href="https://discord.com/oauth2/authorize?client_id=1557858203897823304&amp;scope=bot&amp;permissions=275414871040&amp;integration_type=0">Add to Discord</a><a href="help.html#install-and-set-up">Setup guide</a></div>
+<div class="install-options" id="add-to-discord">
+<div class="install-option"><a class="button" aria-describedby="easy-install-disclosure" href="https://discord.com/oauth2/authorize?client_id=1557858203897823304&amp;scope=bot&amp;permissions=8&amp;integration_type=0">Easy install</a><p id="easy-install-disclosure"><strong>Grants full server permissions</strong></p><p class="muted">Requests Administrator and bypasses channel permission restrictions.</p></div>
+<div class="install-option"><a class="button button-secondary" aria-describedby="limited-install-disclosure" href="https://discord.com/oauth2/authorize?client_id=1557858203897823304&amp;scope=bot&amp;permissions=275414871040&amp;integration_type=0">Limited-permissions install</a><p class="muted" id="limited-install-disclosure">Requests only the permissions the bot needs. Private or restricted channels may need extra setup.</p></div>
+</div>
+<p><a href="help.html#install-and-set-up">Setup guide</a></p>
 </section>
 <section aria-labelledby="sites"><h2 id="sites">Supported sites</h2><p>Cards for Amazon, Bluesky, Facebook, Instagram, Pinterest, Reddit, Snapchat, Threads, TikTok, Twitter, and UpScrolled.</p><p class="muted">Supported formats and media vary by site.  <a href="help.html#supported-sites">See supported links and limits</a>.</p></section>
 <section class="cards" aria-label="Features"><article class="card"><h2>Consistent cards</h2><p>Text and media use the same layout across supported sites.</p></article><article class="card"><h2>Cleaner links</h2><p>Known tracking parameters are removed. Required content IDs and playback parameters stay intact.</p></article><article class="card"><h2>Post controls</h2><p>Use ⋯ in the top-right corner of the card to open private controls, or use Discord’s Apps menu.</p></article></section>
