@@ -42,7 +42,7 @@ Optional helpers require operator approval through `PROVIDER_SHARING_APPROVED=ye
 
 ## Manage your posts
 
-Use **⋯** beside a new custom card’s title, or **Apps → Manage Post**, to open its private controls. Original posters can edit or delete tracked reposts, and remove gallery spoilers; anyone with channel access can mark media NSFW. See [editing limits](docs/HELP.md#editing-reposts).
+On new tracked cards, use **⋯** in the top-right corner of the card, or **Apps → Manage Post**, to open its private controls. Original posters can edit or delete tracked reposts, and remove gallery spoilers; anyone with channel access can mark media NSFW. See [editing limits](docs/HELP.md#editing-reposts).
 
 ## Get help
 

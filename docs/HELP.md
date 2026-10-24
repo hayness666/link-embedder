@@ -66,7 +66,7 @@ Media normally appears above the caption. Captions show the first 300 Unicode ch
 
 ## Manage a repost
 
-Use **⋯** beside a new custom card’s title, or open the recorded repost’s **Apps → Manage Post** command. The private panel shows action buttons without a heading. The controls apply to the whole repost, including posts containing several cards. Existing messages are not bulk updated. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice, or DM.
+On new tracked cards, use **⋯** in the top-right corner of the card, or open the recorded repost’s **Apps → Manage Post** command. The private panel shows action buttons without a heading. The controls apply to the whole repost, including posts containing several cards. Existing messages are not bulk updated. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice, or DM.
 
 Mark NSFW adds spoilers to supported custom-card media, not captions or links, and does not age-restrict the channel. The original poster can use **Remove spoiler** to uncover that media in place; other users cannot remove spoilers. Native previews are not covered by that control. Deleting removes the repost and does not restore the original. Unrecorded originals, old companion replies, and reposts without ownership records cannot be managed through the command.
 
