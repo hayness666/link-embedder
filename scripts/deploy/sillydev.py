@@ -16,8 +16,31 @@ MAX_FILE = 256 * 1024
 MAX_TOTAL = 8 * 1024 * 1024
 MAX_CHANGES = 12
 
+SAFE_CATEGORIES = frozenset({
+    'allowlist_invalid', 'path_rejected', 'symlink_rejected', 'local_file_invalid',
+    'commit_rejected', 'workflow_context_rejected', 'mode_rejected', 'server_rejected',
+    'secret_missing_or_invalid', 'read_response_invalid', 'read_size_invalid',
+    'write_response_invalid', 'http_rejected', 'write_http_outcome_uncertain',
+    'transport_outcome_uncertain', 'directory_response_invalid', 'remote_path_rejected',
+    'total_size_exceeded', 'package_metadata_drift', 'backup_size_exceeded',
+    'change_batch_too_large', 'concurrent_change_detected', 'readback_mismatch',
+    'final_readback_mismatch', 'deployment_failed', 'restart_unconfirmed',
+})
+
 class Failure(Exception):
-    pass
+    def __init__(self, category, status=None):
+        super().__init__(category)
+        self.category = category if type(category) is str and category in SAFE_CATEGORIES else 'unexpected_failure'
+        self.status = status if type(status) is int and 100 <= status <= 599 else None
+
+
+def report_failure(error):
+    category = 'unexpected_failure'
+    status = None
+    if isinstance(error, Failure):
+        category = error.category if type(error.category) is str and error.category in SAFE_CATEGORIES else 'unexpected_failure'
+        status = error.status if type(error.status) is int and 100 <= error.status <= 599 else None
+    print('failure_category=' + category + ((' http_status=' + str(status)) if status is not None else ''))
 
 class Uncertain(Failure):
     pass
@@ -106,8 +129,8 @@ class API:
                 pass
             if method != 'GET':
                 # Even an HTTP error can follow a forwarded or partially completed write.
-                raise Uncertain('write_http_outcome_uncertain') from None
-            raise Failure('http_rejected') from None
+                raise Uncertain('write_http_outcome_uncertain', error.code) from None
+            raise Failure('http_rejected', error.code) from None
         except Failure:
             raise
         except Exception:
@@ -153,17 +176,21 @@ class API:
 
 
 def deploy(root, paths, api, mode, log=print):
+    log('stage=local_source_validation')
     paths = validate_paths(paths)
     if mode not in ('verify', 'deploy'):
         raise Failure('mode_rejected')
     desired = {p: read_local(root, p) for p in paths}
     if sum(map(len, desired.values())) > MAX_TOTAL:
         raise Failure('total_size_exceeded')
+    log('stage=remote_path_validation')
     api.check_paths([*paths, 'package.json', 'package-lock.json'])
     # Dependency changes need a separate reviewed install process; never run npm with a secret.
+    log('stage=package_metadata_validation')
     for name in ('package.json', 'package-lock.json'):
         if api.read(name) != read_local(root, name):
             raise Failure('package_metadata_drift')
+    log('stage=remote_source_read')
     originals = {p: api.read(p) for p in paths}  # All must exist; no delete permission needed.
     if sum(map(len, originals.values())) > MAX_TOTAL:
         raise Failure('backup_size_exceeded')
@@ -174,6 +201,7 @@ def deploy(root, paths, api, mode, log=print):
         return
     if len(changed) > MAX_CHANGES:
         raise Failure('change_batch_too_large')
+    log('stage=source_write_and_readback')
     attempted = []
     try:
         for p in changed:
@@ -212,6 +240,7 @@ def deploy(root, paths, api, mode, log=print):
     if not changed:
         log('already_matches_no_restart')
         return
+    log('stage=restart_request')
     try:
         api.restart()
     except Exception:
@@ -222,16 +251,19 @@ def deploy(root, paths, api, mode, log=print):
 
 def main():
     try:
+        print('stage=context_validation')
         root = Path.cwd().resolve()
         head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True, stderr=subprocess.DEVNULL).strip()
         validate_context(os.environ, head)
+        print('stage=allowlist_load')
         paths = json.loads((Path(__file__).parent / 'allowlist.json').read_text())
+        print('stage=credential_presence_validation')
         api = API(os.environ.get('SILLYDEV_API_KEY'))
         deploy(root, paths, api, os.environ['DEPLOY_MODE'])
         return 0
-    except Exception:
+    except Exception as error:
         # Never expose raw HTTP bodies, local file contents, environment, or exceptions.
-        print('deployment_check_failed_consult_fixed_stage_labels')
+        report_failure(error)
         return 1
 
 if __name__ == '__main__':

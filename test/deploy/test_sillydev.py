@@ -178,6 +178,32 @@ class Tests(unittest.TestCase):
         api=m.API('TOKEN_SECRET')
         with patch.object(api,'request',return_value=b'{"data":"SECRET"}'),self.assertRaisesRegex(m.Failure,'directory_response_invalid'):
             api.check_paths(['src/a.js'])
+    def test_failure_diagnostics_never_stringify_sensitive_errors(self):
+        for error in [Exception('TOKEN_SECRET body source'),m.Failure('TOKEN_SECRET'),m.Failure('http_rejected','TOKEN_SECRET')]:
+            out=io.StringIO()
+            with redirect_stdout(out):m.report_failure(error)
+            self.assertNotIn('TOKEN_SECRET',out.getvalue())
+            self.assertNotIn('body',out.getvalue())
+    def test_failure_safe_http_status(self):
+        out=io.StringIO()
+        with redirect_stdout(out):m.report_failure(m.Failure('http_rejected',403))
+        self.assertEqual(out.getvalue(),'failure_category=http_rejected http_status=403\n')
+    def test_stage_identifies_package_gate(self):
+        self.api.files['package.json']=b'SECRET_REMOTE_CONTENT'
+        with self.assertRaises(m.Failure):self.run_deploy('verify')
+        self.assertEqual(self.logs[-1],'stage=package_metadata_validation')
+        self.assertNotIn('SECRET_REMOTE_CONTENT',' '.join(self.logs))
+        self.assertFalse(self.api.writes);self.assertEqual(self.api.restarts,0)
+    def test_stage_identifies_remote_path_failure(self):
+        def fail(paths):raise m.Failure('http_rejected',401)
+        self.api.check_paths=fail
+        with self.assertRaises(m.Failure):self.run_deploy('verify')
+        self.assertEqual(self.logs[-1],'stage=remote_path_validation')
+    def test_main_reports_only_safe_stage_and_category(self):
+        out=io.StringIO()
+        with patch.object(m.subprocess,'check_output',side_effect=RuntimeError('SECRET')),redirect_stdout(out):
+            self.assertEqual(m.main(),1)
+        self.assertEqual(out.getvalue(),'stage=context_validation\nfailure_category=unexpected_failure\n')
     def test_workflow_no_automatic_trigger_and_secret_job_separate(self):
         text=(Path(__file__).resolve().parents[2]/'.github/workflows/deploy-bot.yml').read_text()
         self.assertIn('workflow_dispatch:',text);self.assertNotIn('pull_request',text);self.assertNotIn('  push:',text)
