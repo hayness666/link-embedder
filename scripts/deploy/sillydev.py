@@ -15,6 +15,7 @@ BASE = 'https://sillydev.co.uk/panel/api/client/servers/' + SERVER
 MAX_FILE = 256 * 1024
 MAX_TOTAL = 8 * 1024 * 1024
 MAX_CHANGES = 12
+MAX_ERROR_BODY = 8192
 
 SAFE_CATEGORIES = frozenset({
     'allowlist_invalid', 'path_rejected', 'symlink_rejected', 'local_file_invalid',
@@ -28,10 +29,49 @@ SAFE_CATEGORIES = frozenset({
 })
 
 class Failure(Exception):
-    def __init__(self, category, status=None):
+    def __init__(self, category, status=None, response=None):
         super().__init__(category)
         self.category = category if type(category) is str and category in SAFE_CATEGORIES else 'unexpected_failure'
         self.status = status if type(status) is int and 100 <= status <= 599 else None
+        self.response = response
+
+
+RESPONSE_VALUES = {
+    'response_type': frozenset({'json', 'html', 'other', 'unknown'}),
+    'error_body': frozenset({'complete', 'oversized', 'unreadable'}),
+    'api_error_structure': frozenset({'present', 'absent', 'unknown'}),
+}
+
+
+def classify_http_error(error):
+    result = {'response_type': 'unknown', 'error_body': 'unreadable', 'api_error_structure': 'unknown'}
+    try:
+        value = error.headers.get('Content-Type', '')
+        kind = value.split(';', 1)[0].strip().lower() if type(value) is str else ''
+        result['response_type'] = 'json' if kind == 'application/json' else 'html' if kind in ('text/html', 'application/xhtml+xml') else 'other'
+    except Exception:
+        pass
+    try:
+        raw = error.read(MAX_ERROR_BODY + 1)
+        if type(raw) is not bytes:
+            return result
+        if len(raw) > MAX_ERROR_BODY:
+            result['error_body'] = 'oversized'
+            return result
+        result['error_body'] = 'complete'
+        try:
+            payload = json.loads(raw)
+            errors = payload.get('errors') if type(payload) is dict else None
+            valid = type(errors) is list and bool(errors) and all(
+                type(item) is dict and type(item.get('code')) is str and
+                type(item.get('status')) is str and re.fullmatch(r'[1-5][0-9]{2}', item['status']) and
+                type(item.get('detail')) is str for item in errors)
+            result['api_error_structure'] = 'present' if valid else 'absent'
+        except Exception:
+            result['api_error_structure'] = 'absent'
+    except Exception:
+        pass
+    return result
 
 
 def report_failure(error):
@@ -40,7 +80,14 @@ def report_failure(error):
     if isinstance(error, Failure):
         category = error.category if type(error.category) is str and error.category in SAFE_CATEGORIES else 'unexpected_failure'
         status = error.status if type(error.status) is int and 100 <= error.status <= 599 else None
-    print('failure_category=' + category + ((' http_status=' + str(status)) if status is not None else ''))
+    suffix = ''
+    response = getattr(error, 'response', None) if isinstance(error, Failure) else None
+    if type(response) is dict:
+        for name, values in RESPONSE_VALUES.items():
+            value = response.get(name)
+            if type(value) is str and value in values:
+                suffix += ' ' + name + '=' + value
+    print('failure_category=' + category + ((' http_status=' + str(status)) if status is not None else '') + suffix)
 
 class Uncertain(Failure):
     pass
@@ -122,6 +169,7 @@ class API:
                     raise Failure('write_response_invalid')
                 return None
         except urllib.error.HTTPError as error:
+            classification = classify_http_error(error)
             # Close without exposing exception text through resource cleanup warnings.
             try:
                 error.close()
@@ -129,8 +177,8 @@ class API:
                 pass
             if method != 'GET':
                 # Even an HTTP error can follow a forwarded or partially completed write.
-                raise Uncertain('write_http_outcome_uncertain', error.code) from None
-            raise Failure('http_rejected', error.code) from None
+                raise Uncertain('write_http_outcome_uncertain', error.code, classification) from None
+            raise Failure('http_rejected', error.code, classification) from None
         except Failure:
             raise
         except Exception:

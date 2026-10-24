@@ -204,6 +204,43 @@ class Tests(unittest.TestCase):
         with patch.object(m.subprocess,'check_output',side_effect=RuntimeError('SECRET')),redirect_stdout(out):
             self.assertEqual(m.main(),1)
         self.assertEqual(out.getvalue(),'stage=context_validation\nfailure_category=unexpected_failure\n')
+    def error_class(self,body,content_type='application/json'):
+        error=urllib.error.HTTPError('SECRET_URL',403,'SECRET_REASON',{'Content-Type':content_type},io.BytesIO(body))
+        try:return m.classify_http_error(error)
+        finally:error.close()
+    def test_documented_api_error_classification_redacts_fields(self):
+        body=json.dumps({'errors':[{'code':'SECRET_CODE','status':'403','detail':'SECRET_TOKEN'}]}).encode()
+        result=self.error_class(body)
+        self.assertEqual(result,{'response_type':'json','error_body':'complete','api_error_structure':'present'})
+        out=io.StringIO()
+        with redirect_stdout(out):m.report_failure(m.Failure('http_rejected',403,result))
+        self.assertNotIn('SECRET',out.getvalue());self.assertIn('api_error_structure=present',out.getvalue())
+    def test_html_rejection_classification(self):
+        self.assertEqual(self.error_class(b'<html>SECRET</html>','text/html; charset=utf-8'),{'response_type':'html','error_body':'complete','api_error_structure':'absent'})
+    def test_malformed_json_not_documented_structure(self):
+        for body in [b'{',b'[]',b'{"errors":[]}',b'{"errors":[{"code":"SECRET","status":403,"detail":"SECRET"}]}']:
+            self.assertEqual(self.error_class(body)['api_error_structure'],'absent')
+    def test_oversized_response_is_unknown_not_false_negative(self):
+        result=self.error_class(b'SECRET'*(m.MAX_ERROR_BODY//6+2))
+        self.assertEqual(result['error_body'],'oversized');self.assertEqual(result['api_error_structure'],'unknown')
+    def test_bounded_read_and_read_failure(self):
+        class Broken:
+            headers={'Content-Type':'application/json'}
+            def read(self,n):
+                assert n==m.MAX_ERROR_BODY+1
+                raise RuntimeError('SECRET')
+        result=m.classify_http_error(Broken())
+        self.assertEqual(result['error_body'],'unreadable');self.assertEqual(result['api_error_structure'],'unknown')
+    def test_classifier_malicious_labels_cannot_escape_whitelist(self):
+        out=io.StringIO()
+        with redirect_stdout(out):m.report_failure(m.Failure('http_rejected',403,{'response_type':'SECRET','api_error_structure':'SECRET','error_body':'SECRET','SECRET':'SECRET'}))
+        self.assertNotIn('SECRET',out.getvalue())
+    def test_error_metadata_propagates_without_raw_output(self):
+        api=m.API('SECRET_TOKEN')
+        error=urllib.error.HTTPError('SECRET_URL',403,'SECRET',{'Content-Type':'text/html'},io.BytesIO(b'<html>SECRET</html>'))
+        with patch.object(api.opener,'open',side_effect=error),self.assertRaises(m.Failure) as caught:api.read('src/a.js')
+        self.assertEqual(caught.exception.response['response_type'],'html')
+        self.assertEqual(str(caught.exception),'http_rejected')
     def test_workflow_no_automatic_trigger_and_secret_job_separate(self):
         text=(Path(__file__).resolve().parents[2]/'.github/workflows/deploy-bot.yml').read_text()
         self.assertIn('workflow_dispatch:',text);self.assertNotIn('pull_request',text);self.assertNotIn('  push:',text)
