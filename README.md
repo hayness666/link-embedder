@@ -1,6 +1,6 @@
 # Link Embedder
 
-Automatic previews for supported public links in Discord. **Anyone with permission to install apps can add it. Grant the required permissions in every channel where you want it to work.** Alpha previews and provider availability can vary; this README is not a live status report.
+Automatic previews for supported public links in Discord. **Anyone with permission to install apps can add it. Grant the required permissions in every channel where you want it to work.** Preview availability depends on the source platform.
 
 ## Install
 
@@ -16,7 +16,7 @@ The bot confirms a replacement before deleting the original. It preserves surrou
 
 ## Supported links
 
-All supported cards use the shared layout. Support is limited to recognized public URL forms; media availability varies.
+Cards share a consistent layout. Only recognized public link formats are supported, and media availability varies.
 
 The original site is the source unless a third-party helper is named.
 
@@ -31,12 +31,10 @@ The original site is the source unless a third-party helper is named.
 | ✅ Snapchat | Public metadata |
 | ✅ Threads | [fzthreads.com](https://github.com/AvianJay/fzthreads) |
 | ✅ TikTok | [tnktok.com](https://github.com/okdargy/fxTikTok) |
-| ✅ Twitter (X) | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
+| ✅ Twitter | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
 | ✅ UpScrolled | Public metadata |
 
 See [HELP](docs/HELP.md) for supported routes and private-content limits.
-
-
 
 ## Providers and privacy
 
@@ -48,15 +46,14 @@ Use **⋯** beside a new custom card’s title, or **Apps → Manage Post**, to 
 
 ## Get help
 
-
-[Help and detailed technical reference](docs/HELP.md) · [Terms](src/website/pages/terms.html) · [Privacy](src/website/pages/privacy.html) · [Contact](src/website/pages/contact/contact.html)
+[Help](docs/HELP.md) · [Terms](src/website/pages/terms.html) · [Privacy](src/website/pages/privacy.html) · [Contact](src/website/pages/contact/contact.html)
 
 Code and documentation: [MIT License](LICENSE). Third-party content retains its own rights. Provider and Discord references are grouped in [HELP](docs/HELP.md#sources).
 
 ## Repository layout
 
-`src/` contains the bot modules and `src/website/` contains the static website. Written documentation is in `docs/`, including detailed guides. Tests live in `test/`. GitHub Pages deploys `src/website/` through the Pages workflow; public URLs stay unchanged. The root `index.js` remains the hosting entry point.
+`src/` contains the bot modules and `src/website/` contains the static website. Documentation is in `docs/`. Tests live in `test/`. GitHub Pages deploys `src/website/` through the Pages workflow; public URLs stay unchanged. The root `index.js` remains the hosting entry point.
 
-Threads representative text, single-image, gallery, video, self-quote, different-author quote, long-reply, short-route, and tracking-cleanup examples passed live QA. This does not establish every mobile app sharing format or distinct plain-repost support. The separate global clickable-source-link update passed live QA.
+Threads support does not cover every mobile sharing format or guarantee previews for plain reposts.
 
 Server administrators can use `/permissions` to check the bot’s effective permissions in the current channel or choose another channel they can manage. Use `/permissions scope:server` for a grouped report and `page:2` for the next page. The report covers channels you can view and manage, including accessible active public threads; unavailable and unsupported areas are identified. Results are private; the command never changes roles or channel permissions.

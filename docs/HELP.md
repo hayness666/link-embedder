@@ -1,8 +1,6 @@
-# Link Embedder Alpha help
+# Link Embedder help
 
-
-
-Public alpha: anyone with permission to install apps can add Link Embedder to a server. Give it the required permissions in every channel where you want it to work. The hosted bot uses replacement-only behavior for eligible new messages; installation does not grant every required channel permission.
+Anyone with permission to install apps can add Link Embedder to a server. Give it the required permissions in every channel where you want it to work. The bot replaces eligible new messages. Installing it does not override channel permissions.
 
 ## Sharing links
 
@@ -22,7 +20,7 @@ Production scope uses empty `TEST_GUILD_ID` and `TEST_CHANNEL_IDS`. Optional tes
 
 ## Supported previews
 
-All supported cards must use our shared layout.
+Cards share the same layout.
 
 With `REPOST_AS_AUTHOR=yes`, eligible messages are replaced through an author-style webhook. The replacement must be confirmed before deleting the original. If replacement is unavailable, the bot does not send a separate reply. Network ambiguity is handled conservatively to avoid deleting the only confirmed copy. Discord shows the APP badge. No extra “Reposted by Link Embedder” line is appended.
 
@@ -39,32 +37,28 @@ User prose is preserved. Known tracking parameters are removed from visible supp
 | Snapchat | Public metadata |
 | ✅ Threads | [fzthreads.com](https://github.com/AvianJay/fzthreads) |
 | TikTok | [tnktok.com](https://github.com/okdargy/fxTikTok) |
-| Twitter (X) | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
+| Twitter | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
 | ✅ UpScrolled | Public metadata |
 
-Amazon preview details: Available public/native title, description, and image; store only if verified. Resolved Amazon short shares display the clean product URL. Native preview metadata is associated only through a validated same-platform redirect and can fill missing product fields; unavailable metadata still produces an honest fallback. Representative Amazon short-share and direct-product QA passed for B08KTZ8249: clean visible and card-target product URLs, title and image, with UTM and empty ltclid removed from the resolved short share. This does not establish every product or actual Android/iOS app provenance. Amazon previews with generic titles or missing product fields get up to two refreshes (after one and two seconds). Useful images and real titles are retained across refreshes; incomplete upstream data can still produce a simpler card. Canonical Amazon metadata can use one exact same-host 301 redirect from /dp/ASIN to /clp/the-same-ASIN, with matching canonical identity and a real product title. The existing eight-second and 512 KiB limits remain; further redirects, challenge responses, and generic-shell images are rejected. Displayed product links stay /dp/. Fresh test1 verification for B08KTZ8249 confirmed a real Kindle Paperwhite title and actual product photos after a verified restart, with a clean /dp/ link and UTM parameters removed. Amazon representative QA is complete: the user accepted the fresh test2 examples. This is not a guarantee for every Amazon product or marketplace, and real-device Android/iOS provenance was not established. Product metadata remains dependent on public availability; store names are never guessed.
+Amazon cards use available public or matching native metadata for the title, description, and image. Store names are shown only when verified. Short shares resolve to clean product links. Missing product fields can trigger up to two refreshes, after one and two seconds; useful titles and images are retained. Metadata recovery allows one same-host 301 redirect from /dp/ASIN to /clp/the-same-ASIN, with matching identity and a real product title. Requests remain limited to eight seconds and 512 KiB. Further redirects, access challenges, and generic-shell images are rejected. Displayed product links keep /dp/. Availability varies by product and marketplace; Android and iOS sharing behavior has not been verified on real devices.
 
 Operator-level `PROVIDER_SHARING_APPROVED=yes` enables the six documented helpers after approval of the recipients in [PRIVACY.md](PRIVACY.md). Installers should see the privacy/help disclosure. Platform overrides use `PLATFORM_MODE=card|native|off|<listed helper>`. Native-only modes other than Amazon are left untouched in replacement mode. Legacy reply mode remains available in code but is not the requested replacement-only deployment behavior.
-
-
 
 Facebook public photo, video, Reel, and post cards use Facebed and public metadata. Generic login or unavailable responses leave the original message untouched. No Facebook login is used. Captions and post text preserve the first 300 Unicode code points, with an ellipsis only when longer. Normal post text appears above images; photo, video, and Reel captions appear below media. Required content IDs and signed media URLs are preserved while optional tracking is removed. Unknown author handles are omitted rather than guessed.
 
 Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. Crossposts can reuse the original video through the approved Reddit helper while retaining crosspost attribution. A link to the video page is shown when playable media cannot be obtained. Availability of Reddit video playback is not guaranteed.
 
-Reddit representative QA is complete for the current alpha: text/self posts, external website links, single images, two-image galleries, native video/GIF, crosspost video playback, redd.it links, modern /s/ shares, and word-safe title truncation have been checked. Supported repost URLs remove nonempty utm_* query keys case-insensitively. Visible short-link formats are intentionally retained; card destinations resolve to canonical post URLs when available. This is not universal Reddit compatibility: m.reddit.com, comment-specific URLs, and app deep links are unsupported; visible fragments remain, and Android/iOS share variants were tested synthetically rather than on real devices. Provider availability can change.
-
-
+Reddit supports text posts, external links, images, galleries, native video/GIF, crosspost video, redd.it links, and recognized /s/ shares. Supported repost URLs remove nonempty utm_* query keys case-insensitively. Visible short links are retained; card destinations resolve to canonical post URLs when available. m.reddit.com links, comment-specific URLs, and app deep links are unsupported. Visible fragments remain. Android and iOS share variants have not been verified on real devices, and provider availability can change.
 
 ## Card layout
 
-Unavailable-preview notices use one short sentence without extra instructions to open the link. Custom cards use bold linked titles in regular card text, no decorative title arrows, a small gap below the title, and a divider above the footer. Cards prefer the original title when available. Examples include Instagram post, Twitter post, and Bluesky post cards, with specific types such as Instagram Reel, Snapchat Story, and Snapchat Spotlight. Platform colors identify the card; Instagram uses #E1306C. Discord controls final media sizing; there is no supported arbitrary width/height setting.
+Unavailable-preview notices use one short sentence without extra instructions to open the link. Custom cards use bold linked titles in regular card text, no decorative title arrows, the author directly below the title, and a divider above the footer. Cards prefer the original title when available. Examples include Instagram post, Twitter post, and Bluesky post cards, with specific types such as Instagram Reel, Snapchat Story, and Snapchat Spotlight. Platform colors identify the card; Instagram uses #E1306C. Discord controls final media sizing; there is no supported arbitrary width/height setting.
 
 Display names are bold and handles are plain, without mentions. Reddit uses a bold r/subreddit beside a plain u/username below the title. Missing author data is omitted. Cards omit engagement counts, dates, author portraits, and provider buttons. The platform footer includes a fixed-label Link Embedder profile hyperlink rather than a mention; the visible name does not depend on Discord resolving a user in forwarded messages. Profile navigation still depends on the Discord client.
 
 Bluesky uses the same card layout as Twitter: a linked post title, bold display name with plain handle, full main text before the media gallery, text-only quotes below media showing up to 300 Unicode characters, followed by an ellipsis only when longer, and the platform footer. No author avatar, engagement counts, or extra action buttons are added. Main videos may use the approved helper’s pds-cache.fxbsky.app public DID/CID route; Discord retrieves that media. This does not guarantee playback or reproduce Twitter-only features such as Spaces.
 
-Bluesky representative live QA is complete: text with UTM query cleanup, one-image posts, a five-image gallery, main-video playback controls, and text-only quote layout were checked after deployment. The main video changed from Play to Pause with playback controls visible; this is not an audio or universal-playback guarantee. An external-link post displayed text and a thumbnail, but its separate outbound destination was not verified. Provider availability and Discord rendering still vary.
+Bluesky media and playback depend on the provider and Discord client. An external-link post may show a thumbnail, but its separate outbound destination is not guaranteed.
 
 Instagram accepts canonical and username-prefixed post/reel links, legacy TV links, and carousel slide selection. Instagram profile links are left untouched. Individual Story links and highlights receive linked unavailable cards without helper requests or login access. Instagram audio pages and account Stories pages are ignored.
 
@@ -84,33 +78,23 @@ Ownership records contain IDs, not message bodies or tokens. Old unrecorded repo
 
 ### Provider behavior
 
-
 Pinterest uses the shared large-image card, red accent, linked pin title, and standard attribution/footer. Only pinterest.com/pin/numeric-ID URLs are supported. Public HTML requests retain the eight-second/512 KiB bounds and reject redirects; matching Discord previews can supply allowed i.pinimg.com images. Private or unavailable pins show a fallback. Pin.it, boards, profiles, and video playback are not supported. Local implementation is awaiting live verification.
 
-
-## Behavior and providers — detailed reference
-
-Reddit website-only posts show the actual clickable destination URL without an arrow or thumbnail gallery. Crossposts can reuse the original video through the approved Reddit helper while preserving the crosspost title and attribution. When playable media cannot be obtained, a link to the video page is shown. Availability of Reddit video playback is not guaranteed.
-
-
-## Managing reposts — detailed reference
+## Managing reposts: reference
 
 Ownership is stored in `data/repost-owners.json` as repost, original-author, server, channel, and webhook IDs only. No message text or webhook tokens are stored. Writes are atomic and complete before deleting the original. Keep this directory on persistent host storage and back it up privately; never commit it. Records remain until managed deletion, rollback, or an operator-verified deletion request. A missing record denies management; a corrupt store stops startup. Capacity is 10,000 records; reaching it preserves originals instead of silently evicting owners.
 
+## Privacy and resource limits: reference
 
-## Privacy and resource limits — detailed reference
+See [PRIVACY.md](PRIVACY.md) for data handling. Message bodies, URLs, and tokens are not logged. Repost ownership IDs are stored as described above. Message caching is disabled. Guild-scoped in-memory message IDs expire after ten minutes (max 1,000 per guild), channel cooldowns after three seconds, and burst timestamps after one minute. Idle guild state expires after ten minutes when another event is processed. Global state is capped at 10,000 guilds; additional uncached guilds are skipped while the cap is full. These controls are isolated between servers.
 
-See [PRIVACY.md](PRIVACY.md) and [HELP.md](HELP.md) for publishable copy. No message-body/URL/token logging. Repost ownership IDs persist locally as described below. Message caching is disabled. Guild-scoped in-memory message IDs expire after ten minutes (max 1,000 per guild), channel cooldowns after three seconds, and burst timestamps after one minute. Idle guild state expires after ten minutes when another event is processed. Global state is capped at 10,000 guilds; additional uncached guilds are skipped while the cap is full. These controls are isolated between servers.
-
-Up to three distinct supported links per message, one response per channel per three seconds, and twenty responses per server per minute. Excess messages are skipped rather than queued. State resets on restart; run one process. No historical backfill, message-edit handling, or deletion synchronization. Gateway/SDK keeps operational guild/channel/member metadata in memory; this is not a promise of zero data processing. Bot responses remain in Discord until deleted.
+Messages can show up to five distinct supported-link previews within Discord’s payload limits. Rate limits are one response per channel every three seconds and twenty responses per server per minute. Excess messages are skipped rather than queued. State resets on restart; run one process. No historical backfill, message-edit handling, or deletion synchronization. Gateway/SDK keeps operational guild/channel/member metadata in memory; this is not a promise of zero data processing. Bot responses remain in Discord until deleted.
 
 HTTPS and exact-host checks reject credentials, all explicit ports, encoded host tricks, and unknown hosts. Known trackers are removed from generated links, including helper fallbacks. Platform canonicalization preserves content IDs, Facebook story/photo IDs, and Instagram image selection. Recognized short links for Amazon, TikTok, Instagram, Facebook, Reddit, and Twitter can expand through up to four HTTPS redirects within six seconds. Reddit compact /comments/ID destinations are recognized. If a Reddit share redirect is unavailable, a matching Discord native preview can supply its post ID from an exact share.redd.it preview URL. Conflicting preview IDs leave the share link unchanged. Crosspost video redirects can supply parent media while preserving the shared post’s attribution. Long card titles end at a word boundary with an ellipsis. Only known same-platform routes are followed; unresolved links stay unchanged. No cookies, login access, or JavaScript challenges are used.
 
+## Provider availability: reference
 
-## Provider availability — detailed reference
-
-Public helpers and media URLs can fail or expire. Initial metadata failure uses an honest linked fallback where supported. There is no delayed backup timer removing working previews. No cookies, private-content access, login-gate bypasses, paid APIs, or guessed metadata are used. Unapproved media redirects are not followed.
-
+Public helpers and media URLs can fail or expire. Initial metadata failure uses a linked fallback where supported. There is no delayed backup timer removing working previews. No cookies, private-content access, login-gate bypasses, paid APIs, or guessed metadata are used. Unapproved media redirects are not followed.
 
 ## Sources
 
@@ -125,8 +109,6 @@ The original poster can open ⋯ → Edit Post, or Apps → Manage Post → Edit
 Pinterest pin 155303888141933052 passed live large-image and visible tracking-cleanup verification. Linked handles are now derived only from a validated Pinterest author profile URL in matching metadata; unknown handles are omitted. This handle addition awaits deployment.
 
 Snapchat Spotlight cards support public token routes, optionally prefixed by @username. Public Open Graph metadata must identify the same Spotlight and advertise an MP4 on the exact bolt-gcdn.sc-cdn.net host and /u/ path. Existing eight-second/512 KiB limits remain. The public red-panda Spotlight sample passed live custom-card QA with its author and description, Play/Download controls, and observed video playback. This verifies that sample, not every Spotlight or device. Profiles, private stories, and unrecognized short links remain unsupported.
-
-
 
 ## Preview sources at a glance
 
@@ -143,7 +125,7 @@ The original site is the source unless a third-party helper is named.
 | Snapchat | Public metadata |
 | ✅ Threads | [fzthreads.com](https://github.com/AvianJay/fzthreads) |
 | TikTok | [tnktok.com](https://github.com/okdargy/fxTikTok) |
-| Twitter (X) | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
+| Twitter | [fxtwitter.com](https://github.com/FxEmbed/FxEmbed) |
 | ✅ UpScrolled | Public metadata |
 
 ## Detailed route limits
@@ -167,21 +149,19 @@ Spotlight videos are downloaded only from the validated Snapchat CDN, with no re
 
 Public individual Story video and photo samples passed live Discord QA, alongside a fresh Spotlight sample. Saved Story collections have local test coverage but have not been verified live. Individual links select only their exact Snap; saved Stories show up to ten Snaps in one card, with a count and full-Story link when more exist. Validated Story HTML has a 2 MiB decompressed limit; Spotlight and other providers retain 512 KiB. Eight-second request timeouts and an aggregate 8 MiB attachment budget remain. Private, expired, mismatched, unsupported-overlay, or unavailable content does not yield a media gallery.
 
-Cards share small spacing after the title and one visible divider immediately above the footer, after media, captions, and any quote or Story count.
+The author follows the title on the next line. One divider sits above the footer, after media, captions, and any quote or Story count.
 
-Threads quotes use the verified display name and handle when available. Self-quotes reuse the name only for a matching identity; other authors may use one bounded fzthreads.com profile lookup. Missing or mismatched names retain a generic quoted-post label. Representative self-quotes and different-author quotes passed live QA; the separate global clickable-link update passed live QA.
+Threads quotes use the verified display name and handle when available. Self-quotes reuse the name only for a matching identity; other authors may use one bounded fzthreads.com profile lookup. Missing or mismatched names retain a generic quoted-post label.
 
-Recognized content links retain only functional parameters in the displayed URL and card target, such as Instagram carousel selection and Facebook content IDs. Unresolved short links are preserved until their destination is known. Signed media URLs are not modified. Representative displayed-link and target cleanup passed live QA.
+Recognized content links retain only functional parameters in the displayed URL and card target, such as Instagram carousel selection and Facebook content IDs. Unresolved short links are preserved until their destination is known. Signed media URLs are not modified.
 
-URLs in post text, captions, and quotes are rendered as clickable links with visible destinations. Known tracking is removed where safe; signed URLs retain their parameters. A URL cut off by the 300-character caption or quote limit stays unlinked. The NASA external link passed live clickability verification, and its literal hyphen was preserved.
+URLs in post text, captions, and quotes are rendered as clickable links with visible destinations. Known tracking is removed where safe; signed URLs retain their parameters. A URL cut off by the 300-character caption or quote limit stays unlinked.
 
-Threads representative QA is complete for text, single images, galleries, video, self-quotes, quotes of another author, long replies with links, short post routes, and tracking cleanup. These examples do not establish every mobile app sharing format or distinct plain-repost support. Global clickable-link verification passed.
+Threads support does not cover every mobile sharing format or guarantee previews for plain reposts.
 
-Threads representative text, single-image, gallery, video, self-quote, different-author quote, long-reply, short-route, and tracking-cleanup examples passed live QA. This does not establish every mobile app sharing format or distinct plain-repost support. The separate global clickable-source-link update passed live QA.
+UpScrolled cards show the display name, handle, full text, icon, and shared layout. Video opens through the normal linked title or source URL; the card has no in-card video player or extra video CTA. Real quote-post metadata and additional media formats remain unverified.
 
-UpScrolled’s public text and video-poster examples passed live Discord QA. Cards show the display name, handle, full text, icon, and shared layout. Video opens through the normal linked title or source URL; the card has no in-card video player or extra video CTA. Real quote-post metadata and additional media formats remain unverified.
-
-Threads omits the helper-generated leading reply annotation, matching Twitter and Bluesky. Its removal passed live QA; ordinary post text and genuine quotes remain unchanged.
+Threads omits the helper-generated leading reply annotation, matching Twitter and Bluesky. Ordinary post text and genuine quotes remain unchanged.
 
 Facebook handle enrichment is optional and bounded to 1.5 seconds. It requires matching public content and owner metadata; access challenges are not followed. Successful lookups cache in memory for five minutes, failures for 30 seconds, with a maximum of 128 entries. Lookup failure preserves the useful Facebed card. The host video sample resolved a handle; the photo sample remained blocked. Text-only cards and revised post ordering have local test coverage; final deployment verification is pending.
 

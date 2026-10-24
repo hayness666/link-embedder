@@ -1,6 +1,6 @@
 # Optional author-style reposts
 
-Release stage: **Alpha**. Public alpha: anyone with permission to install apps can add Link Embedder to a Discord server. It works in channels where the required permissions are granted.
+Anyone with permission to install apps can add Link Embedder to a Discord server. It works in channels where the required permissions are granted.
 
 The hosted bot replaces eligible new messages in channels where it has the required permissions.
 
@@ -16,7 +16,6 @@ Replacement is confirmed before deletion. The source is fetched again to check t
 
 Local tests cover send failure, lost delete acknowledgements, concurrent source edits, eligibility, permissions, and opt-in scope. Live verification uses a designated test channel; this does not restrict public installation or operation in other permitted channels.
 
-
 ## Author controls
 
 Open a recorded repost’s options, then Apps and the Link Embedder management command. Choose **Manage Post**. The private menu contains action buttons without a heading. **Mark NSFW** is blue and available to anyone with channel access. **Delete Post** is red and only shown to the original sender; ownership is checked again before deletion. There is no custom Dismiss button, first-use channel notice, or DM.
@@ -27,4 +26,4 @@ Ownership is stored in `data/repost-owners.json` as repost, original-author, ser
 
 See [README.md](../README.md) for current card layouts and provider limits.
 
-Threads representative text, single-image, gallery, video, self-quote, different-author quote, long-reply, short-route, and tracking-cleanup examples passed live QA. This does not establish every mobile app sharing format or distinct plain-repost support. The separate global clickable-source-link update passed live QA.
+Threads support does not cover every mobile sharing format or guarantee previews for plain reposts.

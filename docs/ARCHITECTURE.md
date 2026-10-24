@@ -6,7 +6,6 @@ Bot modules live directly in `src/`. `simple-cards.js` shares layout and metadat
 
 Written guides live in `docs/`. The root `index.js` and package scripts retain the existing bot startup paths. Website publication does not deploy or restart the bot.
 
-
 Shared website styles live in `src/website/styles.css`. The build retains the existing public `style.css` URL.
 
 Tests are grouped under `test/cards/`, `test/providers/`, and `test/core/`; `npm test` discovers all groups.
@@ -19,4 +18,4 @@ CSS uses pinned Stylelint and Prettier development tools. Run `npm run format:cs
 
 Contact HTML and browser JavaScript live together in `src/website/pages/contact/`. Shared `styles.css` sits beside `index.html`; the build keeps the public `style.css` filename.
 
-Threads representative text, single-image, gallery, video, self-quote, different-author quote, long-reply, short-route, and tracking-cleanup examples passed live QA. This does not establish every mobile app sharing format or distinct plain-repost support. The separate global clickable-source-link update passed live QA.
+Threads support does not cover every mobile sharing format or guarantee previews for plain reposts.
