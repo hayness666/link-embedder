@@ -1,0 +1,57 @@
+name: Manually verify or deploy bot
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact reviewed main commit SHA (40 lowercase hexadecimal characters)
+        required: true
+        type: string
+      mode:
+        description: Read-only verification is the default; deploy writes existing runtime files and requests one restart
+        type: choice
+        options: [verify, deploy]
+        default: verify
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: bot-production
+  cancel-in-progress: false
+jobs:
+  test:
+    if: github.repository == 'hayness666/link-embedder' && github.ref == 'refs/heads/main' && inputs.expected_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.17.0'
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run check
+      - run: npm run lint:css
+      - run: npm run format:check
+      - run: python3 -I -B -m unittest discover -s test/deploy -p 'test_*.py'
+  transfer:
+    needs: test
+    if: github.repository == 'hayness666/link-embedder' && github.ref == 'refs/heads/main' && inputs.expected_sha == github.sha
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: bot-production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      # Fresh runner; no npm install, tests, target-code imports, or artifact downloads here.
+      - name: Verify approved files or deploy with readback
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          DEPLOY_MODE: ${{ inputs.mode }}
+          SILLYDEV_SERVER_ID: ${{ vars.SILLYDEV_SERVER_ID }}
+          SILLYDEV_API_KEY: ${{ secrets.SILLYDEV_API_KEY }}
+        run: python3 -I -B scripts/deploy/sillydev.py
